@@ -63,7 +63,7 @@
       root.classList.toggle('ag-expanded', state.expanded);
       const B = D.brand || {}, words = [].concat(B.wordmark || []);
       // board pages: the short text, the full text one click away
-      const notice = (n, cls, fallback, role) => !n ? '' : board && n.short
+      const notice = (n, cls, fallback, role) => !n ? '' : board && n.short != null
         ? `<div class="${cls}" role="${role}"><details><summary><b>${esc(n.label || fallback)}</b> ${esc(n.short)}</summary><p>${esc(n.text)}</p></details></div>`
         : `<p class="${cls}" role="${role}"><b>${esc(n.label || fallback)}</b> ${esc(n.text)}</p>`;
       root.innerHTML = `<header class="ag-top"><div class="ag-top-inner"><a class="ag-brand" href="${esc(pageURL(pages[0]))}">${B.mark ? `<img class="ag-mark" src="${esc(safeURL(B.mark, ASSETS))}" alt="" width="36" height="36">` : ''}<span class="ag-wordmark">${esc(words[0])}${words[1] ? `<span>${esc(words[1])}</span>` : ''}</span>${B.label ? `<span class="ag-brand-label">${esc(B.label)}</span>` : ''}</a></div></header>
