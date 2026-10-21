@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const SKIP = /^(\.agents|\.claude)\/|\/vendor\/|\.(png|jpg|wasm|ico|woff2?)$|package-lock\.json$/;
-const BAD = /—|\p{Emoji_Presentation}|️/u;
+const BAD = /\u2014|\p{Emoji_Presentation}|\uFE0F/u;
 const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter((f) => f && !SKIP.test(f));
 let failed = false;
 for (const file of files) {
