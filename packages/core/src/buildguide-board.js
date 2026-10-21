@@ -16,7 +16,7 @@
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
 
-  window.BuildGuideBoard = function(root, B, options) {
+  window.BuildGuideBoard = (root, B, options) => {
     if (!window.joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoom() {}, fit() {}, highlight() {}}; }
     let disposed = false;
     const {dia, shapes} = joint;
@@ -61,10 +61,10 @@
       for (const [x, name] of a.glands || []) graph.addCell(new Caption({id: 'gland-' + name, z: 2, position: {x: x + 26, y: a.at[1] - 9},
         size: {width: 22, height: 18}, attrs: {label: {text: name, fill: a.color, fontSize: 12}}}));
     }
-    (B.props || []).forEach((p, i) => graph.addCell(new shapes.standard.Rectangle({
+    for (const [i, p] of (B.props || []).entries()) graph.addCell(new shapes.standard.Rectangle({
       id: 'prop-' + i, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
       attrs: {body: {fill: '#e5e7eb', stroke: '#475569', rx: 4}, label: {text: p.name, fontSize: 12, fontWeight: 600, fill: '#475569', fontFamily: FONT}},
-    })));
+    }));
 
     for (const [id, p] of Object.entries(parts)) {
       const k = kindOf(p), inset = k.inset || 0, offset = k.offset || {};

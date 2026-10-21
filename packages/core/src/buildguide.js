@@ -69,7 +69,7 @@
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
-        const rendered = drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoom(v) { this.inner?.zoom(v); }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }};
+        drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoom(v) { this.inner?.zoom(v); }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
           rendered.inner = mountBoard(canvas, board, {key: page.board, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
@@ -107,7 +107,7 @@
         });
       };
       const observer = new ResizeObserver(fit);
-      root.querySelectorAll('.ag-top, .ag-prerelease, .ag-nav, .ag-warning, .ag-page-heading, .ag-steps, .ag-work-heading, .ag-board-toolbar, .ag-board-legend, .ag-connection-detail, .ag-wire-navigation').forEach(el => observer.observe(el));
+      for (const el of root.querySelectorAll('.ag-top, .ag-prerelease, .ag-nav, .ag-warning, .ag-page-heading, .ag-steps, .ag-work-heading, .ag-board-toolbar, .ag-board-legend, .ag-connection-detail, .ag-wire-navigation')) observer.observe(el);
       window.addEventListener('resize', fit); fit();
       return () => { observer.disconnect(); window.removeEventListener('resize', fit); cancelAnimationFrame(frame); };
     }
@@ -175,7 +175,7 @@
       if (!parts.length) return '<div class="ag-empty">No matching components.</div>';
       let group = '';
       const row = p => {
-        const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(group = p.group)}</th></tr>` : '';
+        const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)}</th></tr>` : ''; group = p.group;
         const link = p.link ? ` <a class="ag-source-link" href="${esc(safeURL(p.link, location.href))}" target="_blank" rel="noopener">${esc(bom.linkLabel || 'Link')} ↗</a>` : '';
         const done = checked(bomKey(p));
         return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)} checked" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<img src="${esc(safeURL(p.image, ASSETS))}" alt="" loading="lazy">` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
@@ -206,21 +206,21 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.expanded && !document.fullscreenElement) toggleScreen(); });
     function bindChecks(scope) {
       // a BOM row toggles its tick wherever you click it (the box, its label and links keep their own click)
-      scope.querySelectorAll('.ag-bom-table [data-check]').forEach(box => box.closest('tr').onclick = e => { if (!e.target.closest('input,label,a')) box.click(); });
-      scope.querySelectorAll('[data-check]').forEach(box => box.onchange = () => {
+      for (const box of scope.querySelectorAll('.ag-bom-table [data-check]')) box.closest('tr').onclick = e => { if (!e.target.closest('input,label,a')) box.click(); };
+      for (const box of scope.querySelectorAll('[data-check]')) box.onchange = () => {
         const key = box.dataset.check, sel = `[data-check="${CSS.escape(key)}"]`, index = [...root.querySelectorAll(sel)].indexOf(box);
         save(key, box.checked); render();
         root.querySelectorAll(sel)[index]?.focus({preventScroll: true});
-      });
+      };
     }
     function bind() {
       const scope = root.querySelector('#ag-wire-scope'); if (scope) scope.onchange = () => { state.scope = scope.value; render(); };
-      root.querySelectorAll('[data-step]').forEach(b => b.onclick = () => navigate(page, Number(b.dataset.step)));
-      root.querySelectorAll('[data-wire]').forEach(b => b.onclick = () => navigate(page, state.step, Number(b.dataset.wire)));
-      root.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(page, i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); });
+      for (const b of root.querySelectorAll('[data-step]')) b.onclick = () => navigate(page, Number(b.dataset.step));
+      for (const b of root.querySelectorAll('[data-wire]')) b.onclick = () => navigate(page, state.step, Number(b.dataset.wire));
+      for (const b of root.querySelectorAll('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(page, i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); };
       bindChecks(root);
       const search = root.querySelector('#ag-search'); if (search) search.oninput = () => { state.search = search.value; const results = root.querySelector('#ag-bom-results'); results.innerHTML = bomRows(); bindChecks(results); };
-      root.querySelectorAll('[data-action]').forEach(b => b.onclick = () => {
+      for (const b of root.querySelectorAll('[data-action]')) b.onclick = () => {
         switch (b.dataset.action) {
           case 'fullscreen': toggleScreen(); break;
           case 'zoom-in': state.zoom = Math.min(3, state.zoom + .25); drawing?.zoom(state.zoom); break;
@@ -231,7 +231,7 @@
           case 'export': exportCSV(); break;
           case 'print': window.print(); break;
         }
-      });
+      };
     }
     window.addEventListener('hashchange', () => { readHash(); render(); });
     readHash(); render();

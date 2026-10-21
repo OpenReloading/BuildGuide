@@ -1,40 +1,47 @@
 name: Release
+# release-please keeps one release PR. Merging it tags each changed component (<component>-vX.Y.Z) and creates its
+# GitHub Release. A release made with GITHUB_TOKEN starts no other workflow, so the assets are built here.
 on:
   push:
-    tags: ['v*']
-permissions:
-  contents: read
+    branches: [main]
+permissions: {}
+concurrency:
+  group: release
+  cancel-in-progress: false
 jobs:
-  test:
+  release-please:
+    if: github.repository == 'OpenReloading/BuildGuide'
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      core: ${{ steps.release.outputs['packages/core--release_created'] }}
+      core-tag: ${{ steps.release.outputs['packages/core--tag_name'] }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
         with:
-          persist-credentials: false
-      - run: npm ci
-      - run: npm test
-      - run: npx playwright test
-  publish:
-    needs: test
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+  core:
+    needs: release-please
+    if: needs.release-please.outputs.core == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.release-please.outputs.core-tag }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
-      - name: Tag matches package.json
-        env:
-          TAG: ${{ github.ref_name }}
-        run: test "$TAG" = "v$(node -p 'require("./package.json").version')"
-      - run: npm run dist
-      - name: GitHub release with the archive and its checksum
+          node-version-file: .nvmrc
+      - run: npm run dist -w packages/core
+      - name: Attach the archive and its checksum
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
-        run: |
-          gh release create "$TAG" dist/*.tar.gz dist/SHA256SUMS --title "$TAG" --notes "Check the archive with sha256sum -c SHA256SUMS, then unpack it into the site's assets."
+          TAG: ${{ needs.release-please.outputs.core-tag }}
+        run: gh release upload "$TAG" packages/core/dist/*.tar.gz packages/core/dist/SHA256SUMS --clobber

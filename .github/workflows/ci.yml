@@ -6,7 +6,7 @@ on:
 permissions:
   contents: read
 jobs:
-  test:
+  check:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
     steps:
@@ -14,6 +14,27 @@ jobs:
         with:
           persist-credentials: false
       - run: npm ci
+      - run: npm run lint
       - run: npm test
-      - run: npx playwright test
+      - run: npm run test:browser
       - run: npm run dist
+      - run: npm audit --audit-level=high
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo docker.io/rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 -color
+      - uses: zizmorcore/zizmor-action@85b2b9fb8e3325e7a23d7d0a9d7ba5ae0f999e3e # v0.7.1
+        with:
+          version: 1.31.1
+          advanced-security: false
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high

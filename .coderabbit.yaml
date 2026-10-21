@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# AI review of pull requests (CodeRabbit OSS plan). Below 10 stars a review starts with the comment `@coderabbitai review`.
+language: en-US
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  path_filters:
+    - '!**/vendor/**'
+    - '!**/package-lock.json'
+    - '!.agents/**'
+    - '!.claude/**'
+  path_instructions:
+    - path: '**'
+      instructions: >-
+        Follow AGENTS.md. Guide data comes from third-party site authors: flag any data value that reaches
+        innerHTML, an attribute, a URL or a style without escaping or a scheme check.
