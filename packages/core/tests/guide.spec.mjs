@@ -113,7 +113,9 @@ test('boards: zoom, fullscreen and page scrolling over the canvas', async ({ pag
     await page.evaluate(() => scrollTo(0, 0));
     await page.locator('[data-action=fullscreen]').click();
     await expect(page.locator('#assembly-guide')).toHaveClass(/ag-expanded/);
-    await page.locator('.ag-steps [data-step="1"]').click(); await ready(page);
+    // the step renders on hashchange: until then ready() still sees the old canvas
+    await page.locator('.ag-steps [data-step="1"]').click();
+    await expect(page.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step'); await ready(page);
     expect(await page.evaluate(() => document.fullscreenElement?.id)).toBe('assembly-guide');
     const nav = await page.locator('.ag-wire-navigation').boundingBox();
     expect(nav.y + nav.height).toBeLessThanOrEqual(await page.evaluate(() => innerHeight) + 1);
