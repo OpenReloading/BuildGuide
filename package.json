@@ -3,16 +3,21 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "packages/core"
+    "packages/core",
+    "packages/docusaurus"
   ],
   "scripts": {
     "lint": "biome check . && node scripts/text-check.mjs && uv run --project packages/mkdocs ruff check packages/mkdocs",
     "test": "npm test --workspaces --if-present && uv run --project packages/mkdocs pytest packages/mkdocs",
-    "test:browser": "npm run test:browser --workspaces --if-present && npm run docs && BUILDGUIDE_SITE=../../site npm run test:browser -w packages/core",
+    "test:browser": "npm run test:browser --workspaces --if-present && npm run docs && BUILDGUIDE_SITE=../../site npm run test:browser -w packages/core && npm run build -w packages/docusaurus && BUILDGUIDE_SITE=../docusaurus/example/build npm run test:browser -w packages/core",
     "docs": "uv run --project packages/mkdocs mkdocs build --strict",
     "dist": "npm run dist --workspaces --if-present && uv build packages/mkdocs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15"
+  },
+  "overrides": {
+    "serialize-javascript": "7.1.2",
+    "tinypool": "2.2.0"
   }
 }

@@ -1,0 +1,32 @@
+{
+  "name": "@openreloading/docusaurus-plugin-buildguide",
+  "version": "0.1.0",
+  "description": "Docusaurus plugin for BuildGuide: interactive build guides (BOM checklist, wiring and tubing boards) from one JSON file",
+  "license": "MIT",
+  "private": true,
+  "main": "src/index.js",
+  "files": [
+    "src",
+    "core"
+  ],
+  "scripts": {
+    "test": "node scripts/copy-core.mjs && node --test tests/*.test.mjs",
+    "build": "node scripts/copy-core.mjs && docusaurus build example",
+    "start": "node scripts/copy-core.mjs && docusaurus start example --host 0.0.0.0 --port 8080",
+    "prepack": "node scripts/copy-core.mjs",
+    "dist": "mkdir -p dist && npm pack --pack-destination dist"
+  },
+  "dependencies": {
+    "copy-webpack-plugin": "^14.0.0"
+  },
+  "peerDependencies": {
+    "@docusaurus/core": "^3.6.0",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}
