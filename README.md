@@ -7,18 +7,20 @@ Interactive build guides from one JSON file: introduction, BOM checklist, and wi
 | Component | Folder | Release |
 |---|---|---|
 | core: browser library, schema, check CLI | [`packages/core/`](packages/core/) | `core-v*`: `buildguide-<version>.tar.gz`, `SHA256SUMS` |
+| mkdocs: MkDocs plugin | [`packages/mkdocs/`](packages/mkdocs/) | `mkdocs-v*`: wheel and sdist |
 
-Each component has its own version, changelog and tag. Releases: [GitHub Releases](https://github.com/OpenReloading/BuildGuide/releases).
+Docs and the live example guide: https://openreloading.github.io/BuildGuide/. Each component has its own version, changelog and tag. Releases: [GitHub Releases](https://github.com/OpenReloading/BuildGuide/releases).
 
 ## Development
 
-Builds and tests run in the dev container (`.devcontainer/`, Playwright image):
+Builds and tests run in the dev container (`.devcontainer/`, Playwright image with uv):
 
 ```sh
 devcontainer up --workspace-folder .
-devcontainer exec --workspace-folder . npm run lint           # Biome, no em dash or emoji
+devcontainer exec --workspace-folder . npm run lint           # Biome, ruff, no em dash or emoji
 devcontainer exec --workspace-folder . npm test               # unit tests of every component
-devcontainer exec --workspace-folder . npm run test:browser   # browser tests
+devcontainer exec --workspace-folder . npm run test:browser   # browser tests: core example, then the docs site
+devcontainer exec --workspace-folder . npm run docs           # docs site into site/
 devcontainer exec --workspace-folder . npm run dist           # release archives
 ```
 
