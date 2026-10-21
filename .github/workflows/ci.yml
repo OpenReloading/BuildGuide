@@ -13,6 +13,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # the container user differs from the checkout owner: git refuses the repository without this
+      - run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - run: npm ci
       - run: npm run lint
       - run: npm test
