@@ -1,0 +1,130 @@
+{
+  "$schema": "../schema/buildguide.schema.json",
+  "storage": "buildguide-demo",
+  "revision": "2026-10-21",
+  "brand": { "mark": "mark.svg", "wordmark": ["Demo", "Station"], "label": "BUILD GUIDE", "footer": "Demo station · example guide" },
+  "prerelease": { "text": "Example data. The parts and values are not a tested build." },
+  "warning": { "text": "Work with the 12 V supply unplugged. Fit the fuse before the first power-up." },
+  "pages": [
+    { "id": "intro", "title": "Introduction", "view": "intro" },
+    { "id": "bom", "title": "BOM", "view": "bom" },
+    { "id": "wiring", "title": "Wiring", "view": "board", "board": "wiring" },
+    { "id": "tubing", "title": "Tubing", "view": "board", "board": "tubing" }
+  ],
+  "intro": {
+    "title": "Demo station",
+    "lead": "A 12 V control box that moves an air cylinder when START is pressed or the sensor sees a part.",
+    "sections": [
+      { "title": "Features", "list": [["Two inputs", "START button or the sensor energises the relay."], "STOP breaks the supply to both."] },
+      { "title": "Build", "steps": ["Collect the parts from the BOM.", "Wire the box step by step.", "Connect the tubes."] },
+      { "title": "Printing", "text": "The sensor bracket prints in PETG without supports." }
+    ],
+    "media": [{ "kind": "video", "caption": "Video placeholder" }, { "kind": "image", "caption": "Image placeholder" }]
+  },
+  "bom": {
+    "note": "Substitute parts as local availability and cost require. Cable and tube lengths are estimates.",
+    "export": "demo-station-bom.csv",
+    "linkLabel": "Model",
+    "items": [
+      { "id": "psu", "group": "Electrical", "part": "Power supply", "spec": "12 V DC, 2 A", "qty": 1 },
+      { "id": "fuse", "group": "Electrical", "part": "Fuse holder with fuse", "spec": "5 x 20 mm, 2 A slow", "qty": 1 },
+      { "id": "buttons", "group": "Electrical", "part": "Push button", "spec": "22 mm, one red NC, one green NO", "qty": 2 },
+      { "id": "relay", "group": "Electrical", "part": "Relay with socket", "spec": "12 V DC coil, 1 changeover contact", "qty": 1 },
+      { "id": "join", "group": "Electrical", "part": "Lever connector", "spec": "4 way, 0.5 to 4 mm²", "qty": 1 },
+      { "id": "sensor", "group": "Electrical", "part": "Inductive sensor", "spec": "M12, PNP NO, 10 to 30 V", "qty": 1 },
+      { "id": "diode", "group": "Electrical", "part": "Diode", "spec": "1N4007", "qty": 1 },
+      { "id": "valve", "group": "Pneumatic", "part": "5/2 solenoid valve", "spec": "12 V DC coil, G1/8", "qty": 1 },
+      { "id": "cylinder", "group": "Pneumatic", "part": "Double acting cylinder", "spec": "16 mm bore, 50 mm stroke", "qty": 1 },
+      { "id": "regulator", "group": "Pneumatic", "part": "Pressure regulator", "spec": "0 to 8 bar, G1/8", "qty": 1 },
+      { "id": "tube", "group": "Pneumatic", "part": "Tube", "spec": "6 x 4 mm PU, 3 m", "qty": 1 },
+      { "id": "bracket", "group": "3D printed", "part": "Sensor bracket", "spec": "PETG, 0.2 mm layers", "qty": 1, "link": "https://example.org/models/sensor-bracket" }
+    ]
+  },
+  "boards": {
+    "wiring": {
+      "label": "Wiring board",
+      "size": [1000, 640],
+      "prefix": "wire",
+      "single": true,
+      "next": "tubing",
+      "legend": [{ "key": "diode", "text": "Silver ring = cathode" }, "Green = selected connection"],
+      "colors": {
+        "RD": { "line": "#dc2626", "outline": "#7f1d1d" },
+        "BK": { "line": "#1f2937", "outline": "#000000" },
+        "BN": { "line": "#92400e", "outline": "#451a03" },
+        "BU": { "line": "#2563eb", "outline": "#1e3a8a" },
+        "DIODE": { "line": "#d1d5db", "outline": "#111827", "diode": true }
+      },
+      "kinds": {
+        "box": { "fill": "#f1f5f9", "stroke": "#17202a" },
+        "button": { "round": true, "stroke": "#9ca3af" },
+        "socket": { "fill": "#1f2937", "stroke": "#1f2937", "inset": 17, "diodeLoop": "around" },
+        "sensor": { "fill": "#e8f5ec", "stroke": "#15803d", "pins": { "BN": "#92400e", "BU": "#2563eb", "BK": "#111827" } },
+        "plug": { "fill": "#1f2937", "stroke": "#1f2937" },
+        "join": { "fill": "#f1f5f9", "stroke": "#64748b" }
+      },
+      "rules": { "perTerminal": 2, "exempt": { "kinds": ["join"], "colors": ["DIODE"] } },
+      "areas": {
+        "box": { "title": "Control box", "at": [60, 250], "size": [880, 360], "color": "#475569", "glands": [[250, "G1"], [520, "G2"], [790, "G3"]] }
+      },
+      "parts": {
+        "PSU": { "kind": "box", "name": "Power supply", "sub": "12 V DC", "at": [180, 70], "size": [150, 80], "ports": { "bottom": ["+", "-"] } },
+        "Y1": { "kind": "plug", "name": "Valve Y1", "sub": "12 V coil", "at": [460, 80], "size": [100, 60], "ports": { "bottom": ["1", "2"] } },
+        "B1": { "kind": "sensor", "name": "Sensor B1", "sub": "PNP, NO", "at": [720, 70], "size": [140, 70], "ports": { "bottom": ["BN", "BU", "BK"] } },
+        "F1": { "kind": "box", "name": "Fuse F1", "sub": "2 A", "at": [140, 340], "size": [90, 50], "ports": { "left": ["1"], "right": ["2"] } },
+        "S0": { "kind": "button", "name": "STOP S0", "color": "#c62828", "at": [330, 320], "size": [56, 56], "ports": { "bottom": ["1", "2"] } },
+        "S1": { "kind": "button", "name": "START S1", "color": "#2e7d32", "at": [440, 320], "size": [56, 56], "ports": { "bottom": ["3", "4"] } },
+        "K1": { "kind": "socket", "name": "Relay K1", "sub": "12 V coil", "at": [600, 330], "size": [200, 120], "ports": { "left": ["A1", "A2"], "right": ["11", "14"] } },
+        "X1": { "kind": "join", "name": "Join X1", "sub": "0 V", "at": [300, 520], "size": [160, 36], "ports": { "top": ["1", "2", "3", "4"] } }
+      },
+      "steps": [
+        { "id": "A", "title": "Supply", "connections": [
+          { "no": "1", "a": "PSU:+", "b": "F1:1", "color": "RD", "cable": "Supply cable", "size": "2 x 0.75 mm²" },
+          { "no": "2", "a": "PSU:-", "b": "X1:1", "color": "BK", "cable": "Supply cable", "size": "2 x 0.75 mm²" }
+        ] },
+        { "id": "B", "title": "Buttons and relay coil", "connections": [
+          { "no": "3", "a": "F1:2", "b": "S0:1", "color": "RD", "size": "0.5 mm²" },
+          { "no": "4", "a": "S0:2", "b": "S1:3", "color": "RD", "size": "0.5 mm²" },
+          { "no": "5", "a": "S1:4", "b": "K1:A1", "color": "RD", "size": "0.5 mm²" },
+          { "no": "6", "a": "K1:A2", "b": "X1:2", "color": "BK", "size": "0.5 mm²" }
+        ] },
+        { "id": "C", "title": "Valve", "connections": [
+          { "no": "7", "a": "F1:2", "b": "K1:11", "color": "RD", "size": "0.5 mm²" },
+          { "no": "8", "a": "K1:14", "b": "Y1:1", "color": "RD", "cable": "Valve cable", "size": "2 x 0.5 mm²" },
+          { "no": "9", "a": "Y1:2", "b": "X1:3", "color": "BK", "cable": "Valve cable", "size": "2 x 0.5 mm²" },
+          { "no": "D1", "a": "Y1:1", "b": "Y1:2", "color": "DIODE", "la": "Valve Y1 · 1 (+)", "lb": "Valve Y1 · 2" }
+        ] },
+        { "id": "D", "title": "Sensor", "connections": [
+          { "no": "10", "a": "B1:BN", "b": "K1:11", "color": "BN", "cable": "Sensor cable", "size": "3 x 0.25 mm²" },
+          { "no": "11", "a": "B1:BU", "b": "X1:4", "color": "BU", "cable": "Sensor cable", "size": "3 x 0.25 mm²" },
+          { "no": "12", "a": "B1:BK", "b": "K1:A1", "color": "BK", "cable": "Sensor cable", "size": "3 x 0.25 mm²" }
+        ] }
+      ]
+    },
+    "tubing": {
+      "label": "Tubing diagram",
+      "size": [1000, 420],
+      "prefix": "tube",
+      "scope": "all",
+      "listAll": true,
+      "listColor": false,
+      "legend": ["6 x 4 mm tube · schematic", "Green = selected connection"],
+      "colors": { "AIR": { "line": "#7694b2", "outline": "#3f5f7f" } },
+      "parts": {
+        "AIR": { "name": "Air supply", "sub": "6 bar", "at": [40, 160], "size": [110, 70], "ports": { "right": ["out"] } },
+        "REG": { "name": "Regulator", "sub": "IN → OUT", "at": [240, 160], "size": [110, 70], "ports": { "left": ["in"], "right": ["out"] } },
+        "V1": { "name": "5/2 valve", "sub": "Y1", "at": [460, 200], "size": [180, 80], "ports": { "left": ["P"], "top": ["A", "B"], "bottom": ["R", "S"] } },
+        "CYL": { "name": "Cylinder", "sub": "double acting", "at": [760, 50], "size": [180, 60], "ports": { "bottom": ["cap", "rod"] } },
+        "SIL": { "name": "Silencers", "at": [500, 360], "size": [100, 30], "ports": { "top": ["R", "S"] } }
+      },
+      "steps": [
+        { "id": "1", "title": "Supply to regulator", "connections": [{ "no": "1", "a": "AIR:out", "b": "REG:in", "color": "AIR", "la": "Air supply", "lb": "Regulator IN" }] },
+        { "id": "2", "title": "Regulator to valve", "connections": [{ "no": "2", "a": "REG:out", "b": "V1:P", "color": "AIR", "la": "Regulator OUT", "lb": "Valve P" }] },
+        { "id": "3", "title": "Valve A to cap end", "connections": [{ "no": "3", "a": "V1:A", "b": "CYL:cap", "color": "AIR", "la": "Valve A", "lb": "Cylinder cap end" }] },
+        { "id": "4", "title": "Valve B to rod end", "connections": [{ "no": "4", "a": "V1:B", "b": "CYL:rod", "color": "AIR", "la": "Valve B", "lb": "Cylinder rod end" }] },
+        { "id": "5", "title": "Exhaust R", "connections": [{ "no": "5", "a": "V1:R", "b": "SIL:R", "color": "AIR", "la": "Valve R", "lb": "Silencer R" }] },
+        { "id": "6", "title": "Exhaust S", "connections": [{ "no": "6", "a": "V1:S", "b": "SIL:S", "color": "AIR", "la": "Valve S", "lb": "Silencer S" }] }
+      ]
+    }
+  }
+}

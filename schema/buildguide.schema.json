@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/OpenReloading/BuildGuide/schema/buildguide.schema.json",
+  "title": "BuildGuide guide data",
+  "description": "One object per guide: pages, introduction, BOM and boards. Cross references (terminals, colours, limits) are checked by buildguide-check.mjs.",
+  "type": "object",
+  "required": ["storage", "pages"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "storage": { "type": "string", "minLength": 1, "description": "localStorage key for the ticks" },
+    "revision": { "type": "string" },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "mark": { "type": "string", "description": "image path relative to the assets URL" },
+        "wordmark": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 2 }], "description": "one word, or two with the second in the accent colour" },
+        "label": { "type": "string" },
+        "footer": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "prerelease": { "$ref": "#/$defs/notice" },
+    "warning": { "$ref": "#/$defs/notice" },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "view"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "title": { "type": "string" },
+          "view": { "enum": ["intro", "bom", "board"] },
+          "board": { "type": "string", "description": "key in boards, for view board" },
+          "path": { "type": "string", "description": "page path relative to the site root; default: empty for the first page, else <id>/" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "intro": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "lead": { "$ref": "#/$defs/paragraphs" },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string" },
+              "list": { "type": "array", "items": { "$ref": "#/$defs/listItem" } },
+              "steps": { "type": "array", "items": { "$ref": "#/$defs/listItem" } },
+              "text": { "$ref": "#/$defs/paragraphs" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "media": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "kind": { "enum": ["video", "image"] },
+              "src": { "type": "string", "description": "relative to the assets URL; without src a placeholder is shown" },
+              "alt": { "type": "string" },
+              "caption": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "bom": {
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "note": { "type": "string" },
+        "export": { "type": "string", "description": "CSV file name" },
+        "linkLabel": { "type": "string", "description": "text of the item links and the CSV column" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "group", "part", "qty"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "group": { "type": "string" },
+              "part": { "type": "string" },
+              "spec": { "type": "string" },
+              "qty": { "type": ["integer", "string"] },
+              "image": { "type": "string", "description": "relative to the assets URL" },
+              "link": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "boards": { "type": "object", "additionalProperties": { "$ref": "#/$defs/board" } }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "notice": {
+      "type": "object",
+      "required": ["text"],
+      "properties": { "label": { "type": "string" }, "text": { "type": "string" } },
+      "additionalProperties": false
+    },
+    "paragraphs": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+    "listItem": { "oneOf": [{ "type": "string" }, { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }], "minItems": 2, "maxItems": 2 }] },
+    "point": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+    "board": {
+      "type": "object",
+      "required": ["size", "colors", "parts", "steps"],
+      "properties": {
+        "label": { "type": "string", "description": "accessible name of the board" },
+        "size": { "$ref": "#/$defs/point", "description": "drawing width and height in board units" },
+        "prefix": { "type": "string", "description": "start of the tick keys; default: the board key" },
+        "scope": { "enum": ["step", "all"], "description": "connections shown at first" },
+        "single": { "type": "boolean", "description": "offer the Selected connection scope" },
+        "listAll": { "type": "boolean", "description": "list every connection, not only the step's" },
+        "listColor": { "type": "boolean", "description": "show the colour code in the list; default true" },
+        "next": { "type": "string", "description": "page id the last connection leads to" },
+        "legend": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "key": { "enum": ["diode"] } }, "additionalProperties": false }] } },
+        "colors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["line", "outline"],
+            "properties": {
+              "line": { "type": "string" },
+              "outline": { "type": "string" },
+              "swatch": { "type": "string", "description": "list swatch; default: line" },
+              "width": { "type": "number" },
+              "diode": { "type": "boolean", "description": "draw a diode body across the two ends" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "kinds": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "fill": { "type": "string" },
+              "stroke": { "type": "string" },
+              "rx": { "type": "number" },
+              "round": { "type": "boolean", "description": "a round part filled with the part's color" },
+              "inset": { "type": "number", "description": "left and right terminals sit this far inside the part" },
+              "offset": { "type": "object", "properties": { "top": { "type": "number" }, "bottom": { "type": "number" } }, "additionalProperties": false },
+              "pins": { "type": "object", "additionalProperties": { "type": "string" }, "description": "terminal name to colour: a coloured dot without text" },
+              "band": { "type": ["boolean", "string"], "description": "a band on the right edge, true for silver" },
+              "diodeLoop": { "enum": ["around"], "description": "a diode across two terminals loops around the part" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "rules": {
+          "type": "object",
+          "properties": {
+            "perTerminal": { "type": "integer", "minimum": 1 },
+            "exempt": {
+              "type": "object",
+              "properties": { "kinds": { "type": "array", "items": { "type": "string" } }, "colors": { "type": "array", "items": { "type": "string" } } },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "areas": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["title", "at", "size"],
+            "properties": {
+              "title": { "type": "string" },
+              "at": { "$ref": "#/$defs/point" },
+              "size": { "$ref": "#/$defs/point" },
+              "color": { "type": "string" },
+              "frame": { "type": "boolean" },
+              "glands": { "type": "array", "items": { "type": "array", "prefixItems": [{ "type": "number" }, { "type": "string" }], "minItems": 2, "maxItems": 2 }, "description": "[x, name] openings in the top wall" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "props": {
+          "type": "array",
+          "items": { "type": "object", "required": ["name", "at", "size"], "properties": { "name": { "type": "string" }, "at": { "$ref": "#/$defs/point" }, "size": { "$ref": "#/$defs/point" } }, "additionalProperties": false }
+        },
+        "parts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["at", "size", "ports"],
+            "properties": {
+              "kind": { "type": "string" },
+              "name": { "type": "string" },
+              "sub": { "type": "string" },
+              "color": { "type": "string" },
+              "at": { "$ref": "#/$defs/point" },
+              "size": { "$ref": "#/$defs/point" },
+              "ports": {
+                "type": "object",
+                "propertyNames": { "enum": ["left", "right", "top", "bottom"] },
+                "additionalProperties": { "type": "array", "items": { "type": "string" } }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "connections"],
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "connections": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["no", "a", "b", "color"],
+                  "properties": {
+                    "no": { "type": "string" },
+                    "a": { "type": "string", "description": "PART:terminal" },
+                    "b": { "type": "string", "description": "PART:terminal" },
+                    "color": { "type": "string" },
+                    "la": { "type": "string", "description": "label of end a; default: part name · terminal" },
+                    "lb": { "type": "string" },
+                    "cable": { "type": "string" },
+                    "size": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
