@@ -1,0 +1,137 @@
+{
+  "problems": [
+    "wiring: part LAMP repeats terminal 1",
+    "wiring: part c1 clashes with connection 1",
+    "wiring 2: diode ends on two parts"
+  ],
+  "guide": {
+    "storage": "test-guide",
+    "pages": [
+      {
+        "id": "intro",
+        "title": "Introduction",
+        "view": "intro"
+      },
+      {
+        "id": "bom",
+        "title": "BOM",
+        "view": "bom"
+      },
+      {
+        "id": "wiring",
+        "title": "Wiring",
+        "view": "board",
+        "board": "wiring"
+      }
+    ],
+    "intro": {
+      "title": "Kit",
+      "lead": "A kit.",
+      "sections": []
+    },
+    "bom": {
+      "items": [
+        {
+          "id": "psu",
+          "group": "Power",
+          "part": "Power supply",
+          "spec": "12 V",
+          "qty": 1
+        }
+      ]
+    },
+    "boards": {
+      "wiring": {
+        "size": [
+          400,
+          300
+        ],
+        "colors": {
+          "RD": {
+            "line": "#c00",
+            "outline": "#600"
+          },
+          "DIODE": {
+            "line": "#ccc",
+            "outline": "#111",
+            "diode": true
+          }
+        },
+        "parts": {
+          "PSU": {
+            "name": "Power supply",
+            "at": [
+              20,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "right": [
+                "+",
+                "-"
+              ]
+            }
+          },
+          "LAMP": {
+            "name": "Lamp",
+            "at": [
+              250,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "left": [
+                "1",
+                "2"
+              ],
+              "right": [
+                "1"
+              ]
+            }
+          },
+          "c1": {
+            "at": [
+              150,
+              200
+            ],
+            "size": [
+              40,
+              40
+            ],
+            "ports": {
+              "top": [
+                "x"
+              ]
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "A",
+            "title": "Power",
+            "connections": [
+              {
+                "no": "1",
+                "a": "PSU:+",
+                "b": "LAMP:1",
+                "color": "RD"
+              },
+              {
+                "no": "2",
+                "a": "PSU:-",
+                "b": "LAMP:2",
+                "color": "DIODE"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

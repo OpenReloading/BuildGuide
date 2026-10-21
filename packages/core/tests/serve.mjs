@@ -1,11 +1,11 @@
-// Static server for the example and the browser tests: serves the repository root, nothing else.
-// Use: node tests/serve.mjs [port]
+// Static server for the example and the browser tests: serves this package, or the given folder, nothing else.
+// Use: node tests/serve.mjs [port] [folder]
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const ROOT = process.argv[3] ? resolve(process.argv[3]) : fileURLToPath(new URL('..', import.meta.url));
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.wasm': 'application/wasm', '.png': 'image/png', '.jpg': 'image/jpeg' };
 
 createServer(async (req, res) => {
