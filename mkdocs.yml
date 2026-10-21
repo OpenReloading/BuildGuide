@@ -33,5 +33,6 @@ nav:
   - Home: index.md
   - Core: core.md
   - MkDocs plugin: mkdocs.md
+  - Docusaurus plugin: docusaurus.md
   - Data format: data-format.md
   - Example guide: example/index.md
