@@ -15,5 +15,5 @@ test('the schema rejects an unknown view and a misspelt key', () => {
   guide.pages[0].view = 'video';
   guide.bom.items[0].quantity = 1;
   assert.equal(validate(guide), false);
-  assert.deepEqual(validate.errors.map(e => e.instancePath).sort(), ['/bom/items/0', '/pages/0/view']);
+  assert.deepEqual(validate.errors.map(e => e.instancePath).sort((x, y) => x.localeCompare(y)), ['/bom/items/0', '/pages/0/view']);
 });

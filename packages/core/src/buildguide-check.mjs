@@ -31,7 +31,7 @@ function checkBoard(key, board, pageIds) {
       const id = end.slice(0, at), pin = end.slice(at + 1), part = parts[id];
       if (!part) { found.push(`${key} ${c.no}: no part ${id}`); continue; }
       if (!Object.values(part.ports || {}).flat().includes(pin)) { found.push(`${key} ${c.no}: ${id} has no terminal ${pin}`); continue; }
-      if (!(exempt.kinds || []).includes(part.kind) && !(exempt.colors || []).includes(c.color)) (ends[end] ||= []).push(c.no);
+      if (!(exempt.kinds || []).includes(part.kind) && !(exempt.colors || []).includes(c.color)) { ends[end] ||= []; ends[end].push(c.no); }
     }
     if (!(c.color in colors)) found.push(`${key} ${c.no}: unknown colour ${c.color}`);
     else if (colors[c.color].diode && String(c.a).split(':')[0] !== String(c.b).split(':')[0]) found.push(`${key} ${c.no}: diode ends on two parts`);

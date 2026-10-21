@@ -1,0 +1,38 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!.agents", "!.claude", "!**/vendor", "!**/dist"]
+  },
+  "formatter": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": { "noUnusedVariables": "error", "noUnusedImports": "error", "noUndeclaredDependencies": "error" },
+      "suspicious": { "noNestedPromises": "error", "useArraySortCompare": "error" }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["packages/core/src/buildguide.js", "packages/core/src/buildguide-board.js"],
+      // classic browser scripts, not modules: their 'use strict' is not redundant
+      "linter": { "rules": { "suspicious": { "noRedundantUseStrict": "off" } } }
+    },
+    {
+      "includes": ["packages/core/src/**", "!packages/core/src/buildguide-check.mjs"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": { "patterns": [{ "group": ["node:*", "node:*/**"], "message": "The browser library runs without Node." }] }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "assist": { "enabled": false }
+}

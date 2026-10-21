@@ -1,19 +1,17 @@
 {
-  "name": "buildguide",
-  "version": "0.1.0",
-  "description": "Interactive build guides for hardware: BOM checklist, wiring and tubing boards from one JSON file",
-  "license": "MIT",
-  "type": "module",
+  "name": "buildguide-monorepo",
   "private": true,
-  "bin": { "buildguide-check": "src/buildguide-check.mjs" },
+  "type": "module",
+  "workspaces": [
+    "packages/core"
+  ],
   "scripts": {
-    "test": "node --test tests/*.test.mjs",
-    "test:browser": "playwright test",
-    "serve": "node tests/serve.mjs 8080",
-    "dist": "node scripts/dist.mjs"
+    "lint": "biome check . && node scripts/text-check.mjs",
+    "test": "npm test --workspaces --if-present",
+    "test:browser": "npm run test:browser --workspaces --if-present",
+    "dist": "npm run dist --workspaces --if-present"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1",
-    "ajv": "8.20.0"
+    "@biomejs/biome": "2.5.15"
   }
 }
