@@ -62,7 +62,10 @@
       root.classList.toggle('ag-diagram-page', !!board);
       root.classList.toggle('ag-expanded', state.expanded);
       const B = D.brand || {}, words = [].concat(B.wordmark || []);
-      const notice = (n, cls, fallback, role) => n ? `<p class="${cls}" role="${role}"><b>${esc(n.label || fallback)}</b> ${esc(n.text)}</p>` : '';
+      // board pages: the short text, the full text one click away
+      const notice = (n, cls, fallback, role) => !n ? '' : board && n.short
+        ? `<div class="${cls}" role="${role}"><details><summary><b>${esc(n.label || fallback)}</b> ${esc(n.short)}</summary><p>${esc(n.text)}</p></details></div>`
+        : `<p class="${cls}" role="${role}"><b>${esc(n.label || fallback)}</b> ${esc(n.text)}</p>`;
       root.innerHTML = `<header class="ag-top"><div class="ag-top-inner"><a class="ag-brand" href="${esc(pageURL(pages[0]))}">${B.mark ? `<img class="ag-mark" src="${esc(safeURL(B.mark, ASSETS))}" alt="" width="36" height="36">` : ''}<span class="ag-wordmark">${esc(words[0])}${words[1] ? `<span>${esc(words[1])}</span>` : ''}</span>${B.label ? `<span class="ag-brand-label">${esc(B.label)}</span>` : ''}</a></div></header>
       <main class="ag-main">${notice(D.prerelease, 'ag-prerelease', 'Pre-release', 'alert')}<nav class="ag-nav" aria-label="Guide pages">${pages.map(p => `<a href="${esc(pageURL(p))}" ${p === page ? 'aria-current="page"' : ''}>${esc(p.title)}</a>`).join('')}</nav>${notice(D.warning, 'ag-warning', 'Safety', 'note')}<div id="ag-content">${page.view === 'intro' ? renderIntro() : page.view === 'bom' ? renderBOM() : renderBoard()}</div>
       <footer class="ag-footer"><span>${board ? (persistent ? 'Progress saved in this browser' : 'Storage unavailable · progress lasts for this visit') : esc(B.footer || '')}${D.revision ? ' · revision ' + esc(D.revision) : ''}</span>${button('Print', 'print')}</footer></main>`;

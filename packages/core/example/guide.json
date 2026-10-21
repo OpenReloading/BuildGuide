@@ -4,7 +4,7 @@
   "revision": "2026-10-21",
   "brand": { "mark": "mark.svg", "wordmark": ["Demo", "Station"], "label": "BUILD GUIDE", "footer": "Demo station · example guide" },
   "prerelease": { "text": "Example data. The parts and values are not a tested build." },
-  "warning": { "text": "Work with the 12 V supply unplugged. Fit the fuse before the first power-up." },
+  "warning": { "text": "Work with the 12 V supply unplugged. Fit the fuse before the first power-up.", "short": "Work with the 12 V supply unplugged." },
   "pages": [
     { "id": "intro", "title": "Introduction", "view": "intro" },
     { "id": "bom", "title": "BOM", "view": "bom" },
