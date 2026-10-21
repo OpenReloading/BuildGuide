@@ -108,7 +108,11 @@
     "notice": {
       "type": "object",
       "required": ["text"],
-      "properties": { "label": { "type": "string" }, "text": { "type": "string" } },
+      "properties": {
+        "label": { "type": "string" },
+        "text": { "type": "string" },
+        "short": { "type": "string", "description": "shown on board pages, the full text opens from it" }
+      },
       "additionalProperties": false
     },
     "paragraphs": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },

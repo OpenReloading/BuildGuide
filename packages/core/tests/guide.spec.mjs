@@ -43,6 +43,21 @@ test('page shell: navigation, notices, brand and introduction', async ({ page })
   await expect(page.locator('#assembly-guide h1')).toHaveText(D.pages.at(-2).title);
 });
 
+test('notices: board pages show the short text, the full text opens from it', async ({ page }) => {
+  await page.goto(BASE + boards[0].id + '/');
+  await expect(page.locator('.ag-prerelease + .ag-nav + .ag-warning + #ag-content')).toHaveCount(1);
+  const full = page.locator('.ag-warning details > :not(summary)');
+  await expect(page.locator('.ag-warning summary')).toContainText(D.warning.short);
+  await expect(page.locator('.ag-warning summary')).not.toContainText(D.warning.text);
+  await expect(full).toBeHidden();
+  await page.locator('.ag-warning summary').click();
+  await expect(full).toHaveText(D.warning.text);
+  await expect(full).toBeVisible();
+  // a notice without short text stays in full
+  await expect(page.locator('.ag-prerelease details')).toHaveCount(0);
+  await expect(page.locator('.ag-prerelease')).toContainText(D.prerelease.text);
+});
+
 for (const p of boards) {
   const b = D.boards[p.board], all = b.steps.flatMap(s => s.connections);
   test(`${p.id}: every connection matches the data`, async ({ page }) => {
