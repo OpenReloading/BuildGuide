@@ -4,6 +4,8 @@ import { readFileSync } from 'node:fs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
 const ORIGIN = 'http://127.0.0.1:8080', BASE = ORIGIN + '/example/';
+// the core files: src/ here, assets/buildguide/ in a site built with a plugin
+const CORE = process.env.BUILDGUIDE_SITE ? '/assets/buildguide/' : '/src/';
 const boards = D.pages.filter(p => p.view === 'board');
 const label = (b, c, side) => c['l' + side] ?? `${b.parts[c[side].split(':')[0]].name} · ${c[side].slice(c[side].indexOf(':') + 1)}`;
 const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
@@ -167,16 +169,16 @@ test('storage blocked: ticks last for the visit', async ({ page }) => {
 
 test('inline data in #guide-data works like data-src', async ({ page }) => {
   await page.route(BASE + 'inline/', r => r.fulfill({ contentType: 'text/html', body:
-    `<!doctype html><link rel="stylesheet" href="../../src/buildguide.css"><div id="assembly-guide" data-page="bom" data-site="../"></div>
-     <script type="application/json" id="guide-data">${JSON.stringify(D).replace(/</g, '\\u003c')}</script><script src="../../src/buildguide.js" defer></script>` }));
+    `<!doctype html><link rel="stylesheet" href="${CORE}buildguide.css"><div id="assembly-guide" data-page="bom" data-site="../"></div>
+     <script type="application/json" id="guide-data">${JSON.stringify(D).replace(/</g, '\\u003c')}</script><script src="${CORE}buildguide.js" defer></script>` }));
   await page.goto(BASE + 'inline/');
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
 });
 
 // a page that mounts the given data inline, as a third-party site would
 const inlinePage = (page, path, data, view) => page.route(BASE + path, r => r.fulfill({ contentType: 'text/html', body:
-  `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="../../src/buildguide.css"><div id="assembly-guide" data-page="${view}" data-site="../"></div>
-   <script type="application/json" id="guide-data">${typeof data === 'string' ? data : JSON.stringify(data).replace(/</g, '\\u003c')}</script><script src="../../src/buildguide.js" defer></script>` }));
+  `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css"><div id="assembly-guide" data-page="${view}" data-site="../"></div>
+   <script type="application/json" id="guide-data">${typeof data === 'string' ? data : JSON.stringify(data).replace(/</g, '\\u003c')}</script><script src="${CORE}buildguide.js" defer></script>` }));
 
 test('untrusted data: script URLs become #, ids with spaces and slashes reach their step, CSV formulas stay text', async ({ page }) => {
   const d = structuredClone(D), w = d.boards.wiring;

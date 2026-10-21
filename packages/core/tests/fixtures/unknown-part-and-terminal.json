@@ -1,0 +1,113 @@
+{
+  "problems": [
+    "wiring 2: PSU has no terminal 3",
+    "wiring 2: no part FAN"
+  ],
+  "guide": {
+    "storage": "test-guide",
+    "pages": [
+      {
+        "id": "intro",
+        "title": "Introduction",
+        "view": "intro"
+      },
+      {
+        "id": "bom",
+        "title": "BOM",
+        "view": "bom"
+      },
+      {
+        "id": "wiring",
+        "title": "Wiring",
+        "view": "board",
+        "board": "wiring"
+      }
+    ],
+    "intro": {
+      "title": "Kit",
+      "lead": "A kit.",
+      "sections": []
+    },
+    "bom": {
+      "items": [
+        {
+          "id": "psu",
+          "group": "Power",
+          "part": "Power supply",
+          "spec": "12 V",
+          "qty": 1
+        }
+      ]
+    },
+    "boards": {
+      "wiring": {
+        "size": [
+          400,
+          300
+        ],
+        "colors": {
+          "RD": {
+            "line": "#c00",
+            "outline": "#600"
+          }
+        },
+        "parts": {
+          "PSU": {
+            "name": "Power supply",
+            "at": [
+              20,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "right": [
+                "+",
+                "-"
+              ]
+            }
+          },
+          "LAMP": {
+            "name": "Lamp",
+            "at": [
+              250,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "left": [
+                "1",
+                "2"
+              ]
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "A",
+            "title": "Power",
+            "connections": [
+              {
+                "no": "1",
+                "a": "PSU:+",
+                "b": "LAMP:1",
+                "color": "RD"
+              },
+              {
+                "no": "2",
+                "a": "PSU:3",
+                "b": "FAN:1",
+                "color": "RD"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

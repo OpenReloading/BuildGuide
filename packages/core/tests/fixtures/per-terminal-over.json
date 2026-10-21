@@ -1,0 +1,169 @@
+{
+  "problems": [
+    "wiring: 3 connections on PSU:+ (1, 2, 6), at most 2"
+  ],
+  "guide": {
+    "storage": "test-guide",
+    "pages": [
+      {
+        "id": "intro",
+        "title": "Introduction",
+        "view": "intro"
+      },
+      {
+        "id": "bom",
+        "title": "BOM",
+        "view": "bom"
+      },
+      {
+        "id": "wiring",
+        "title": "Wiring",
+        "view": "board",
+        "board": "wiring"
+      }
+    ],
+    "intro": {
+      "title": "Kit",
+      "lead": "A kit.",
+      "sections": []
+    },
+    "bom": {
+      "items": [
+        {
+          "id": "psu",
+          "group": "Power",
+          "part": "Power supply",
+          "spec": "12 V",
+          "qty": 1
+        }
+      ]
+    },
+    "boards": {
+      "wiring": {
+        "size": [
+          400,
+          300
+        ],
+        "colors": {
+          "RD": {
+            "line": "#c00",
+            "outline": "#600"
+          },
+          "DIODE": {
+            "line": "#ddd",
+            "outline": "#111",
+            "diode": true
+          }
+        },
+        "parts": {
+          "PSU": {
+            "name": "Power supply",
+            "at": [
+              20,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "right": [
+                "+",
+                "-"
+              ]
+            }
+          },
+          "LAMP": {
+            "name": "Lamp",
+            "at": [
+              250,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "left": [
+                "1",
+                "2"
+              ]
+            }
+          },
+          "J": {
+            "kind": "join",
+            "name": "Join",
+            "at": [
+              150,
+              150
+            ],
+            "size": [
+              40,
+              20
+            ],
+            "ports": {
+              "top": [
+                "1"
+              ]
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "A",
+            "title": "Power",
+            "connections": [
+              {
+                "no": "1",
+                "a": "PSU:+",
+                "b": "LAMP:1",
+                "color": "RD"
+              },
+              {
+                "no": "2",
+                "a": "PSU:+",
+                "b": "J:1",
+                "color": "RD"
+              },
+              {
+                "no": "3",
+                "a": "LAMP:1",
+                "b": "LAMP:2",
+                "color": "DIODE"
+              },
+              {
+                "no": "4",
+                "a": "J:1",
+                "b": "LAMP:2",
+                "color": "RD"
+              },
+              {
+                "no": "5",
+                "a": "J:1",
+                "b": "LAMP:2",
+                "color": "RD"
+              },
+              {
+                "no": "6",
+                "a": "PSU:+",
+                "b": "J:1",
+                "color": "RD"
+              }
+            ]
+          }
+        ],
+        "rules": {
+          "perTerminal": 2,
+          "exempt": {
+            "kinds": [
+              "join"
+            ],
+            "colors": [
+              "DIODE"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
