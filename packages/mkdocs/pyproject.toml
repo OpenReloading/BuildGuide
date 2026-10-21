@@ -1,0 +1,41 @@
+[project]
+name = "mkdocs-buildguide"
+version = "0.1.0"
+description = "MkDocs plugin for BuildGuide: interactive build guides (BOM checklist, wiring and tubing boards) from one data file"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+dependencies = ["mkdocs>=1.6", "jsonschema>=4.18", "pyyaml>=6"]
+
+[project.urls]
+Source = "https://github.com/OpenReloading/BuildGuide"
+
+[project.entry-points."mkdocs.plugins"]
+buildguide = "mkdocs_buildguide.plugin:BuildGuidePlugin"
+
+[dependency-groups]
+dev = ["pytest==9.1.1", "ruff==0.17.1", "mkdocs-material==9.7.7"]
+
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+# hatch_build.py copies packages/core/src and the schema into src/mkdocs_buildguide/core/ (git-ignored)
+[tool.hatch.build.hooks.custom]
+
+[tool.hatch.build]
+artifacts = ["src/mkdocs_buildguide/core/"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mkdocs_buildguide"]
+
+# rebuild the editable install when core changes, so the copy stays current
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "hatch_build.py" }, { file = "../core/src/**" }, { file = "../core/schema/*.json" }]
+
+[tool.ruff]
+line-length = 140
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

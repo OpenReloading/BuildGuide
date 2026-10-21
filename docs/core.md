@@ -1,0 +1,1 @@
+--8<-- "packages/core/README.md"

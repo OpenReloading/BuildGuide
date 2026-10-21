@@ -1,0 +1,3 @@
+---
+buildguide: bom
+---

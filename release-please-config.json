@@ -61,6 +61,18 @@
   "packages": {
     "packages/core": {
       "component": "core"
+    },
+    "packages/mkdocs": {
+      "component": "mkdocs",
+      "release-type": "python",
+      "package-name": "mkdocs-buildguide",
+      "extra-files": [
+        {
+          "type": "toml",
+          "path": "uv.lock",
+          "jsonpath": "$.package[?(@.name.value=='mkdocs-buildguide')].version"
+        }
+      ]
     }
   }
 }

@@ -19,6 +19,8 @@ jobs:
     outputs:
       core: ${{ steps.release.outputs['packages/core--release_created'] }}
       core-tag: ${{ steps.release.outputs['packages/core--tag_name'] }}
+      mkdocs: ${{ steps.release.outputs['packages/mkdocs--release_created'] }}
+      mkdocs-tag: ${{ steps.release.outputs['packages/mkdocs--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
@@ -45,3 +47,24 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.release-please.outputs.core-tag }}
         run: gh release upload "$TAG" packages/core/dist/*.tar.gz packages/core/dist/SHA256SUMS --clobber
+  mkdocs:
+    needs: release-please
+    if: needs.release-please.outputs.mkdocs == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.release-please.outputs.mkdocs-tag }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: 0.13.4
+          enable-cache: false
+      - run: uv build packages/mkdocs
+      - name: Attach the wheel and the sdist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-please.outputs.mkdocs-tag }}
+        run: gh release upload "$TAG" packages/mkdocs/dist/*.whl packages/mkdocs/dist/*.tar.gz --clobber

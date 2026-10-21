@@ -1,0 +1,37 @@
+site_name: BuildGuide
+site_url: https://openreloading.github.io/BuildGuide/
+site_description: Interactive build guides from one data file, with the MkDocs plugin and the core browser library.
+copyright: MIT license
+
+theme:
+  name: material
+  font: false   # system fonts: no requests outside the site
+  palette:
+    scheme: default
+    primary: blue grey
+    accent: deep orange
+
+plugins:
+  - search
+  - buildguide:
+      data: packages/core/example/guide.json
+      assets: example/assets/
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.snippets:
+      check_paths: true
+
+# agent instructions in docs/agents/ are not pages
+exclude_docs: |
+  agents/
+
+nav:
+  - Home: index.md
+  - Core: core.md
+  - MkDocs plugin: mkdocs.md
+  - Data format: data-format.md
+  - Example guide: example/index.md

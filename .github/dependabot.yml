@@ -18,3 +18,18 @@ updates:
     groups:
       npm:
         update-types: [minor, patch]
+  - package-ecosystem: uv
+    directory: /packages/mkdocs
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    groups:
+      uv:
+        update-types: [minor, patch]
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
