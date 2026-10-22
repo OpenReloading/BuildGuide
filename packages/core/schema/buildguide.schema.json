@@ -2,78 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/OpenReloading/BuildGuide/schema/buildguide.schema.json",
   "title": "BuildGuide guide data",
-  "description": "One object per guide: pages, introduction, BOM and boards. Cross references (terminals, colours, limits) are checked by buildguide-check.mjs.",
+  "description": "One object per guide: the data of the BOM component and of the board components. Cross references (terminals, colours, limits) are checked by buildguide-check.mjs.",
   "type": "object",
-  "required": ["storage", "pages"],
+  "required": ["storage"],
   "properties": {
     "$schema": { "type": "string" },
     "storage": { "type": "string", "minLength": 1, "description": "localStorage key for the ticks" },
-    "revision": { "type": "string" },
-    "brand": {
-      "type": "object",
-      "properties": {
-        "mark": { "type": "string", "description": "image path relative to the assets URL" },
-        "wordmark": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" }, "minItems": 1, "maxItems": 2 }], "description": "one word, or two with the second in the accent colour" },
-        "label": { "type": "string" },
-        "footer": { "type": "string" }
-      },
-      "additionalProperties": false
-    },
-    "prerelease": { "$ref": "#/$defs/notice" },
-    "warning": { "$ref": "#/$defs/notice" },
-    "pages": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "object",
-        "required": ["id", "title", "view"],
-        "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "title": { "type": "string" },
-          "view": { "enum": ["intro", "bom", "board"] },
-          "board": { "type": "string", "description": "key in boards, for view board" },
-          "path": { "type": "string", "description": "page path relative to the site root; default: empty for the first page, else <id>/" }
-        },
-        "additionalProperties": false
-      }
-    },
-    "intro": {
-      "type": "object",
-      "required": ["title"],
-      "properties": {
-        "title": { "type": "string" },
-        "lead": { "$ref": "#/$defs/paragraphs" },
-        "sections": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["title"],
-            "properties": {
-              "title": { "type": "string" },
-              "list": { "type": "array", "items": { "$ref": "#/$defs/listItem" } },
-              "steps": { "type": "array", "items": { "$ref": "#/$defs/listItem" } },
-              "text": { "$ref": "#/$defs/paragraphs" }
-            },
-            "additionalProperties": false
-          }
-        },
-        "media": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["kind"],
-            "properties": {
-              "kind": { "enum": ["video", "image"] },
-              "src": { "type": "string", "description": "relative to the assets URL; without src a placeholder is shown" },
-              "alt": { "type": "string" },
-              "caption": { "type": "string" }
-            },
-            "additionalProperties": false
-          }
-        }
-      },
-      "additionalProperties": false
-    },
     "bom": {
       "type": "object",
       "required": ["items"],
@@ -105,31 +39,19 @@
   },
   "additionalProperties": false,
   "$defs": {
-    "notice": {
-      "type": "object",
-      "required": ["text"],
-      "properties": {
-        "label": { "type": "string" },
-        "text": { "type": "string" },
-        "short": { "type": "string", "description": "shown on board pages, the full text opens from it" }
-      },
-      "additionalProperties": false
-    },
-    "paragraphs": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
-    "listItem": { "oneOf": [{ "type": "string" }, { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }], "minItems": 2, "maxItems": 2 }] },
     "point": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
     "board": {
       "type": "object",
-      "required": ["size", "colors", "parts", "steps"],
+      "required": ["title", "size", "colors", "parts", "steps"],
       "properties": {
-        "label": { "type": "string", "description": "accessible name of the board" },
+        "title": { "type": "string", "minLength": 1, "description": "name of the board: step navigation label, connection list heading and accessible name" },
+        "label": { "type": "string", "description": "accessible name of the board; default: title" },
         "size": { "$ref": "#/$defs/point", "description": "drawing width and height in board units" },
         "prefix": { "type": "string", "description": "start of the tick keys; default: the board key" },
         "scope": { "enum": ["step", "all"], "description": "connections shown at first" },
         "single": { "type": "boolean", "description": "offer the Selected connection scope" },
         "listAll": { "type": "boolean", "description": "list every connection, not only the step's" },
         "listColor": { "type": "boolean", "description": "show the colour code in the list; default true" },
-        "next": { "type": "string", "description": "page id the last connection leads to" },
         "legend": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "key": { "enum": ["diode"] } }, "additionalProperties": false }] } },
         "colors": {
           "type": "object",

@@ -4,10 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Introduction · Demo station</title>
+<link rel="stylesheet" href="host.css">
 <link rel="stylesheet" href="../src/buildguide.css">
 </head>
 <body>
-<div id="assembly-guide" data-page="intro" data-site="./" data-src="./guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+<nav><a href="./" aria-current="page">Introduction</a> <a href="bom/">BOM</a> <a href="wiring/">Wiring</a> <a href="tubing/">Tubing</a> <a href="all/">All components</a></nav>
+<main>
+<h1>Introduction</h1>
+<p class="notice"><b>Pre-release.</b> Example data. The parts and values are not a tested build.</p>
+<p>A 12 V control box that moves an air cylinder when START is pressed or the sensor sees a part. The pages of this example embed the guide components in a plain host page: the page owns its title, notices and text, a component only draws the BOM or a board.</p>
+<h2>Features</h2>
+<ul><li><b>Two inputs.</b> START button or the sensor energises the relay.</li><li>STOP breaks the supply to both.</li></ul>
+<h2>Build</h2>
+<ol><li>Collect the parts from the <a href="bom/">BOM</a>.</li><li>Wire the box step by step.</li><li>Connect the tubes.</li></ol>
+<h2>Printing</h2>
+<p>The sensor bracket prints in PETG without supports.</p>
+</main>
 <script src="../src/buildguide.js" defer></script>
 </body>
 </html>

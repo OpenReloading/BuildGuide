@@ -6,29 +6,6 @@
   ],
   "guide": {
     "storage": "test-guide",
-    "pages": [
-      {
-        "id": "intro",
-        "title": "Introduction",
-        "view": "intro"
-      },
-      {
-        "id": "bom",
-        "title": "BOM",
-        "view": "bom"
-      },
-      {
-        "id": "wiring",
-        "title": "Wiring",
-        "view": "board",
-        "board": "wiring"
-      }
-    ],
-    "intro": {
-      "title": "Kit",
-      "lead": "A kit.",
-      "sections": []
-    },
     "bom": {
       "items": [
         {
@@ -107,7 +84,8 @@
               }
             ]
           }
-        ]
+        ],
+        "title": "Wiring"
       }
     }
   }

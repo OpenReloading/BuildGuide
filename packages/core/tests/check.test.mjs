@@ -28,7 +28,7 @@ test('command line: exit 1 and one line per problem, exit 0 when clean', () => {
   let failed;
   try { execFileSync('node', [cli, bad], { encoding: 'utf8', stdio: 'pipe' }); } catch (e) { failed = e; }
   assert.equal(failed.status, 1);
-  assert.equal(failed.stderr, 'bad-guide.json: storage: missing\nbad-guide.json: pages: none\n');
+  assert.equal(failed.stderr, 'bad-guide.json: storage: missing\n');
 });
 
 test('command line: runs through a symlink, exit 2 without files', () => {
