@@ -31,18 +31,26 @@ jobs:
           # API commits are unsigned)
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-      # CI runs for a pull request opened or updated with GITHUB_TOKEN wait for approval, so its required checks stay open.
-      # Closing and reopening it with RELEASE_PLEASE_TOKEN (fine-grained token, this repository only, Pull requests
-      # read and write) starts CI on the signed head. Without the secret, close and reopen it by hand.
+      # A pull request opened or updated with GITHUB_TOKEN starts no CI. Closing and reopening it with RELEASE_PLEASE_TOKEN
+      # (fine-grained token, this repository only, Pull requests and Actions read and write) starts CI on the signed head;
+      # those runs wait for approval because github-actions opened the PR, so the step approves them.
       - if: steps.release.outputs.prs_created == 'true'
+        continue-on-error: true   # never blocks the release jobs below
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
         run: |
-          if [ -z "$GH_TOKEN" ]; then echo "RELEASE_PLEASE_TOKEN not set: close and reopen the release pull request"; exit 0; fi
-          prs=$(gh pr list -R "$GITHUB_REPOSITORY" --state open --label 'autorelease: pending' --json number --jq '.[].number')
-          for pr in $prs; do
+          if [ -z "$GH_TOKEN" ]; then echo "::warning::RELEASE_PLEASE_TOKEN not set: close and reopen the release PR, approve its runs"; exit 0; fi
+          for pr in $(gh pr list -R "$GITHUB_REPOSITORY" --state open --label 'autorelease: pending' --json number --jq '.[].number'); do
+            sha=$(gh pr view "$pr" -R "$GITHUB_REPOSITORY" --json headRefOid --jq .headRefOid)
             gh pr close "$pr" -R "$GITHUB_REPOSITORY"
             gh pr reopen "$pr" -R "$GITHUB_REPOSITORY"
+            for _ in $(seq 12); do   # the runs appear within seconds of the reopen
+              sleep 10
+              for run in $(gh api "repos/$GITHUB_REPOSITORY/actions/runs?head_sha=$sha&status=action_required" --jq '.workflow_runs[].id'); do
+                gh api -X POST "repos/$GITHUB_REPOSITORY/actions/runs/$run/approve" \
+                  || echo "::warning::could not approve run $run: the token needs Actions read and write"
+              done
+            done
           done
   core:
     needs: release-please
