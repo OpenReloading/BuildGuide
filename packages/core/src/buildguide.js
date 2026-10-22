@@ -57,7 +57,9 @@
     const listen = (target, type, handler) => { target.addEventListener(type, handler); cleanups.push(() => target.removeEventListener(type, handler)); };
 
     function navigate(index = 0, wire = 0) {
-      const next = [...pairs().filter(p => nameOf(p) !== boardKey), `${param}=${hashOf(steps[index], steps[index].connections[wire])}`].join('&');
+      // this board's pair keeps its place among the others
+      const own = `${param}=${hashOf(steps[index], steps[index].connections[wire])}`, all = pairs();
+      const next = (all.some(p => nameOf(p) === boardKey) ? all.map(p => nameOf(p) === boardKey ? own : p) : [...all, own]).join('&');
       if (location.hash.slice(1) === next) { readHash(); render(); } else location.hash = next;
     }
     // true when this board's position changed
