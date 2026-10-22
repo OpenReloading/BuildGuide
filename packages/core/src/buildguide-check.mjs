@@ -1,16 +1,14 @@
 #!/usr/bin/env node
-// Checks a guide's data before it is published: pages, BOM lines, and every board connection
+// Checks a guide's data before it is published: BOM lines, and every board connection
 // against its parts, terminals, colours and the board's per-terminal limit.
 // Use: node buildguide-check.mjs guide.json [...]   (exit 1 and one line per problem)
 import { readFileSync, realpathSync } from 'node:fs';
 import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const VIEWS = ['intro', 'bom', 'board'];
-
 const repeated = (values) => [...new Set(values.filter((v, i) => values.indexOf(v) !== i))];
 
-function checkBoard(key, board, pageIds) {
+function checkBoard(key, board) {
   const found = [];
   const parts = board.parts || {}, colors = board.colors || {};
   const steps = board.steps || [];
@@ -40,29 +38,19 @@ function checkBoard(key, board, pageIds) {
   if (limit) for (const [end, nos] of Object.entries(ends)) {
     if (nos.length > limit) found.push(`${key}: ${nos.length} connections on ${end} (${nos.join(', ')}), at most ${limit}`);
   }
-  if (board.next && !pageIds.includes(board.next)) found.push(`${key}: next page ${board.next} does not exist`);
   return found;
 }
 
 export function check(data) {
   const found = [];
   if (!data.storage) found.push('storage: missing');
-  const pages = data.pages || [];
-  if (!pages.length) found.push('pages: none');
-  const ids = pages.map((p) => p.id);
-  for (const id of repeated(ids)) found.push(`pages: id ${id} used twice`);
-  for (const p of pages) {
-    if (!VIEWS.includes(p.view)) found.push(`pages.${p.id}: unknown view ${p.view}`);
-    else if (p.view === 'board' && !data.boards?.[p.board]) found.push(`pages.${p.id}: no board ${p.board}`);
-    else if (p.view !== 'board' && !data[p.view]) found.push(`pages.${p.id}: ${p.view} missing`);
-  }
   const items = data.bom?.items || [];
   for (const id of repeated(items.map((i) => i.id))) found.push(`bom: id ${id} used twice`);
   for (const i of items) {
     if (!i.part) found.push(`bom.${i.id}: part missing`);
     if (i.qty === undefined || i.qty === '') found.push(`bom.${i.id}: qty missing`);
   }
-  for (const [key, board] of Object.entries(data.boards || {})) found.push(...checkBoard(key, board, ids));
+  for (const [key, board] of Object.entries(data.boards || {})) found.push(...checkBoard(key, board));
   return found;
 }
 

@@ -1,5 +1,5 @@
 // BuildGuide board renderer: JointJS parts with terminals and libavoid orthogonal routes, for wiring and tubing alike.
-// The page shell owns navigation and saved progress; this renderer owns only its drawing.
+// The component around it owns navigation and saved progress; this renderer owns only its drawing.
 (() => {
   let library;
   const cachedRoutes = new Map();
@@ -212,7 +212,7 @@
     }
 
     root.appendChild(holder);
-    root.setAttribute('aria-label', (B.label || 'Board') + '. Select a numbered connection to inspect it.');
+    root.setAttribute('aria-label', (B.label || B.title) + '. Select a numbered connection to inspect it.');
     const steps = B.steps, all = steps.flatMap(s => s.connections);
     const step = steps[options.step];
     const selected = step.connections[options.wire];
