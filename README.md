@@ -2,11 +2,11 @@
 
 # BuildGuide
 
-Interactive build guides from one JSON file: introduction, BOM checklist, and wiring and tubing boards with a tick per connection. Plain JavaScript and CSS, no requests outside the site.
+Interactive build guide components from one JSON file: a BOM checklist, and wiring and tubing boards with a tick per connection, to place in your own documentation pages. Plain JavaScript and CSS, no requests outside the site.
 
 | Component | Folder | Release |
 |---|---|---|
-| core: browser library, schema, check CLI | [`packages/core/`](packages/core/) | `core-v*`: `buildguide-<version>.tar.gz`, `SHA256SUMS` |
+| core: browser components, schema, check CLI | [`packages/core/`](packages/core/) | `core-v*`: `buildguide-<version>.tar.gz`, `SHA256SUMS` |
 | mkdocs: MkDocs plugin | [`packages/mkdocs/`](packages/mkdocs/) | `mkdocs-v*`: wheel and sdist |
 | docusaurus: Docusaurus plugin | [`packages/docusaurus/`](packages/docusaurus/) | `docusaurus-v*`: `openreloading-docusaurus-plugin-buildguide-<version>.tgz` |
 
