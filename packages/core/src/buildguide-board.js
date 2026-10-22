@@ -212,7 +212,7 @@
     }
 
     root.appendChild(holder);
-    root.setAttribute('aria-label', (B.label || B.title) + '. Select a numbered connection to inspect it.');
+    root.setAttribute('aria-label', options.name + '. Select a numbered connection to inspect it.');
     const steps = B.steps, all = steps.flatMap(s => s.connections);
     const step = steps[options.step];
     const selected = step.connections[options.wire];

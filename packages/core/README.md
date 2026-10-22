@@ -29,7 +29,7 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    The script mounts every `[data-buildguide]` element by itself. `BuildGuide.mount(root, data, {view, board, assets})` mounts any other element and returns a function that removes the component again (listeners, drawing, markup). An element that names an unknown view or board shows `Unknown guide component`.
 
-   Each component carries the class `ag-guide`, takes the width of its container and has no title: the host page names it. Boards keep their position in the URL hash, one `key=step/number` pair per board, for example `#wiring=B/4&tubing=3`. Use each board once per page.
+   Each component carries the class `ag-guide`, takes the width of its container and has no title: the host page names it. Boards keep their position in the URL hash, one `key=step/number` pair per board, for example `#wiring=B/4&tubing=3`. Use each board once per page. A hash without a board's pair (a heading anchor such as `#intro`) leaves that board where it is; a foreign fragment stays in the hash, but once a board pair follows it the browser no longer scrolls to the anchor. Boards also follow `popstate`.
 
    Colours are `--ag-*` custom properties on `.ag-guide` (list at the top of `buildguide.css`). A site overrides them in its own stylesheet, for example `.ag-guide{--ag-accent:#0a5}`. `--ag-page` is the component background.
 
@@ -45,7 +45,7 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
    node assets/buildguide-0.1.0/buildguide-check.mjs guide.json
    ```
 
-   It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part and the per-terminal limit. It prints one line per problem and exits 1, or 2 without a file. `check(data)` from the same module returns the list. The schema itself is checked with any JSON Schema validator.
+   It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part, the per-terminal limit, a board `title`, and tick prefixes that are unique across boards and not `bom`. It prints one line per problem and exits 1, or 2 without a file. `check(data)` from the same module returns the list. The schema itself is checked with any JSON Schema validator.
 
 ## Development
 

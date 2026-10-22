@@ -42,9 +42,9 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
    | BOM checklist | `<div data-buildguide="bom"></div>` |
    | A board | `<div data-buildguide="board" data-board="KEY"></div>`, `KEY` is a key in `boards` |
 
-   Write the element with double quotes and nothing inside; the plugin adds a no-JavaScript note. Elements in code blocks and inline code are text, not components.
+   Attribute values may use double or single quotes; a board key may hold spaces. The view must be exactly `bom` or `board`. An empty element gets a no-JavaScript note after the search index is built. Elements in code blocks and inline code are text, not components.
 
-The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a BOM component without `bom` data, is a warning (an error with `--strict`).
+The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a `data-buildguide` without value, or a BOM component without `bom` data, is a warning (an error with `--strict`).
 
 On pages with a component the plugin sets `data-assets` on the inline data, inlines the data once, and loads core from `assets/buildguide/` in the built site. Other pages get nothing. `buildguide-mkdocs.css` only keeps component tables out of Material's table wrapper: the Material header, tabs, sidebars and footer stay. Leave Material's `navigation.instant` off (not tested with components).
 

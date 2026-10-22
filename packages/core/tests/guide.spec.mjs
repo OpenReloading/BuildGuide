@@ -27,6 +27,8 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(() => expect(problems).toEqual({ errors: [], missing: [], external: [] }));
 
+// sets the hash and resolves once the page's hashchange handlers have run (the test's own handler is registered last)
+const setHash = (page, hash) => page.evaluate(h => new Promise(done => { addEventListener('hashchange', () => done(), { once: true }); location.hash = h; }), hash);
 const ready = scope => expect(scope.locator('.ag-board-canvas')).toHaveAttribute('data-ready', 'true');
 
 for (const [key, b] of boards) {
@@ -239,6 +241,12 @@ test('storage blocked: ticks last for the visit, each component says so', async 
   await expect(page.locator('.ag-status')).toHaveText('Storage unavailable: progress is not saved.');
   await page.locator('.ag-verify input').check();
   await expect(page.locator('.ag-verify input')).toBeChecked();
+  // a second tick keeps the first one in memory
+  await page.locator('[data-action=next-wire]').click();
+  await page.locator('.ag-verify input').check();
+  await expect(page.locator('.ag-progress')).toHaveText(`2 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
+  await page.locator('[data-action=prev-wire]').click();
+  await expect(page.locator('.ag-verify input')).toBeChecked();
 });
 
 // a page that mounts the given data inline, as a third-party site would
@@ -269,13 +277,68 @@ test('untrusted data: script URLs become #, ids with spaces and slashes reach th
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
 });
 
+test('a foreign hash fragment keeps the boards where they are and stays in the hash', async ({ page }) => {
+  const t = D.boards.tubing;
+  await inlinePage(page, 'anchors/', D, '<h2 id="top">Top</h2><div data-buildguide="board" data-board="wiring"></div><div data-buildguide="board" data-board="tubing"></div>');
+  await page.goto(BASE + 'anchors/#top');
+  const wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
+  await ready(wiring); await ready(tubing);
+  await wiring.locator('[data-step="1"]').click();
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await setHash(page, 'top');
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await tubing.locator('[data-step="2"]').click();
+  await expect(tubing.locator('.ag-steps [data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  // the anchor click replaced the hash: the wiring pair is gone from the URL, the board keeps its step, the anchor stays
+  expect(await page.evaluate(() => decodeURIComponent(location.hash))).toBe(`#top&tubing=${hashOf(t.steps[2], t.steps[2].connections[0])}`);
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+});
+
+test('history navigation without a hashchange moves the board', async ({ page }) => {
+  const w = D.boards.wiring, s = w.steps[1], c = s.connections[1];
+  await page.goto(url('wiring')); await ready(page);
+  await page.evaluate(h => { history.pushState(null, '', h); dispatchEvent(new PopStateEvent('popstate')); }, `#${at('wiring', s, c)}`);
+  await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+});
+
+test('a board without title still renders, named by its key', async ({ page }) => {
+  const d = structuredClone(D);
+  delete d.boards.wiring.title; delete d.boards.wiring.label;
+  await inlinePage(page, 'untitled/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'untitled/'); await ready(page);
+  await expect(page.locator('nav.ag-steps')).toHaveAttribute('aria-label', 'wiring steps');
+  await expect(page.locator('.ag-board-canvas')).toHaveAttribute('aria-label', /^wiring\. /);
+});
+
+test('a component without any data source says so', async ({ page }) => {
+  await page.route(BASE + 'nodata/', r => r.fulfill({ contentType: 'text/html', body:
+    `<!doctype html><meta charset="utf-8"><div data-buildguide="bom"></div><script src="${CORE}buildguide.js" defer></script>` }));
+  await page.goto(BASE + 'nodata/');
+  await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
+});
+
+test('a stale or repeated unmount leaves the current mount alone', async ({ page }) => {
+  await inlinePage(page, 'stale/', D, '');
+  await page.goto(BASE + 'stale/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const alive = await page.evaluate(data => {
+    const el = document.createElement('div'); document.body.append(el);
+    const first = window.BuildGuide.mount(el, data, { view: 'bom' }), second = window.BuildGuide.mount(el, data, { view: 'bom' });
+    first();
+    const afterStale = el.classList.contains('ag-guide');
+    second(); second();
+    return [afterStale, el.classList.contains('ag-guide'), el.childElementCount];
+  }, D);
+  expect(alive).toEqual([true, false, 0]);
+});
+
 test('invalid inline data and unknown components say so', async ({ page }) => {
   await inlinePage(page, 'broken/', '{not json', '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'broken/');
   await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
-  await inlinePage(page, 'unknown/', D, '<div data-buildguide="board" data-board="nowhere"></div><div data-buildguide="intro"></div>');
+  await inlinePage(page, 'unknown/', D, '<div data-buildguide="board" data-board="nowhere"></div><div data-buildguide="intro"></div><div data-buildguide="board" data-board="constructor"></div><div data-buildguide="board" data-board="__proto__"></div>');
   await page.goto(BASE + 'unknown/');
-  await expect(page.locator('[data-buildguide]')).toHaveText(['Unknown guide component: board nowhere.', 'Unknown guide component: intro.']);
+  await expect(page.locator('[data-buildguide]')).toHaveText(['Unknown guide component: board nowhere.', 'Unknown guide component: intro.', 'Unknown guide component: board constructor.', 'Unknown guide component: board __proto__.']);
 });
 
 test('unmounting removes every listener and the markup, mounting again works', async ({ page }) => {
@@ -312,8 +375,8 @@ test('unmounting removes every listener and the markup, mounting again works', a
     await expect(page.locator('.ag-guide')).toHaveCount(0);
     expect(await page.evaluate(() => document.getElementById('host').textContent)).toBe('');
   }
-  // the drawing's own resize handling is gone too: a hash change after unmounting renders nothing
-  await page.evaluate(() => { location.hash = 'wiring=B'; });
+  // a hash change after unmounting renders nothing
+  await setHash(page, 'wiring=B');
   await expect(page.locator('.ag-guide')).toHaveCount(0);
 });
 
