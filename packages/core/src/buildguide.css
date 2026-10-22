@@ -22,11 +22,11 @@
  --ag-detail-line:light-dark(#dce5d4, #415046);
  --ag-step-current-bg:light-dark(#e7f1e2, #24382c);
  --ag-step-current-line:light-dark(#639168, #5fae80);
- --ag-control-line:light-dark(#cbd8c8, #7f8d84);
+ --ag-control-line:light-dark(#81897f, #7f8d84);
  --ag-control-ink:light-dark(#354d35, #d8e2da);
  --ag-control-hover:light-dark(#e6eee0, #34413a);
  --ag-placeholder-line:light-dark(#a9b9ab, #5f6d64);
- --ag-swatch-line:light-dark(#98a79c, #8c9b91);
+ --ag-swatch-line:light-dark(#828f85, #8c9b91);
  --ag-row-arrow:light-dark(#819375, #9aab92);
  --ag-arrow:light-dark(#718567, #9aab92);
  --ag-row-selected:light-dark(#eff5e9, #263b2e);
@@ -57,7 +57,7 @@
 .ag-guide .ag-primary:hover{background:var(--ag-primary-hover);text-decoration:none}
 .ag-guide .ag-quiet{font-size:12px;padding:10px 0;color:var(--ag-muted)}
 .ag-guide .ag-steps{display:flex;gap:6px;overflow:auto;margin-bottom:16px}
-.ag-guide .ag-steps button{display:flex;align-items:center;gap:9px;flex:1;min-width:126px;min-height:57px;text-align:left;padding:8px;background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:7px}
+.ag-guide .ag-steps button{display:flex;align-items:center;gap:9px;flex:1;min-width:126px;min-height:57px;text-align:left;padding:8px;background:var(--ag-surface);border:1px solid var(--ag-control-line);border-radius:7px}
 .ag-guide .ag-steps button[aria-current]{background:var(--ag-step-current-bg);border-color:var(--ag-step-current-line)}
 .ag-guide .ag-steps b{font-size:12px;font-weight:600;display:block;line-height:1.3}
 .ag-guide .ag-steps small{display:block;font-size:10px;color:var(--ag-muted);margin-top:3px}
@@ -102,7 +102,7 @@
 /* BOM */
 .ag-guide .ag-bom-tools{margin-bottom:18px}
 .ag-guide .ag-search{display:block;max-width:380px}
-.ag-guide .ag-search input{width:100%;border:1px solid var(--ag-line);background:var(--ag-surface);border-radius:6px;padding:10px 13px;color:var(--ag-ink);font-size:13px}
+.ag-guide .ag-search input{width:100%;border:1px solid var(--ag-control-line);background:var(--ag-surface);border-radius:6px;padding:10px 13px;color:var(--ag-ink);font-size:13px}
 .ag-guide .ag-bom-table{border:1px solid var(--ag-line);border-radius:9px;overflow:auto;background:var(--ag-surface)}
 .ag-guide .ag-bom-table table{display:table;border:0;border-collapse:collapse;width:100%;margin:0;background:var(--ag-surface);color:var(--ag-ink);font-size:12px}
 .ag-guide .ag-bom-table th{padding:12px 17px;border:0;background:var(--ag-surface-head);font-size:11px;font-weight:600;color:var(--ag-muted);text-align:left;min-width:0;white-space:nowrap}
