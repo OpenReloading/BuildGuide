@@ -1,6 +1,6 @@
 # BuildGuide for Docusaurus
 
-Docusaurus 3 plugin: checks the guide data at build time, serves the core browser files and provides the `<BuildGuide page="..."/>` component.
+Docusaurus 3 plugin: checks the guide data at build time, serves the core browser files and provides the `<BuildGuide />` component for a BOM checklist or a wiring or tubing board. Your pages, notices and navigation stay your own.
 
 ## Use
 
@@ -13,34 +13,41 @@ Docusaurus 3 plugin: checks the guide data at build time, serves the core browse
 2. Add the plugin to `docusaurus.config.js`:
 
    ```js
-   plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json', site: '/guide/' }]],
+   plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
    ```
 
    | Option | Meaning | Default |
    |---|---|---|
    | `data` | guide data (JSON, core data format), relative to the site folder | required |
-   | `site` | URL path of the guide's root below `baseUrl`. Page paths in the data (`path`, or the defaults: empty for the first page, else `<id>/`) are relative to it | `/` |
-   | `assets` | folder of brand mark, BOM images and intro media, relative to `site` | `assets/` |
+   | `assets` | folder of BOM images below `baseUrl` | `assets/` |
 
-3. Put one guide page on each Docusaurus page whose URL matches its path:
+3. Use the component in any page, as often as you like on one page. The page has its own title (Docusaurus prints it) and notices (admonitions):
 
    ```mdx
    ---
    title: Wiring
-   hide_title: true
-   hide_table_of_contents: true
    ---
 
    import BuildGuide from '@theme/BuildGuide';
 
-   <BuildGuide page="wiring" />
+   :::warning[Safety]
+   Work with the supply unplugged.
+   :::
+
+   <BuildGuide view="board" board="wiring" />
+   <BuildGuide view="bom" />
    ```
 
-The build stops on a problem the core check finds (`buildguide-check.mjs`), one line per problem. Core is served from `<baseUrl>assets/buildguide/` in `docusaurus start` and `docusaurus build`. Every page carries the data in `<script type="application/json" id="buildguide-data">` and loads `buildguide.css`. The component loads `buildguide.js` and calls `BuildGuide.mount`. Guide pages reached through Docusaurus links mount without a full page load. Links inside the guide load the target page in full.
+   | Prop | Meaning |
+   |---|---|
+   | `view` | `bom` or `board` |
+   | `board` | key in `boards`, for `board` |
+
+The build stops on a problem the core check finds (`buildguide-check.mjs`), one line per problem. Core is served from `<baseUrl>assets/buildguide/` in `docusaurus start` and `docusaurus build`. Every page carries the data in `<script type="application/json" id="buildguide-data">` and loads `buildguide.css`. The component loads `buildguide.js`, calls `BuildGuide.mount` and removes the component when it unmounts, so client-side navigation between pages works. An unknown view or board key shows `Unknown guide component` in the page. Dark theme: `html[data-theme="dark"] .ag-guide` gets the dark tokens and `html[data-theme="light"] .ag-guide` the light ones (the plugin's own stylesheet), whatever the browser prefers.
 
 ## Development
 
-From the repository root, in the dev container: `npm test` (plugin tests), `npm run build -w packages/docusaurus` (example site in `example/build/`, the core example guide under `/example/`), `npm run start -w packages/docusaurus` (dev server on port 8080) and `npm run test:browser` (the core browser tests, also against the example build). `npm run dist -w packages/docusaurus` writes the .tgz to `dist/`. Builds, tests and `npm pack` copy `packages/core/src` into `core/` (git-ignored) first, so the package ships core at its own tag (#7).
+From the repository root, in the dev container: `npm test` (plugin tests), `npm run build -w packages/docusaurus` (example site in `example/build/`, the example pages under `/example/`), `npm run start -w packages/docusaurus` (dev server on port 8080) and `npm run test:browser` (the core browser tests, also against the example build). `npm run dist -w packages/docusaurus` writes the .tgz to `dist/`. Builds, tests and `npm pack` copy `packages/core/src` into `core/` (git-ignored) first, so the package ships core at its own tag (#7).
 
 ## Licenses
 

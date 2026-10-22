@@ -1,28 +1,21 @@
 {
   "problems": [
-    "pages.intro: intro missing",
-    "pages.bom: bom missing"
+    "wiring 2: no part constructor",
+    "wiring 2: unknown colour constructor"
   ],
   "guide": {
     "storage": "test-guide",
-    "pages": [
-      {
-        "id": "intro",
-        "title": "Introduction",
-        "view": "intro"
-      },
-      {
-        "id": "bom",
-        "title": "BOM",
-        "view": "bom"
-      },
-      {
-        "id": "wiring",
-        "title": "Wiring",
-        "view": "board",
-        "board": "wiring"
-      }
-    ],
+    "bom": {
+      "items": [
+        {
+          "id": "psu",
+          "group": "Power",
+          "part": "Power supply",
+          "spec": "12 V",
+          "qty": 1
+        }
+      ]
+    },
     "boards": {
       "wiring": {
         "size": [
@@ -81,10 +74,17 @@
                 "a": "PSU:+",
                 "b": "LAMP:1",
                 "color": "RD"
+              },
+              {
+                "no": "2",
+                "a": "constructor:1",
+                "b": "LAMP:2",
+                "color": "constructor"
               }
             ]
           }
-        ]
+        ],
+        "title": "Wiring"
       }
     }
   }

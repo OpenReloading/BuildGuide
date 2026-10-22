@@ -1,50 +1,8 @@
 {
   "problems": [
-    "pages: id bom used twice",
-    "pages.x: unknown view video",
-    "pages.air: no board tubing"
+    "storage: missing"
   ],
   "guide": {
-    "storage": "test-guide",
-    "pages": [
-      {
-        "id": "intro",
-        "title": "Introduction",
-        "view": "intro"
-      },
-      {
-        "id": "bom",
-        "title": "BOM",
-        "view": "bom"
-      },
-      {
-        "id": "wiring",
-        "title": "Wiring",
-        "view": "board",
-        "board": "wiring"
-      },
-      {
-        "id": "bom",
-        "title": "Again",
-        "view": "bom"
-      },
-      {
-        "id": "x",
-        "title": "X",
-        "view": "video"
-      },
-      {
-        "id": "air",
-        "title": "Air",
-        "view": "board",
-        "board": "tubing"
-      }
-    ],
-    "intro": {
-      "title": "Kit",
-      "lead": "A kit.",
-      "sections": []
-    },
     "bom": {
       "items": [
         {
@@ -117,7 +75,8 @@
               }
             ]
           }
-        ]
+        ],
+        "title": "Wiring"
       }
     }
   }

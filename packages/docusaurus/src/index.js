@@ -1,5 +1,5 @@
 // Docusaurus plugin: checks the guide data at build time, serves core at <baseUrl>assets/buildguide/ and
-// provides <BuildGuide page="..."/> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
+// provides <BuildGuide view="bom"/> and <BuildGuide view="board" board="KEY"/> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
@@ -11,12 +11,17 @@ module.exports = function buildguide(context, options = {}) {
   if (!options.data) throw new Error('buildguide: the option data (path to the guide JSON) is missing');
   const data = path.resolve(context.siteDir, options.data);
   const core = `${context.baseUrl}assets/buildguide/`;
-  // core resolves page paths against it as a folder: one trailing slash
-  const below = (options.site ?? '').replace(/^\/+|\/+$/g, '');
-  const site = context.baseUrl + (below && `${below}/`);
+  // the folder of BOM images below baseUrl, as a URL path with one trailing slash
+  const raw = options.assets ?? 'assets/';
+  let from = 0, to = raw.length;
+  while (raw[from] === '/') from++;
+  while (to > from && raw[to - 1] === '/') to--;
+  const below = raw.slice(from, to);
+  const assets = context.baseUrl + (below && `${below}/`);
   return {
     name: 'docusaurus-plugin-buildguide',
     getThemePath: () => './theme',
+    getClientModules: () => [path.join(__dirname, 'buildguide-docusaurus.css')],
     getPathsToWatch: () => [data],
     async loadContent() {
       const guide = JSON.parse(readFileSync(data, 'utf8'));
@@ -31,7 +36,7 @@ module.exports = function buildguide(context, options = {}) {
       return {
         headTags: [
           { tagName: 'link', attributes: { rel: 'stylesheet', href: `${core}buildguide.css` } },
-          `<script type="application/json" id="buildguide-data" data-core="${attr(core)}" data-site="${attr(site)}" data-assets="${attr(options.assets ?? 'assets/')}">${JSON.stringify(content).replace(/</g, '\\u003c')}</script>`,
+          `<script type="application/json" id="buildguide-data" data-core="${attr(core)}" data-assets="${attr(assets)}">${JSON.stringify(content).replace(/</g, '\\u003c')}</script>`,
         ],
       };
     },

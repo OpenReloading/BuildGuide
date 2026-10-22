@@ -1,18 +1,18 @@
 #!/usr/bin/env node
-// Checks a guide's data before it is published: pages, BOM lines, and every board connection
+// Checks a guide's data before it is published: BOM lines, and every board connection
 // against its parts, terminals, colours and the board's per-terminal limit.
 // Use: node buildguide-check.mjs guide.json [...]   (exit 1 and one line per problem)
 import { readFileSync, realpathSync } from 'node:fs';
 import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const VIEWS = ['intro', 'bom', 'board'];
-
 const repeated = (values) => [...new Set(values.filter((v, i) => values.indexOf(v) !== i))];
 
-function checkBoard(key, board, pageIds) {
+function checkBoard(key, board) {
   const found = [];
+  if (!board.title) found.push(`${key}: title missing`);
   const parts = board.parts || {}, colors = board.colors || {};
+  const has = (object, name) => Object.hasOwn(object, name);
   const steps = board.steps || [];
   const connections = steps.flatMap((s) => s.connections || []);
   for (const id of repeated(steps.map((s) => s.id))) found.push(`${key}: step ${id} used twice`);
@@ -21,48 +21,43 @@ function checkBoard(key, board, pageIds) {
     for (const pin of repeated(Object.values(part.ports || {}).flat())) found.push(`${key}: part ${id} repeats terminal ${pin}`);
   }
   // the board draws connection n as cell 'c' + n, next to the parts' own ids
-  for (const c of connections) if (('c' + c.no) in parts) found.push(`${key}: part c${c.no} clashes with connection ${c.no}`);
+  for (const c of connections) if (has(parts, 'c' + c.no)) found.push(`${key}: part c${c.no} clashes with connection ${c.no}`);
   const ends = {};
   const exempt = board.rules?.exempt || {};
   for (const c of connections) {
     for (const end of [c.a, c.b]) {
       const at = String(end).indexOf(':');
       if (at < 1) { found.push(`${key} ${c.no}: end ${end} is not PART:terminal`); continue; }
-      const id = end.slice(0, at), pin = end.slice(at + 1), part = parts[id];
+      const id = end.slice(0, at), pin = end.slice(at + 1), part = has(parts, id) ? parts[id] : undefined;
       if (!part) { found.push(`${key} ${c.no}: no part ${id}`); continue; }
       if (!Object.values(part.ports || {}).flat().includes(pin)) { found.push(`${key} ${c.no}: ${id} has no terminal ${pin}`); continue; }
       if (!(exempt.kinds || []).includes(part.kind) && !(exempt.colors || []).includes(c.color)) { ends[end] ||= []; ends[end].push(c.no); }
     }
-    if (!(c.color in colors)) found.push(`${key} ${c.no}: unknown colour ${c.color}`);
+    if (!has(colors, c.color)) found.push(`${key} ${c.no}: unknown colour ${c.color}`);
     else if (colors[c.color].diode && String(c.a).split(':')[0] !== String(c.b).split(':')[0]) found.push(`${key} ${c.no}: diode ends on two parts`);
   }
   const limit = board.rules?.perTerminal;
   if (limit) for (const [end, nos] of Object.entries(ends)) {
     if (nos.length > limit) found.push(`${key}: ${nos.length} connections on ${end} (${nos.join(', ')}), at most ${limit}`);
   }
-  if (board.next && !pageIds.includes(board.next)) found.push(`${key}: next page ${board.next} does not exist`);
   return found;
 }
 
 export function check(data) {
   const found = [];
   if (!data.storage) found.push('storage: missing');
-  const pages = data.pages || [];
-  if (!pages.length) found.push('pages: none');
-  const ids = pages.map((p) => p.id);
-  for (const id of repeated(ids)) found.push(`pages: id ${id} used twice`);
-  for (const p of pages) {
-    if (!VIEWS.includes(p.view)) found.push(`pages.${p.id}: unknown view ${p.view}`);
-    else if (p.view === 'board' && !data.boards?.[p.board]) found.push(`pages.${p.id}: no board ${p.board}`);
-    else if (p.view !== 'board' && !data[p.view]) found.push(`pages.${p.id}: ${p.view} missing`);
-  }
   const items = data.bom?.items || [];
   for (const id of repeated(items.map((i) => i.id))) found.push(`bom: id ${id} used twice`);
   for (const i of items) {
     if (!i.part) found.push(`bom.${i.id}: part missing`);
     if (i.qty === undefined || i.qty === '') found.push(`bom.${i.id}: qty missing`);
   }
-  for (const [key, board] of Object.entries(data.boards || {})) found.push(...checkBoard(key, board, ids));
+  const boards = Object.entries(data.boards || {});
+  for (const [key, board] of boards) found.push(...checkBoard(key, board));
+  // tick keys start with the prefix: boards and the BOM ('bom') must not share one
+  const prefixes = boards.map(([key, board]) => [key, board.prefix || key]);
+  for (const prefix of repeated(prefixes.map(([, p]) => p))) found.push(`boards: prefix ${prefix} used twice`);
+  for (const [key, prefix] of prefixes) if (prefix === 'bom') found.push(`${key}: prefix bom is taken by the BOM`);
   return found;
 }
 

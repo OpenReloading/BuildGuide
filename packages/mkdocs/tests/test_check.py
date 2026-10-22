@@ -25,7 +25,13 @@ def test_the_example_guide_has_no_problems():
 
 def test_schema_errors_come_first_with_their_path():
     guide = read(CORE / "example/guide.json")
-    guide["pages"][0]["view"] = "video"
+    del guide["boards"]["tubing"]["title"]
     guide["bom"]["items"][0]["quantity"] = 1
     found = problems(guide)
-    assert [line.split(":")[0] for line in found] == ["$.bom.items[0]", "$.pages[0].view"]
+    assert [line.split(":")[0] for line in found] == ["$.boards.tubing", "$.bom.items[0]"]
+
+
+def test_a_step_note_must_be_text():
+    guide = read(CORE / "example/guide.json")
+    guide["boards"]["wiring"]["steps"][0]["note"] = 1
+    assert [line.split(":")[0] for line in problems(guide)] == ["$.boards.wiring.steps[0].note"]

@@ -1,26 +1,6 @@
 {
   "$schema": "../schema/buildguide.schema.json",
   "storage": "buildguide-demo",
-  "revision": "2026-10-21",
-  "brand": { "mark": "mark.svg", "wordmark": ["Demo", "Station"], "label": "BUILD GUIDE", "footer": "Demo station · example guide" },
-  "prerelease": { "text": "Example data. The parts and values are not a tested build." },
-  "warning": { "text": "Work with the 12 V supply unplugged. Fit the fuse before the first power-up.", "short": "Work with the 12 V supply unplugged." },
-  "pages": [
-    { "id": "intro", "title": "Introduction", "view": "intro" },
-    { "id": "bom", "title": "BOM", "view": "bom" },
-    { "id": "wiring", "title": "Wiring", "view": "board", "board": "wiring" },
-    { "id": "tubing", "title": "Tubing", "view": "board", "board": "tubing" }
-  ],
-  "intro": {
-    "title": "Demo station",
-    "lead": "A 12 V control box that moves an air cylinder when START is pressed or the sensor sees a part.",
-    "sections": [
-      { "title": "Features", "list": [["Two inputs", "START button or the sensor energises the relay."], "STOP breaks the supply to both."] },
-      { "title": "Build", "steps": ["Collect the parts from the BOM.", "Wire the box step by step.", "Connect the tubes."] },
-      { "title": "Printing", "text": "The sensor bracket prints in PETG without supports." }
-    ],
-    "media": [{ "kind": "video", "caption": "Video placeholder" }, { "kind": "image", "caption": "Image placeholder" }]
-  },
   "bom": {
     "note": "Substitute parts as local availability and cost require. Cable and tube lengths are estimates.",
     "export": "demo-station-bom.csv",
@@ -42,11 +22,11 @@
   },
   "boards": {
     "wiring": {
+      "title": "Wiring",
       "label": "Wiring board",
       "size": [1000, 640],
       "prefix": "wire",
       "single": true,
-      "next": "tubing",
       "legend": [{ "key": "diode", "text": "Silver ring = cathode" }, "Green = selected connection"],
       "colors": {
         "RD": { "line": "#dc2626", "outline": "#7f1d1d" },
@@ -78,7 +58,7 @@
         "X1": { "kind": "join", "name": "Join X1", "sub": "0 V", "at": [300, 520], "size": [160, 36], "ports": { "top": ["1", "2", "3", "4"] } }
       },
       "steps": [
-        { "id": "A", "title": "Supply", "connections": [
+        { "id": "A", "title": "Supply", "note": "Unplug the 12 V supply before you touch a terminal. Check that the fuse is out of its holder.", "connections": [
           { "no": "1", "a": "PSU:+", "b": "F1:1", "color": "RD", "cable": "Supply cable", "size": "2 x 0.75 mm²" },
           { "no": "2", "a": "PSU:-", "b": "X1:1", "color": "BK", "cable": "Supply cable", "size": "2 x 0.75 mm²" }
         ] },
@@ -88,7 +68,7 @@
           { "no": "5", "a": "S1:4", "b": "K1:A1", "color": "RD", "size": "0.5 mm²" },
           { "no": "6", "a": "K1:A2", "b": "X1:2", "color": "BK", "size": "0.5 mm²" }
         ] },
-        { "id": "C", "title": "Valve", "connections": [
+        { "id": "C", "title": "Valve", "note": "Check the diode: the ring end goes to the plus terminal of the valve coil.", "connections": [
           { "no": "7", "a": "F1:2", "b": "K1:11", "color": "RD", "size": "0.5 mm²" },
           { "no": "8", "a": "K1:14", "b": "Y1:1", "color": "RD", "cable": "Valve cable", "size": "2 x 0.5 mm²" },
           { "no": "9", "a": "Y1:2", "b": "X1:3", "color": "BK", "cable": "Valve cable", "size": "2 x 0.5 mm²" },
@@ -102,6 +82,7 @@
       ]
     },
     "tubing": {
+      "title": "Tubing",
       "label": "Tubing diagram",
       "size": [1000, 420],
       "prefix": "tube",
@@ -122,7 +103,7 @@
         { "id": "2", "title": "Regulator to valve", "connections": [{ "no": "2", "a": "REG:out", "b": "V1:P", "color": "AIR", "la": "Regulator OUT", "lb": "Valve P" }] },
         { "id": "3", "title": "Valve A to cap end", "connections": [{ "no": "3", "a": "V1:A", "b": "CYL:cap", "color": "AIR", "la": "Valve A", "lb": "Cylinder cap end" }] },
         { "id": "4", "title": "Valve B to rod end", "connections": [{ "no": "4", "a": "V1:B", "b": "CYL:rod", "color": "AIR", "la": "Valve B", "lb": "Cylinder rod end" }] },
-        { "id": "5", "title": "Exhaust R", "connections": [{ "no": "5", "a": "V1:R", "b": "SIL:R", "color": "AIR", "la": "Valve R", "lb": "Silencer R" }] },
+        { "id": "5", "title": "Exhaust R", "note": "Fit the silencers before you apply air.", "connections": [{ "no": "5", "a": "V1:R", "b": "SIL:R", "color": "AIR", "la": "Valve R", "lb": "Silencer R" }] },
         { "id": "6", "title": "Exhaust S", "connections": [{ "no": "6", "a": "V1:S", "b": "SIL:S", "color": "AIR", "la": "Valve S", "lb": "Silencer S" }] }
       ]
     }

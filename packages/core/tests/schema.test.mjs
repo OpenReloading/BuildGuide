@@ -10,10 +10,18 @@ test('the example guide matches the schema', () => {
   assert.equal(validate(read('../example/guide.json')), true, JSON.stringify(validate.errors));
 });
 
-test('the schema rejects an unknown view and a misspelt key', () => {
+test('the schema rejects a board without title and a misspelt key', () => {
   const guide = read('../example/guide.json');
-  guide.pages[0].view = 'video';
+  delete guide.boards.tubing.title;
   guide.bom.items[0].quantity = 1;
   assert.equal(validate(guide), false);
-  assert.deepEqual(validate.errors.map(e => e.instancePath).sort((x, y) => x.localeCompare(y)), ['/bom/items/0', '/pages/0/view']);
+  assert.deepEqual(validate.errors.map(e => e.instancePath).sort((x, y) => x.localeCompare(y)), ['/boards/tubing', '/bom/items/0']);
+});
+
+test('the schema accepts a step note and rejects one that is not text', () => {
+  const guide = read('../example/guide.json');
+  assert.equal(typeof guide.boards.wiring.steps[0].note, 'string');
+  guide.boards.wiring.steps[0].note = 1;
+  assert.equal(validate(guide), false);
+  assert.deepEqual(validate.errors.map(e => e.instancePath), ['/boards/wiring/steps/0/note']);
 });

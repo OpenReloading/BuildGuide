@@ -1,0 +1,15 @@
+/* The example's own page styling: BuildGuide components bring theirs. */
+body{margin:0;font:16px/1.6 system-ui,sans-serif;color:#1f2933}
+nav{display:flex;flex-wrap:wrap;gap:4px 18px;padding:12px 24px;border-bottom:1px solid #d5dbe0}
+nav a[aria-current]{font-weight:700}
+main{max-width:1200px;margin:0 auto;padding:8px 24px 40px}
+.notice{margin:0 0 16px;padding:9px 12px;border-left:4px solid #c62828;background:#fdecea}
+.notice.warning{border-color:#d6a541;background:#fbf4e2}
+/* Dark when the browser prefers it, unless the page opts out with data-ag-scheme="light" on <html>. */
+@media (prefers-color-scheme: dark) {
+  html:not([data-ag-scheme=light]) body{background:#111513;color:#e4e8e6}
+  html:not([data-ag-scheme=light]) nav{border-color:#33403a}
+  html:not([data-ag-scheme=light]) a{color:#8fd6b4}
+  html:not([data-ag-scheme=light]) .notice{background:#3a1f1f}
+  html:not([data-ag-scheme=light]) .notice.warning{background:#3a3217}
+}

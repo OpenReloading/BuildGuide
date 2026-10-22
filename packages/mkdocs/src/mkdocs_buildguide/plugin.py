@@ -1,9 +1,11 @@
-"""MkDocs plugin: a page with the front matter `buildguide: <page id>` shows that page of the guide."""
+"""MkDocs plugin: `<div data-buildguide="bom"></div>` and `<div data-buildguide="board" data-board="KEY"></div>` in a page become guide components."""
 
 import html
 import json
 import math
+import re
 import shutil
+from html.parser import HTMLParser
 from pathlib import Path
 
 import yaml
@@ -11,12 +13,32 @@ from mkdocs.config import config_options as c
 from mkdocs.exceptions import PluginError
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.utils import get_relative_url
-from mkdocs.utils.meta import get_data
 
 from .check import problems
 
 HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
+CLOSED = re.compile(r"\s*</div>")  # nothing but whitespace before the closing tag
+
+
+class Divs(HTMLParser):
+    """The opening tags of the divs in a page as the browser reads them: (start, end, attributes). Comments and scripts are skipped."""
+
+    def __init__(self, text):
+        super().__init__(convert_charrefs=False)
+        self.lines = [0] + [m.end() for m in re.finditer("\n", text)]
+        self.found = []
+        self.feed(text)
+        self.close()
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "div":
+            line, column = self.getpos()
+            start = self.lines[line - 1] + column
+            values = {}
+            for name, value in attrs:  # the first of a repeated attribute wins, a bare one is ''
+                values.setdefault(name, "" if value is None else value)
+            self.found.append((start, start + len(self.get_starttag_text()), values))
 
 
 def finite(value):
@@ -52,43 +74,45 @@ class BuildGuidePlugin(BasePlugin):
             raise PluginError(f"{data}:\n" + "\n".join(found))
         config.watch.append(data)
 
-    # every guide page's URL is known before the first page renders: read the front matter of all pages here
-    def on_files(self, files, config):
-        ids, urls = [p["id"] for p in self.guide["pages"]], {}
-        for file in files.documentation_pages():
-            page_id = get_data(file.content_string)[1].get("buildguide")
-            if page_id is None:
-                continue
-            if page_id not in ids:
-                raise PluginError(f"{file.src_uri}: no guide page {page_id}")
-            if page_id in urls:
-                raise PluginError(f"{file.src_uri}: guide page {page_id} is already on {urls[page_id].src_uri}")
-            urls[page_id] = file
-        for p in self.guide["pages"]:
-            if p["id"] in urls:
-                p["path"] = urls[p["id"]].url
-            else:
-                log.warning(f"guide page {p['id']} has no MkDocs page with the front matter 'buildguide: {p['id']}'")
+    def on_pre_build(self, config):
+        self.pages = set()
 
+    # components are found in the rendered page; an unknown view or board key is a warning, an error with --strict
     def on_page_content(self, output, page, config, files):
-        page_id = page.meta.get("buildguide")
-        if page_id is None:
-            return output
-        site = get_relative_url(".", page.url).rstrip("/") + "/"
-        return (
-            f'{output}<div id="assembly-guide" data-page="{html.escape(str(page_id))}" data-site="{site}" '
-            f'data-assets="{html.escape(self.config["assets"])}"><noscript>This guide needs JavaScript.</noscript></div>'
-        )
+        for _, _, attributes in Divs(output).found:
+            view = attributes.get("data-buildguide")
+            if view is None:
+                continue
+            key = attributes.get("data-board")
+            if view == "":
+                log.warning(f"{page.file.src_uri}: data-buildguide has no value")
+            elif not (
+                (view == "bom" and "bom" in self.guide) or (view == "board" and key in (self.guide.get("boards") or {}))
+            ):
+                log.warning(f"{page.file.src_uri}: no guide component {view}{' ' + key if key else ''}")
+            self.pages.add(page.file.src_uri)
+        return output
 
-    # the data goes in after the content, so the search index leaves it out
+    # the note for visitors without JavaScript goes in here, after the search index took the content
+    def add_note(self, output):
+        for _, end, attributes in reversed(Divs(output).found):
+            if "data-buildguide" in attributes and CLOSED.match(output, end):
+                output = output[:end] + "<noscript>This guide needs JavaScript.</noscript>" + output[end:]
+        return output
+
+    # the data goes in after the content, so the search index leaves it out; only pages with a component get it
     def on_post_page(self, output, page, config):
-        if page.meta.get("buildguide") is None:
+        if page.file.src_uri not in self.pages:
             return output
         core = get_relative_url("assets/buildguide/", page.url).rstrip("/") + "/"
+        assets = get_relative_url(self.config["assets"], page.url).rstrip("/") + "/"
         styles = f'<link rel="stylesheet" href="{core}buildguide.css"><link rel="stylesheet" href="{core}buildguide-mkdocs.css">'
         data = json.dumps(self.guide).replace("<", "\\u003c")
-        scripts = f'<script type="application/json" id="guide-data">{data}</script><script src="{core}buildguide.js" defer></script>'
-        output = output.replace("</head>", styles + "</head>", 1)
+        scripts = (
+            f'<script type="application/json" id="guide-data" data-assets="{html.escape(assets)}">{data}</script>'
+            f'<script src="{core}buildguide.js" defer></script>'
+        )
+        output = self.add_note(output).replace("</head>", styles + "</head>", 1)
         at = output.rfind("</body>")
         return output[:at] + scripts + output[at:]
 

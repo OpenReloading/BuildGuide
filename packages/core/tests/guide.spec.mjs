@@ -1,4 +1,5 @@
-// Browser checks of the example guide. Every expectation is derived from example/guide.json.
+// Browser checks of the example guide components. Every expectation is derived from example/guide.json.
+// The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,wiring,tubing,all}/.
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
@@ -6,9 +7,14 @@ const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.u
 const ORIGIN = 'http://127.0.0.1:8080', BASE = ORIGIN + '/example/';
 // the core files: src/ here, assets/buildguide/ in a site built with a plugin
 const CORE = process.env.BUILDGUIDE_SITE ? '/assets/buildguide/' : '/src/';
-const boards = D.pages.filter(p => p.view === 'board');
+const boards = Object.entries(D.boards);
 const label = (b, c, side) => c['l' + side] ?? `${b.parts[c[side].split(':')[0]].name} · ${c[side].slice(c[side].indexOf(':') + 1)}`;
 const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
+const at = (key, s, c) => `${encodeURIComponent(key)}=${hashOf(s, c)}`;
+const url = key => `${BASE}${key}/`;
+// one component of a page: a board by its steps navigation, the BOM by its table
+const boardOf = (page, key) => page.locator('.ag-guide').filter({ has: page.locator(`nav[aria-label="${D.boards[key].title} steps"]`) });
+const bomOf = page => page.locator('.ag-guide').filter({ has: page.locator('.ag-bom') });
 
 let problems;
 test.beforeEach(async ({ page }) => {
@@ -21,48 +27,15 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(() => expect(problems).toEqual({ errors: [], missing: [], external: [] }));
 
-const ready = page => expect(page.locator('.ag-board-canvas')).toHaveAttribute('data-ready', 'true');
+// sets the hash and resolves once the page's hashchange handlers have run (the test's own handler is registered last)
+const setHash = (page, hash) => page.evaluate(h => new Promise(done => { addEventListener('hashchange', () => done(), { once: true }); location.hash = h; }), hash);
+const ready = scope => expect(scope.locator('.ag-board-canvas')).toHaveAttribute('data-ready', 'true');
 
-test('page shell: navigation, notices, brand and introduction', async ({ page }) => {
-  await page.goto(BASE);
-  await expect(page.locator('.ag-nav a')).toHaveText(D.pages.map(p => p.title));
-  await expect(page.locator('.ag-prerelease + .ag-nav + .ag-warning + #ag-content')).toHaveCount(1);
-  await expect(page.locator('.ag-prerelease')).toContainText(D.prerelease.text);
-  await expect(page.locator('.ag-warning')).toContainText(D.warning.text);
-  await expect(page.locator('.ag-wordmark')).toHaveText(D.brand.wordmark.join(''));
-  await expect(page.locator('#assembly-guide h1')).toHaveText(D.intro.title);
-  await expect(page.locator('.ag-intro h2')).toHaveText(D.intro.sections.map(s => s.title));
-  await expect(page.locator('.ag-media-placeholder')).toHaveCount(D.intro.media.length);
-  for (const p of D.pages.slice(1)) {
-    await page.locator('.ag-nav').getByRole('link', { name: p.title, exact: true }).click();
-    await expect(page).toHaveURL(BASE + p.id + '/');
-    await page.reload();
-    await expect(page.locator('#assembly-guide h1')).toHaveText(p.title);
-  }
-  await page.goBack();
-  await expect(page.locator('#assembly-guide h1')).toHaveText(D.pages.at(-2).title);
-});
-
-test('notices: board pages show the short text, the full text opens from it', async ({ page }) => {
-  await page.goto(BASE + boards[0].id + '/');
-  await expect(page.locator('.ag-prerelease + .ag-nav + .ag-warning + #ag-content')).toHaveCount(1);
-  const full = page.locator('.ag-warning details > :not(summary)');
-  await expect(page.locator('.ag-warning summary')).toContainText(D.warning.short);
-  await expect(page.locator('.ag-warning summary')).not.toContainText(D.warning.text);
-  await expect(full).toBeHidden();
-  await page.locator('.ag-warning summary').click();
-  await expect(full).toHaveText(D.warning.text);
-  await expect(full).toBeVisible();
-  // a notice without short text stays in full
-  await expect(page.locator('.ag-prerelease details')).toHaveCount(0);
-  await expect(page.locator('.ag-prerelease')).toContainText(D.prerelease.text);
-});
-
-for (const p of boards) {
-  const b = D.boards[p.board], all = b.steps.flatMap(s => s.connections);
-  test(`${p.id}: every connection matches the data`, async ({ page }) => {
+for (const [key, b] of boards) {
+  const all = b.steps.flatMap(s => s.connections);
+  test(`${key}: every connection matches the data`, async ({ page }) => {
     for (const s of b.steps) for (const c of s.connections) {
-      await page.goto(`${BASE}${p.id}/#${hashOf(s, c)}`); await ready(page);
+      await page.goto(`${url(key)}#${at(key, s, c)}`); await ready(page);
       await expect(page.locator('.ag-connection-detail')).toContainText(label(b, c, 'a'));
       await expect(page.locator('.ag-connection-detail')).toContainText(label(b, c, 'b'));
       await expect(page.locator('[data-connection]')).toHaveCount((b.scope || 'step') === 'all' ? all.length : s.connections.length);
@@ -72,14 +45,22 @@ for (const p of boards) {
   });
 }
 
-test('wiring: scopes, ticks per exact connection, step order into the next page', async ({ page }) => {
+test('components carry no h1 and no page chrome', async ({ page }) => {
+  await page.goto(url('wiring')); await ready(page);
+  await expect(page.locator('.ag-guide h1')).toHaveCount(0);
+  await expect(page.locator('.ag-top, .ag-nav, .ag-footer, .ag-notice, .ag-intro')).toHaveCount(0);
+  // JointJS numbers its own drawing elements: the component's markup has no ids
+  await expect(page.locator('.ag-guide [id]:not(.ag-board-canvas *)')).toHaveCount(0);
+});
+
+test('wiring: scopes, ticks per exact connection, the last connection ends the board', async ({ page }) => {
   const b = D.boards.wiring, all = b.steps.flatMap(s => s.connections), first = b.steps[0];
-  await page.goto(`${BASE}wiring/#${hashOf(first, first.connections[0])}`); await ready(page);
-  await page.locator('#ag-wire-scope').selectOption('single'); await ready(page);
+  await page.goto(`${url('wiring')}#${at('wiring', first, first.connections[0])}`); await ready(page);
+  await page.locator('[data-role=scope]').selectOption('single'); await ready(page);
   await expect(page.locator('[data-connection]')).toHaveCount(1);
-  await page.locator('#ag-wire-scope').selectOption('all'); await ready(page);
+  await page.locator('[data-role=scope]').selectOption('all'); await ready(page);
   await expect(page.locator('[data-connection]')).toHaveCount(all.length);
-  await page.locator('#ag-wire-scope').selectOption('step'); await ready(page);
+  await page.locator('[data-role=scope]').selectOption('step'); await ready(page);
   await expect(page.locator('[data-action=prev-wire]')).toBeDisabled();
   await page.locator('.ag-verify input').check();
   await expect(page.locator('.ag-wire-row.selected input')).toBeChecked();
@@ -94,34 +75,54 @@ test('wiring: scopes, ticks per exact connection, step order into the next page'
   await page.evaluate(([key, value]) => localStorage.setItem(key, JSON.stringify({ [value]: true })), [D.storage, `${b.prefix}-${c.no}:${c.a}:SOMEWHERE:1`]);
   await page.reload();
   await expect(page.locator('.ag-verify input')).not.toBeChecked();
-  const last = b.steps.at(-1), next = D.boards[b.next].steps[0];
-  await page.goto(`${BASE}wiring/#${hashOf(last, last.connections.at(-1))}`);
-  await expect(page.locator('[data-action=next-wire]')).toHaveText(`Open ${D.pages.find(p => p.id === b.next).title.toLowerCase()} →`);
-  await page.locator('[data-action=next-wire]').click();
-  await expect(page).toHaveURL(`${BASE}${b.next}/#${hashOf(next, next.connections[0])}`);
+  const last = b.steps.at(-1);
+  await page.goto(`${url('wiring')}#${at('wiring', last, last.connections.at(-1))}`); await ready(page);
+  await expect(page.locator('[data-action=next-wire]')).toBeDisabled();
+  await expect(page.locator('[data-action=next-wire]')).toHaveText('Last connection');
 });
 
-test('notices: the text keeps the notice colour in a dark colour scheme', async ({ browser }) => {
-  const page = await browser.newPage({ colorScheme: 'dark' });
-  await page.goto(BASE + boards[0].id + '/');
-  const color = sel => page.locator(sel).evaluate(el => getComputedStyle(el).color);
-  const notice = await color('.ag-warning');
-  for (const part of ['.ag-warning summary', '.ag-warning .ag-notice-full']) expect(await color(part)).toBe(notice);
-  await page.close();
+for (const [key, b] of boards) {
+  test(`${key}: the note of a step shows with that step, above its connection list`, async ({ page }) => {
+    expect(b.steps.some(s => s.note)).toBe(true);
+    expect(b.steps.some(s => !s.note)).toBe(true);
+    await page.goto(url(key)); await ready(page);
+    for (const [i, s] of b.steps.entries()) {
+      await page.locator(`.ag-steps [data-step="${i}"]`).click();
+      await expect(page.locator(`.ag-steps [data-step="${i}"]`)).toHaveAttribute('aria-current', 'step');
+      await expect(page.locator('.ag-step-note')).toHaveCount(s.note ? 1 : 0);
+      if (s.note) {
+        await expect(page.locator('.ag-step-note')).toHaveText(s.note);
+        await expect(page.locator('.ag-step-note + .ag-list-heading')).toHaveCount(1);
+      }
+    }
+  });
+}
+
+test('a step note is text, not markup', async ({ page }) => {
+  const d = structuredClone(D);
+  d.boards.wiring.steps[0].note = '<b>Unplug</b> & check <img src=x onerror=window.hit=1>';
+  await inlinePage(page, 'note/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'note/'); await ready(page);
+  await expect(page.locator('.ag-step-note')).toHaveText(d.boards.wiring.steps[0].note);
+  await expect(page.locator('.ag-step-note b, .ag-step-note img')).toHaveCount(0);
+  expect(await page.evaluate(() => window.hit)).toBeUndefined();
 });
 
 test('keyboard: focus stays on the control after a step or connection changes', async ({ page }) => {
-  await page.goto(BASE + boards[0].id + '/'); await ready(page);
+  await page.goto(url('wiring')); await ready(page);
   await page.locator('[data-action=next-wire]').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-action=next-wire]')).toBeFocused();
   await page.locator('[data-step="1"]').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('[data-step="1"]')).toBeFocused();
+  await page.locator('[data-role=scope]').focus();
+  await page.locator('[data-role=scope]').selectOption('all');
+  await expect(page.locator('[data-role=scope]')).toBeFocused();
 });
 
 test('keyboard: focus follows a connection chosen from another step', async ({ page }) => {
-  await page.goto(BASE + 'tubing/'); await ready(page);
+  await page.goto(url('tubing')); await ready(page);
   const row = page.locator('.ag-wire-row [data-goto]').first();
   const no = await row.getAttribute('data-conn');
   await row.focus();
@@ -129,28 +130,83 @@ test('keyboard: focus follows a connection chosen from another step', async ({ p
   await expect(page.locator(`.ag-wire-row [data-conn="${no}"][data-wire]`)).toBeFocused();
 });
 
-test('colour: --ag-page paints the guide', async ({ page }) => {
-  await page.goto(BASE + 'bom/');
-  await page.locator('#assembly-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(1, 2, 3)'));
-  expect(await page.locator('#assembly-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(1, 2, 3)');
+test('colour: --ag-page paints the component', async ({ page }) => {
+  await page.goto(url('bom'));
+  await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(1, 2, 3)'));
+  expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(1, 2, 3)');
 });
 
-test('tubing: all connections listed, last connection ends the guide, keyboard selection', async ({ page }) => {
+test('host styles do not restyle the components', async ({ page }) => {
+  await page.goto(url('wiring')); await ready(page);
+  const size = sel => page.locator(sel).first().evaluate(el => getComputedStyle(el).fontSize);
+  // the stylesheet's own value: 18px in a component narrower than 760px, else 20px
+  const narrow = await page.locator('.ag-guide').evaluate(el => el.clientWidth <= 760);
+  expect(await size('.ag-guide .ag-work-heading h2')).toBe(narrow ? '18px' : '20px');
+  await page.goto(url('bom'));
+  expect(await size('.ag-bom-table th')).toBe('11px');
+  expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
+});
+
+// the stylesheet's own colours: --ag-<name>:light-dark(light, dark)
+const css = readFileSync(new URL('../src/buildguide.css', import.meta.url), 'utf8');
+const rgb = hex => { const full = hex.length === 4 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex, n = parseInt(full.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+const token = (name, scheme) => rgb(css.match(new RegExp(`--ag-${name}:light-dark\\((#[0-9a-f]+), (#[0-9a-f]+)\\)`))[scheme === 'dark' ? 2 : 1]);
+// the signal of the host under test: Material's body attribute, Docusaurus' html attribute, or only the browser preference (core example)
+const signal = (page, want) => page.evaluate(scheme => {
+  if (document.body.hasAttribute('data-md-color-scheme')) { document.body.setAttribute('data-md-color-scheme', scheme === 'dark' ? 'slate' : 'default'); return 'host'; }
+  if (document.documentElement.hasAttribute('data-theme')) { document.documentElement.setAttribute('data-theme', scheme); return 'host'; }
+  if (scheme === 'light') document.documentElement.setAttribute('data-ag-scheme', 'light');
+  return 'browser';
+}, want);
+
+for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
+  test(`colour scheme: a ${want} host in a browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    const kind = await signal(page, want);
+    // a host signal beats the browser preference; the core example has none, so the preference decides unless the page opts out
+    const expected = kind === 'host' || want === 'light' ? want : os;
+    const style = await page.locator('.ag-guide').evaluate(el => ({ background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color, scheme: getComputedStyle(el).colorScheme,
+      filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter, surface: getComputedStyle(el.querySelector('.ag-panel')).backgroundColor }));
+    expect(style.background).toBe(token('page', expected));
+    expect(style.color).toBe(token('ink', expected));
+    expect(style.surface).toBe(token('surface', expected));
+    // the browser's own light scheme is 'normal' when no host or rule names one
+    expect(style.scheme === 'dark').toBe(expected === 'dark');
+    expect(style.filter).toBe(expected === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
+  });
+}
+
+test('colour scheme: a component prints light on a dark host', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto(url('wiring')); await ready(page);
+  await signal(page, 'dark');
+  await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
+  expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
+});
+
+test('colour scheme: a host sets a token itself in both schemes', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto(url('bom'));
+  await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(9, 8, 7)'));
+  expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 8, 7)');
+});
+
+test('tubing: all connections listed, keyboard selection', async ({ page }) => {
   const b = D.boards.tubing, all = b.steps.flatMap(s => s.connections);
-  await page.goto(BASE + 'tubing/'); await ready(page);
+  await page.goto(url('tubing')); await ready(page);
   await expect(page.locator('.ag-wire-row')).toHaveCount(all.length);
+  await expect(page.locator('.ag-list-heading h3')).toHaveText(`All ${b.title.toLowerCase()} connections`);
   await expect(page.locator('.ag-row-color')).toHaveCount(0);
   await page.locator(`[data-connection="${all[2].no}"]`).focus();
   await page.keyboard.press('Enter');
-  await expect(page).toHaveURL(`${BASE}tubing/#${hashOf(b.steps[2], all[2])}`);
-  const last = b.steps.at(-1);
-  await page.goto(`${BASE}tubing/#${hashOf(last, last.connections.at(-1))}`); await ready(page);
-  await expect(page.locator('[data-action=next-wire]')).toBeDisabled();
+  await expect(page).toHaveURL(`${url('tubing')}#${at('tubing', b.steps[2], all[2])}`);
+  await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(all[2].no);
 });
 
 test('boards: zoom, fullscreen and page scrolling over the canvas', async ({ page }) => {
-  for (const p of boards) {
-    await page.goto(BASE + p.id + '/'); await ready(page);
+  for (const [key] of boards) {
+    await page.goto(url(key)); await ready(page);
     const paper = page.locator('.ag-board-canvas .joint-paper');
     const width = (await paper.boundingBox()).width;
     await page.locator('[data-action=zoom-in]').click();
@@ -161,21 +217,23 @@ test('boards: zoom, fullscreen and page scrolling over the canvas', async ({ pag
     await page.waitForFunction(b => scrollY > b, before);
     await page.evaluate(() => scrollTo(0, 0));
     await page.locator('[data-action=fullscreen]').click();
-    await expect(page.locator('#assembly-guide')).toHaveClass(/ag-expanded/);
+    await expect(page.locator('.ag-guide')).toHaveClass(/ag-expanded/);
     // the step renders on hashchange: until then ready() still sees the old canvas
     await page.locator('.ag-steps [data-step="1"]').click();
     await expect(page.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step'); await ready(page);
-    expect(await page.evaluate(() => document.fullscreenElement?.id)).toBe('assembly-guide');
+    expect(await page.evaluate(() => document.fullscreenElement?.classList.contains('ag-guide'))).toBe(true);
     const nav = await page.locator('.ag-wire-navigation').boundingBox();
     expect(nav.y + nav.height).toBeLessThanOrEqual(await page.evaluate(() => innerHeight) + 1);
     await page.locator('[data-action=fullscreen]').click();
     await page.waitForFunction(() => !document.fullscreenElement);
+    await expect(page.locator('.ag-guide')).not.toHaveClass(/ag-expanded/);
+    await expect(page.locator('body')).not.toHaveClass(/ag-no-scroll/);
   }
 });
 
 test('BOM: ticks, search, row click and CSV export', async ({ page }) => {
   const items = D.bom.items;
-  await page.goto(BASE + 'bom/');
+  await page.goto(url('bom'));
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(items.length);
   await expect(page.locator('tr.ag-group')).toHaveText([...new Set(items.map(i => i.group))]);
   await page.locator('tbody input[type=checkbox]').first().check();
@@ -183,9 +241,9 @@ test('BOM: ticks, search, row click and CSV export', async ({ page }) => {
   await expect(page.locator('tbody input[type=checkbox]').first()).toBeChecked();
   await page.locator('tbody tr:not(.ag-group)').nth(2).locator('td').nth(2).click();
   await expect(page.locator('.ag-progress')).toHaveText(`2 / ${items.length} checked`);
-  await page.locator('#ag-search').fill('valve');
+  await page.locator('[data-role=search]').fill('valve');
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(items.filter(i => `${i.part} ${i.spec ?? ''} ${i.group}`.toLowerCase().includes('valve')).length);
-  await page.locator('#ag-search').fill('');
+  await page.locator('[data-role=search]').fill('');
   await expect(page.locator('tbody a', { hasText: D.bom.linkLabel })).toHaveCount(items.filter(i => i.link).length);
   const download = page.waitForEvent('download');
   await page.locator('[data-action=export]').click();
@@ -194,74 +252,225 @@ test('BOM: ticks, search, row click and CSV export', async ({ page }) => {
   const csv = readFileSync(await file.path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
   expect(csv[0]).toBe(`"Group","Component","Specification","Quantity","${D.bom.linkLabel}"`);
   expect(csv.length).toBe(items.length + 1);
-  await page.locator('#ag-search').fill('does-not-exist');
+  await page.locator('[data-role=search]').fill('does-not-exist');
   await expect(page.locator('.ag-empty')).toBeVisible();
+});
+
+test('one page with a BOM and two boards: own hash, ticks, focus, no duplicate ids', async ({ page }) => {
+  const [w, t] = [D.boards.wiring, D.boards.tubing];
+  await page.goto(url('all'));
+  const wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing'), bom = bomOf(page);
+  await expect(page.locator('.ag-guide')).toHaveCount(3);
+  await ready(wiring); await ready(tubing);
+  const ids = await page.evaluate(() => [...document.querySelectorAll('.ag-guide [id]')].map(e => e.id));
+  expect(ids.length).toBe(new Set(ids).size);
+  // each board keeps its own position in the hash
+  await wiring.locator('[data-step="1"]').click();
+  await tubing.locator('[data-step="2"]').click();
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await expect(tubing.locator('.ag-steps [data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  expect(await page.evaluate(() => decodeURIComponent(location.hash))).toBe(`#wiring=${hashOf(w.steps[1], w.steps[1].connections[0])}&tubing=${hashOf(t.steps[2], t.steps[2].connections[0])}`);
+  await wiring.locator('[data-action=next-wire]').click();
+  await expect(tubing.locator('.ag-steps [data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  await expect(wiring.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(w.steps[1].connections[1].no);
+  expect(await page.evaluate(() => decodeURIComponent(location.hash))).toBe(`#wiring=${hashOf(w.steps[1], w.steps[1].connections[1])}&tubing=${hashOf(t.steps[2], t.steps[2].connections[0])}`);
+  // ticks of the three components do not overwrite each other
+  await bom.locator('tbody input[type=checkbox]').first().check();
+  await wiring.locator('.ag-verify input').check();
+  await tubing.locator('.ag-verify input').check();
+  await bom.locator('tbody input[type=checkbox]').nth(1).check();
+  await expect(bom.locator('.ag-progress')).toHaveText(`2 / ${D.bom.items.length} checked`);
+  await expect(wiring.locator('.ag-progress')).toHaveText(`1 / ${w.steps.flatMap(s => s.connections).length} checked`);
+  await expect(tubing.locator('.ag-progress')).toHaveText(`1 / ${t.steps.flatMap(s => s.connections).length} checked`);
+  await page.reload();
+  await expect(bom.locator('.ag-progress')).toHaveText(`2 / ${D.bom.items.length} checked`);
+  await expect(wiring.locator('.ag-progress')).toHaveText(`1 / ${w.steps.flatMap(s => s.connections).length} checked`);
+  await expect(tubing.locator('.ag-progress')).toHaveText(`1 / ${t.steps.flatMap(s => s.connections).length} checked`);
+  // focus stays in the component that was used
+  await ready(wiring); await ready(tubing);
+  await tubing.locator('[data-action=next-wire]').focus();
+  await page.keyboard.press('Enter');
+  await expect(tubing.locator('[data-action=next-wire]')).toBeFocused();
+  // each component says where its progress is kept
+  await expect(page.locator('.ag-status')).toHaveText(Array(3).fill('Progress saved in this browser.'));
 });
 
 test('phones: no sideways scrolling, the next action stays on screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const p of D.pages) {
-    await page.goto(BASE + (p === D.pages[0] ? '' : p.id + '/'));
+  for (const path of ['', 'bom/', 'wiring/', 'tubing/', 'all/']) {
+    await page.goto(BASE + path);
     expect(await page.evaluate(() => document.body.scrollWidth <= innerWidth)).toBe(true);
   }
-  for (const p of boards) {
-    await page.goto(BASE + p.id + '/'); await ready(page);
+  for (const [key] of boards) {
+    await page.goto(url(key)); await ready(page);
     await page.waitForFunction(() => { const r = document.querySelector('.ag-wire-navigation').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
   }
 });
 
-test('storage blocked: ticks last for the visit', async ({ page }) => {
-  await page.addInitScript(() => Object.defineProperty(window, 'localStorage', { get() { throw Error('blocked'); } }));
-  await page.goto(BASE + 'wiring/');
-  await expect(page.locator('.ag-footer')).toContainText('Storage unavailable');
+test('storage blocked: ticks last for the visit, each component says so', async ({ page }) => {
+  // the guide's key is blocked; a host's own use of localStorage (Material's palette) keeps working
+  await page.addInitScript(key => {
+    const real = window.localStorage, blocked = () => { throw Error('blocked'); };
+    Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? blocked() : real.getItem(k)), setItem: (k, v) => (k === key ? blocked() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
+  }, D.storage);
+  await page.goto(url('wiring'));
+  await expect(page.locator('.ag-status')).toHaveText('Storage unavailable: progress is not saved.');
   await page.locator('.ag-verify input').check();
+  await expect(page.locator('.ag-verify input')).toBeChecked();
+  // a second tick keeps the first one in memory
+  await page.locator('[data-action=next-wire]').click();
+  await page.locator('.ag-verify input').check();
+  await expect(page.locator('.ag-progress')).toHaveText(`2 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
+  await page.locator('[data-action=prev-wire]').click();
   await expect(page.locator('.ag-verify input')).toBeChecked();
 });
 
+// a page that mounts the given data inline, as a third-party site would
+const inlinePage = (page, path, data, components) => page.route(BASE + path, r => r.fulfill({ contentType: 'text/html', body:
+  `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css">${components}
+   <script type="application/json" id="guide-data" data-assets="../assets/">${typeof data === 'string' ? data : JSON.stringify(data).replace(/</g, '\\u003c')}</script><script src="${CORE}buildguide.js" defer></script>` }));
+
 test('inline data in #guide-data works like data-src', async ({ page }) => {
-  await page.route(BASE + 'inline/', r => r.fulfill({ contentType: 'text/html', body:
-    `<!doctype html><link rel="stylesheet" href="${CORE}buildguide.css"><div id="assembly-guide" data-page="bom" data-site="../"></div>
-     <script type="application/json" id="guide-data">${JSON.stringify(D).replace(/</g, '\\u003c')}</script><script src="${CORE}buildguide.js" defer></script>` }));
+  await inlinePage(page, 'inline/', D, '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'inline/');
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
 });
 
-// a page that mounts the given data inline, as a third-party site would
-const inlinePage = (page, path, data, view) => page.route(BASE + path, r => r.fulfill({ contentType: 'text/html', body:
-  `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css"><div id="assembly-guide" data-page="${view}" data-site="../"></div>
-   <script type="application/json" id="guide-data">${typeof data === 'string' ? data : JSON.stringify(data).replace(/</g, '\\u003c')}</script><script src="${CORE}buildguide.js" defer></script>` }));
-
 test('untrusted data: script URLs become #, ids with spaces and slashes reach their step, CSV formulas stay text', async ({ page }) => {
   const d = structuredClone(D), w = d.boards.wiring;
-  d.brand.mark = 'x:"><img src=1 onerror=window.hit=1>';
-  d.pages[2].path = 'javascript:window.hit=1';
   d.bom.items[0].link = 'javascript:window.hit=1';
+  d.bom.items[0].image = 'javascript:window.hit=1';
   d.bom.items[0].part = '=1+1';
   w.steps[1].id = 'Schritt ü/2';
-  await inlinePage(page, 'odd/', d, 'bom');
-  await page.goto(BASE + 'odd/');
-  await expect(page.locator('.ag-nav a').nth(2)).toHaveAttribute('href', '#');
+  await inlinePage(page, 'odd/', d, '<div data-buildguide="bom"></div><div data-buildguide="board" data-board="wiring"></div>');
+  const s = w.steps[1], c = s.connections[1];
+  await page.goto(`${BASE}odd/#${at('wiring', s, c)}`); await ready(page);
   await expect(page.locator('tbody a').first()).toHaveAttribute('href', '#');
   expect(await page.evaluate(() => window.hit)).toBeUndefined();
   const download = page.waitForEvent('download');
   await page.locator('[data-action=export]').click();
   expect(readFileSync(await (await download).path(), 'utf8').split('\r\n')[1]).toContain(`"'=1+1"`);
-  await inlinePage(page, 'odd-wiring/', d, 'wiring');
-  const s = w.steps[1], c = s.connections[1];
-  await page.goto(`${BASE}odd-wiring/#${hashOf(s, c)}`); await ready(page);
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
 });
 
-test('invalid inline data says so', async ({ page }) => {
-  await inlinePage(page, 'broken/', '{not json', 'intro');
+test('a foreign hash fragment keeps the boards where they are and stays in the hash', async ({ page }) => {
+  const t = D.boards.tubing;
+  await inlinePage(page, 'anchors/', D, '<h2 id="top">Top</h2><div data-buildguide="board" data-board="wiring"></div><div data-buildguide="board" data-board="tubing"></div>');
+  await page.goto(BASE + 'anchors/#top');
+  const wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
+  await ready(wiring); await ready(tubing);
+  await wiring.locator('[data-step="1"]').click();
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await setHash(page, 'top');
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await tubing.locator('[data-step="2"]').click();
+  await expect(tubing.locator('.ag-steps [data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  // the anchor click replaced the hash: the wiring pair is gone from the URL, the board keeps its step, the anchor stays
+  expect(await page.evaluate(() => decodeURIComponent(location.hash))).toBe(`#top&tubing=${hashOf(t.steps[2], t.steps[2].connections[0])}`);
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+});
+
+test('a name-only fragment equal to a board key is an anchor, not a position', async ({ page }) => {
+  await inlinePage(page, 'same/', D, '<h2 id="wiring">Wiring</h2><div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'same/');
+  const wiring = boardOf(page, 'wiring');
+  await ready(wiring);
+  await wiring.locator('[data-step="1"]').click();
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await setHash(page, 'wiring');
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+});
+
+test('history navigation without a hashchange moves the board', async ({ page }) => {
+  const w = D.boards.wiring, s = w.steps[1], c = s.connections[1];
+  await page.goto(url('wiring')); await ready(page);
+  await page.evaluate(h => { history.pushState(null, '', h); dispatchEvent(new PopStateEvent('popstate')); }, `#${at('wiring', s, c)}`);
+  await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+});
+
+test('a board without title still renders, named by its key', async ({ page }) => {
+  const d = structuredClone(D);
+  delete d.boards.wiring.title; delete d.boards.wiring.label;
+  await inlinePage(page, 'untitled/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'untitled/'); await ready(page);
+  await expect(page.locator('nav.ag-steps')).toHaveAttribute('aria-label', 'wiring steps');
+  await expect(page.locator('.ag-board-canvas')).toHaveAttribute('aria-label', /^wiring\. /);
+});
+
+test('a component without any data source says so', async ({ page }) => {
+  await page.route(BASE + 'nodata/', r => r.fulfill({ contentType: 'text/html', body:
+    `<!doctype html><meta charset="utf-8"><div data-buildguide="bom"></div><script src="${CORE}buildguide.js" defer></script>` }));
+  await page.goto(BASE + 'nodata/');
+  await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
+});
+
+test('a stale or repeated unmount leaves the current mount alone', async ({ page }) => {
+  await inlinePage(page, 'stale/', D, '');
+  await page.goto(BASE + 'stale/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const alive = await page.evaluate(data => {
+    const el = document.createElement('div'); document.body.append(el);
+    const first = window.BuildGuide.mount(el, data, { view: 'bom' }), second = window.BuildGuide.mount(el, data, { view: 'bom' });
+    first();
+    const afterStale = el.classList.contains('ag-guide');
+    second(); second();
+    return [afterStale, el.classList.contains('ag-guide'), el.childElementCount];
+  }, D);
+  expect(alive).toEqual([true, false, 0]);
+});
+
+test('invalid inline data and unknown components say so', async ({ page }) => {
+  await inlinePage(page, 'broken/', '{not json', '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'broken/');
-  await expect(page.locator('#assembly-guide')).toHaveText('Guide data unavailable.');
+  await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
+  await inlinePage(page, 'unknown/', D, '<div data-buildguide="board" data-board="nowhere"></div><div data-buildguide="intro"></div><div data-buildguide="board" data-board="constructor"></div><div data-buildguide="board" data-board="__proto__"></div>');
+  await page.goto(BASE + 'unknown/');
+  await expect(page.locator('[data-buildguide]')).toHaveText(['Unknown guide component: board nowhere.', 'Unknown guide component: intro.', 'Unknown guide component: board constructor.', 'Unknown guide component: board __proto__.']);
+});
+
+test('unmounting removes every listener and the markup, mounting again works', async ({ page }) => {
+  // window and document listeners added after the marker and not removed yet
+  await page.addInitScript(() => {
+    const live = [], add = EventTarget.prototype.addEventListener, remove = EventTarget.prototype.removeEventListener;
+    window.__live = live;
+    EventTarget.prototype.addEventListener = function (type, fn, opts) {
+      if ((this === window || this === document) && window.__mark) live.push([this, type, fn]);
+      return add.call(this, type, fn, opts);
+    };
+    EventTarget.prototype.removeEventListener = function (type, fn, opts) {
+      const i = live.findIndex(l => l[0] === this && l[1] === type && l[2] === fn);
+      if (i >= 0) live.splice(i, 1);
+      return remove.call(this, type, fn, opts);
+    };
+  });
+  await inlinePage(page, 'remount/', D, '<div id="host"></div>');
+  await page.goto(BASE + 'remount/');
+  await page.waitForFunction(() => window.BuildGuide);
+  await page.evaluate(() => { window.__mark = true; });
+  for (let round = 0; round < 3; round++) {
+    await page.evaluate(data => {
+      window.__stops = [];
+      const host = document.getElementById('host');
+      host.replaceChildren(...['bom', 'wiring', 'tubing'].map(() => document.createElement('div')));
+      [...host.children].forEach((el, i) => { window.__stops.push(window.BuildGuide.mount(el, data, i ? { view: 'board', board: ['', 'wiring', 'tubing'][i] } : { view: 'bom' })); });
+    }, D);
+    await expect(page.locator('.ag-guide')).toHaveCount(3);
+    await ready(page.locator('.ag-guide').nth(1));
+    expect(await page.evaluate(() => window.__live.length)).toBeGreaterThan(0);
+    await page.evaluate(() => { for (const stop of window.__stops) stop(); });
+    expect(await page.evaluate(() => window.__live.length)).toBe(0);
+    await expect(page.locator('.ag-guide')).toHaveCount(0);
+    expect(await page.evaluate(() => document.getElementById('host').textContent)).toBe('');
+  }
+  // a hash change after unmounting renders nothing
+  await setHash(page, 'wiring=B');
+  await expect(page.locator('.ag-guide')).toHaveCount(0);
 });
 
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
-  test('the page says it needs JavaScript', async ({ page }) => {
-    await page.goto(BASE);
+  test('a component says it needs JavaScript', async ({ page }) => {
+    await page.goto(url('bom'));
     expect(await page.content()).toContain('This guide needs JavaScript.');
   });
 });

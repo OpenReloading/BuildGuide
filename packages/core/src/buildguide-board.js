@@ -1,5 +1,5 @@
 // BuildGuide board renderer: JointJS parts with terminals and libavoid orthogonal routes, for wiring and tubing alike.
-// The page shell owns navigation and saved progress; this renderer owns only its drawing.
+// The component around it owns navigation and saved progress; this renderer owns only its drawing.
 (() => {
   let library;
   const cachedRoutes = new Map();
@@ -46,7 +46,7 @@
     const holder = document.createElement('div');
     const paper = new dia.Paper({
       el: holder, model: graph, width: W, height: H, cellViewNamespace: ns, interactive: false,
-      background: {color: '#ffffff'}, async: false,
+      background: {color: 'transparent'}, async: false,   // the canvas behind it carries the surface colour
       labelsLayer: true,   // connection numbers above the parts, never hidden under a terminal
     });
 
@@ -212,7 +212,7 @@
     }
 
     root.appendChild(holder);
-    root.setAttribute('aria-label', (B.label || 'Board') + '. Select a numbered connection to inspect it.');
+    root.setAttribute('aria-label', options.name + '. Select a numbered connection to inspect it.');
     const steps = B.steps, all = steps.flatMap(s => s.connections);
     const step = steps[options.step];
     const selected = step.connections[options.wire];

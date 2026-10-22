@@ -9,7 +9,6 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator
 
-VIEWS = ("intro", "bom", "board")
 SCHEMA = json.loads((Path(__file__).parent / "core" / "buildguide.schema.json").read_text(encoding="utf-8"))
 
 
@@ -22,8 +21,10 @@ def repeated(values):
     return found
 
 
-def check_board(key, board, page_ids):
+def check_board(key, board):
     found = []
+    if not board.get("title"):
+        found.append(f"{key}: title missing")
     parts, colors = board.get("parts") or {}, board.get("colors") or {}
     steps = board.get("steps") or []
     connections = [c for s in steps for c in s.get("connections") or []]
@@ -60,8 +61,6 @@ def check_board(key, board, page_ids):
         for end, nos in ends.items():
             if len(nos) > limit:
                 found.append(f"{key}: {len(nos)} connections on {end} ({', '.join(map(str, nos))}), at most {limit}")
-    if board.get("next") and board["next"] not in page_ids:
-        found.append(f"{key}: next page {board['next']} does not exist")
     return found
 
 
@@ -69,19 +68,6 @@ def check(data):
     found = []
     if not data.get("storage"):
         found.append("storage: missing")
-    pages = data.get("pages") or []
-    if not pages:
-        found.append("pages: none")
-    ids = [p.get("id") for p in pages]
-    found += [f"pages: id {i} used twice" for i in repeated(ids)]
-    for p in pages:
-        view = p.get("view")
-        if view not in VIEWS:
-            found.append(f"pages.{p.get('id')}: unknown view {view}")
-        elif view == "board" and (data.get("boards") or {}).get(p.get("board")) is None:
-            found.append(f"pages.{p.get('id')}: no board {p.get('board')}")
-        elif view != "board" and data.get(view) is None:
-            found.append(f"pages.{p.get('id')}: {view} missing")
     items = (data.get("bom") or {}).get("items") or []
     found += [f"bom: id {item_id} used twice" for item_id in repeated([item.get("id") for item in items])]
     for item in items:
@@ -89,8 +75,13 @@ def check(data):
             found.append(f"bom.{item.get('id')}: part missing")
         if item.get("qty", "") == "":
             found.append(f"bom.{item.get('id')}: qty missing")
-    for key, board in (data.get("boards") or {}).items():
-        found += check_board(key, board, ids)
+    boards = list((data.get("boards") or {}).items())
+    for key, board in boards:
+        found += check_board(key, board)
+    # tick keys start with the prefix: boards and the BOM ('bom') must not share one
+    prefixes = [(key, board.get("prefix") or key) for key, board in boards]
+    found += [f"boards: prefix {prefix} used twice" for prefix in repeated([p for _, p in prefixes])]
+    found += [f"{key}: prefix bom is taken by the BOM" for key, prefix in prefixes if prefix == "bom"]
     return found
 
 
