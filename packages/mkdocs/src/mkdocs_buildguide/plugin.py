@@ -1,8 +1,9 @@
-"""MkDocs plugin: a page with the front matter `buildguide: <page id>` shows that page of the guide."""
+"""MkDocs plugin: `<div data-buildguide="bom"></div>` and `<div data-buildguide="board" data-board="KEY"></div>` in a page become guide components."""
 
 import html
 import json
 import math
+import re
 import shutil
 from pathlib import Path
 
@@ -11,12 +12,14 @@ from mkdocs.config import config_options as c
 from mkdocs.exceptions import PluginError
 from mkdocs.plugins import BasePlugin, get_plugin_logger
 from mkdocs.utils import get_relative_url
-from mkdocs.utils.meta import get_data
 
 from .check import problems
 
 HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
+# an opening tag with data-buildguide, and whether the element is empty
+COMPONENT = re.compile(r"""(<div\b[^>]*?\bdata-buildguide=["']?(\w+)["']?[^>]*>)(</div>)?""")
+BOARD = re.compile(r"""\bdata-board=["']?([^"'\s>]+)""")
 
 
 def finite(value):
@@ -52,42 +55,40 @@ class BuildGuidePlugin(BasePlugin):
             raise PluginError(f"{data}:\n" + "\n".join(found))
         config.watch.append(data)
 
-    # every guide page's URL is known before the first page renders: read the front matter of all pages here
-    def on_files(self, files, config):
-        ids, urls = [p["id"] for p in self.guide["pages"]], {}
-        for file in files.documentation_pages():
-            page_id = get_data(file.content_string)[1].get("buildguide")
-            if page_id is None:
-                continue
-            if page_id not in ids:
-                raise PluginError(f"{file.src_uri}: no guide page {page_id}")
-            if page_id in urls:
-                raise PluginError(f"{file.src_uri}: guide page {page_id} is already on {urls[page_id].src_uri}")
-            urls[page_id] = file
-        for p in self.guide["pages"]:
-            if p["id"] in urls:
-                p["path"] = urls[p["id"]].url
-            else:
-                log.warning(f"guide page {p['id']} has no MkDocs page with the front matter 'buildguide: {p['id']}'")
+    def on_pre_build(self, config):
+        self.pages = set()
 
+    # components are found in the rendered page; an unknown view or board key is a warning, an error with --strict
     def on_page_content(self, output, page, config, files):
-        page_id = page.meta.get("buildguide")
-        if page_id is None:
-            return output
-        site = get_relative_url(".", page.url).rstrip("/") + "/"
-        return (
-            f'{output}<div id="assembly-guide" data-page="{html.escape(str(page_id))}" data-site="{site}" '
-            f'data-assets="{html.escape(self.config["assets"])}"><noscript>This guide needs JavaScript.</noscript></div>'
-        )
+        def component(match):
+            tag, view, empty = match.groups()
+            board = BOARD.search(tag)
+            key = board and html.unescape(board.group(1))
+            if view == "bom":
+                known = "bom" in self.guide
+            elif view == "board":
+                known = key in self.guide.get("boards", {})
+            else:
+                known = False
+            if not known:
+                log.warning(f"{page.file.src_uri}: no guide component {view}{' ' + key if key else ''}")
+            self.pages.add(page.file.src_uri)
+            return tag + ("<noscript>This guide needs JavaScript.</noscript></div>" if empty else "")
 
-    # the data goes in after the content, so the search index leaves it out
+        return COMPONENT.sub(component, output)
+
+    # the data goes in after the content, so the search index leaves it out; only pages with a component get it
     def on_post_page(self, output, page, config):
-        if page.meta.get("buildguide") is None:
+        if page.file.src_uri not in self.pages:
             return output
         core = get_relative_url("assets/buildguide/", page.url).rstrip("/") + "/"
+        assets = get_relative_url(self.config["assets"], page.url).rstrip("/") + "/"
         styles = f'<link rel="stylesheet" href="{core}buildguide.css"><link rel="stylesheet" href="{core}buildguide-mkdocs.css">'
         data = json.dumps(self.guide).replace("<", "\\u003c")
-        scripts = f'<script type="application/json" id="guide-data">{data}</script><script src="{core}buildguide.js" defer></script>'
+        scripts = (
+            f'<script type="application/json" id="guide-data" data-assets="{html.escape(assets)}">{data}</script>'
+            f'<script src="{core}buildguide.js" defer></script>'
+        )
         output = output.replace("</head>", styles + "</head>", 1)
         at = output.rfind("</body>")
         return output[:at] + scripts + output[at:]

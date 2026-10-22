@@ -1,6 +1,6 @@
 # BuildGuide for MkDocs
 
-MkDocs plugin: each page with the front matter `buildguide: <page id>` shows that page of a BuildGuide guide. The plugin checks the data at build time and bundles the core browser files.
+MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing board) anywhere in a Markdown page. The plugin checks the data at build time and bundles the core browser files. Your pages, notices and navigation stay your own.
 
 ## Use
 
@@ -23,19 +23,30 @@ MkDocs plugin: each page with the front matter `buildguide: <page id>` shows tha
    | Option | Meaning | Default |
    |---|---|---|
    | `data` | guide data, YAML or JSON, in the core data format | required |
-   | `assets` | folder of brand mark, BOM images and intro media, relative to the site root | `assets/` |
+   | `assets` | folder of BOM images, relative to the site root | `assets/` |
 
-3. Write one Markdown page per guide page, with the page `id` in the front matter. The page body is shown above the guide:
+3. Place a component where it belongs in a page's Markdown, as many as you need, also several on one page. Write the title and notices as normal Markdown (for Material, admonitions):
 
    ```markdown
-   ---
-   buildguide: wiring
-   ---
+   # Wiring
+
+   !!! warning "Safety"
+
+       Work with the supply unplugged.
+
+   <div data-buildguide="board" data-board="wiring"></div>
    ```
 
-The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), on front matter that names no guide page, and on a guide page claimed by two Markdown pages. A guide page without a Markdown page is a warning (an error with `--strict`).
+   | Component | Markup |
+   |---|---|
+   | BOM checklist | `<div data-buildguide="bom"></div>` |
+   | A board | `<div data-buildguide="board" data-board="KEY"></div>`, `KEY` is a key in `boards` |
 
-On each guide page the plugin writes `<div id="assembly-guide">` with `data-page`, `data-site` and `data-assets`, inlines the data with every page's `path` set from its MkDocs URL, and loads core from `assets/buildguide/` in the built site. With the Material theme, `buildguide-mkdocs.css` hides the site header, tabs, sidebars and footer on guide pages. Leave Material's `navigation.instant` off: guide pages need a full page load.
+   Write the element with double quotes and nothing inside; the plugin adds a no-JavaScript note. Elements in code blocks and inline code are text, not components.
+
+The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a BOM component without `bom` data, is a warning (an error with `--strict`).
+
+On pages with a component the plugin sets `data-assets` on the inline data, inlines the data once, and loads core from `assets/buildguide/` in the built site. Other pages get nothing. `buildguide-mkdocs.css` only keeps component tables out of Material's table wrapper: the Material header, tabs, sidebars and footer stay. Leave Material's `navigation.instant` off (not tested with components).
 
 The data and the core files reach the browser from the site only. Use the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
 
