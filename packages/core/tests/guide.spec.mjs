@@ -199,6 +199,7 @@ test('one page with a BOM and two boards: own hash, ticks, focus, no duplicate i
   await wiring.locator('[data-action=next-wire]').click();
   await expect(tubing.locator('.ag-steps [data-step="2"]')).toHaveAttribute('aria-current', 'step');
   await expect(wiring.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(w.steps[1].connections[1].no);
+  expect(await page.evaluate(() => decodeURIComponent(location.hash))).toBe(`#wiring=${hashOf(w.steps[1], w.steps[1].connections[1])}&tubing=${hashOf(t.steps[2], t.steps[2].connections[0])}`);
   // ticks of the three components do not overwrite each other
   await bom.locator('tbody input[type=checkbox]').first().check();
   await wiring.locator('.ag-verify input').check();
