@@ -159,9 +159,9 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-row-color{display:none}
  .ag-guide .ag-primary{font-size:11px;padding:10px 12px}
 }
-/* Phones: each BOM row stacks, so the specification stays on screen (screen only: print keeps the table). */
+/* Components narrower than 560 px (phones): each BOM row stacks, so the specification stays on screen (screen only: print keeps the table). */
 @media screen{
-@container (max-width:760px){
+@container (max-width:560px){
  .ag-guide .ag-bom-table thead{display:none}
  .ag-guide .ag-bom-table tr:not(.ag-group){display:grid;grid-template-columns:76px minmax(0,1fr)}
  .ag-guide .ag-bom-table td:nth-child(3){grid-column:2;border-top:0;padding-top:0}
