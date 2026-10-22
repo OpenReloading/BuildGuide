@@ -23,6 +23,8 @@ def repeated(values):
 
 def check_board(key, board):
     found = []
+    if not board.get("title"):
+        found.append(f"{key}: title missing")
     parts, colors = board.get("parts") or {}, board.get("colors") or {}
     steps = board.get("steps") or []
     connections = [c for s in steps for c in s.get("connections") or []]
@@ -73,8 +75,13 @@ def check(data):
             found.append(f"bom.{item.get('id')}: part missing")
         if item.get("qty", "") == "":
             found.append(f"bom.{item.get('id')}: qty missing")
-    for key, board in (data.get("boards") or {}).items():
+    boards = list((data.get("boards") or {}).items())
+    for key, board in boards:
         found += check_board(key, board)
+    # tick keys start with the prefix: boards and the BOM ('bom') must not share one
+    prefixes = [(key, board.get("prefix") or key) for key, board in boards]
+    found += [f"boards: prefix {prefix} used twice" for prefix in repeated([p for _, p in prefixes])]
+    found += [f"{key}: prefix bom is taken by the BOM" for key, prefix in prefixes if prefix == "bom"]
     return found
 
 
