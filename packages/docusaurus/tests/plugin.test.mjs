@@ -22,6 +22,14 @@ test('assets is a folder below baseUrl', () => {
   assert.deepEqual([undefined, '/', '', '/media', 'media/', 'a/b'].map(url), ['/docs/assets/', '/docs/', '/docs/', '/docs/media/', '/docs/media/', '/docs/a/b/']);
 });
 
+test('assets with very many slashes is trimmed in linear time', () => {
+  const start = performance.now();
+  const inner = '/'.repeat(100000);
+  const url = site(example, { assets: `//a${inner}x//` }).injectHtmlTags({ content: {} }).headTags[1].match(/data-assets="([^"]*)"/)[1];
+  assert.equal(url, `/docs/a${inner}x/`);
+  assert.ok(performance.now() - start < 500);
+});
+
 test('problems in the data stop the build, one line each', async () => {
   const fixture = JSON.parse(readFileSync(new URL('../../core/tests/fixtures/board-ids.json', import.meta.url)));
   const file = join(mkdtempSync(join(tmpdir(), 'bg-')), 'guide.json');
