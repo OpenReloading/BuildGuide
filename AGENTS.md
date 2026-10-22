@@ -1,13 +1,13 @@
 # BuildGuide
 
-Monorepo of BuildGuide components (core in `packages/core/`, MkDocs plugin in `packages/mkdocs/`, Docusaurus plugin in `packages/docusaurus/`), each released on its own. Docs site: `mkdocs.yml` and `docs/`, deployed to GitHub Pages by `.github/workflows/pages.yml`. License MIT (`LICENSE`).
+Monorepo of BuildGuide components, the BOM and board views for a host's own pages (core in `packages/core/`, MkDocs plugin in `packages/mkdocs/`, Docusaurus plugin in `packages/docusaurus/`), each released on its own. Docs site: `mkdocs.yml` and `docs/`, deployed to GitHub Pages by `.github/workflows/pages.yml`. License MIT (`LICENSE`).
 
 ## Commands
 
 - Agents run on the host; file edits and Git stay there. Start the container with `devcontainer up --docker-path podman --workspace-folder .` (runs `npm ci` and `uv sync`); run project commands with the prefix `devcontainer exec --docker-path podman --workspace-folder .`.
 - Lint (Biome, ruff, no em dash or emoji): `npm run lint`
 - Unit tests (node, pytest): `npm test`
-- Browser tests (core example, the built docs site, the Docusaurus example build): `npm run test:browser`
+- Browser tests (core example pages, the built docs site, the Docusaurus example build; each hosts /example/{bom,wiring,tubing,all}/): `npm run test:browser`
 - Docusaurus example site: `npm run build -w packages/docusaurus` (`packages/docusaurus/example/build/`), dev server `npm run start -w packages/docusaurus` (port 8080)
 - Dependency audit (CI): `node scripts/audit.mjs`. An advisory without a fix goes into its `ALLOWED` list and into `allow-ghsas` in `ci.yml`, with the user's approval.
 - Docs site into `site/`: `npm run docs`. Serve: `uv run --project packages/mkdocs mkdocs serve -a 0.0.0.0:8080`
@@ -22,7 +22,7 @@ Monorepo of BuildGuide components (core in `packages/core/`, MkDocs plugin in `p
 - A data format change updates `packages/core/schema/buildguide.schema.json`, `src/buildguide-check.mjs`, `example/guide.json` and the tests together.
 - `packages/mkdocs/` is Python, managed with uv (`uv.lock` committed). Its build copies `packages/core/src` and the schema into `src/mkdocs_buildguide/core/` (git-ignored). `check.py` is a port of `buildguide-check.mjs`: a check change updates both, with a case in `packages/core/tests/fixtures/` (both test suites run them).
 - `packages/docusaurus/` copies `packages/core/src` into `core/` (git-ignored) before its tests, builds and `npm pack` (`scripts/copy-core.mjs`); it has no npm dependency on core until #7.
-- Stable for sites that style or test against it: `#assembly-guide`, `ag-*` classes, `data-step`, `data-wire`, `data-connection`, `data-action` values. Tick keys `<prefix>-<no>:<a>:<b>` and `bom-<id>:<part>` stay as they are, a change drops saved ticks.
+- Stable for sites that style or test against it: the `ag-*` component classes (the root is `.ag-guide`), the attributes `data-buildguide`, `data-board`, `data-src`, `data-assets`, `data-step`, `data-wire`, `data-conn`, `data-connection`, `data-role` and the `data-action` values, the hash pairs `#<board key>=<step>/<no>`, the tick keys `<prefix>-<no>:<a>:<b>` and `bom-<id>:<part>`, and the single `storage` key. A change to a tick key or the storage key drops saved ticks. The components-only release removed `#assembly-guide`, `data-page`, `data-site`, the shell classes (`ag-top`, `ag-nav`, `ag-main`, `ag-footer`, `ag-notice*`, `ag-intro*`, `ag-diagram-page`), renamed `ag-page-heading` to `ag-head`, and changed the hash from `#<step>/<no>` to `#<board key>=<step>/<no>`. Tick keys and the storage key did not change.
 - Browser test expectations come from `example/guide.json`, not from literals.
 - Versions and changelogs come from release-please (`release-please-config.json`): never edit a component's `version` or `CHANGELOG.md` by hand. PR titles are Conventional Commits with the component as scope (CONTRIBUTING.md).
 - Actions pinned by commit SHA with the version as comment, images by digest.

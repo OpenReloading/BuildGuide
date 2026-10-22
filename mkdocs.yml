@@ -15,7 +15,6 @@ plugins:
   - search
   - buildguide:
       data: packages/core/example/guide.json
-      assets: example/assets/
 
 markdown_extensions:
   - admonition
@@ -35,4 +34,9 @@ nav:
   - MkDocs plugin: mkdocs.md
   - Docusaurus plugin: docusaurus.md
   - Data format: data-format.md
-  - Example guide: example/index.md
+  - Example guide:
+      - Introduction: example/index.md
+      - BOM: example/bom.md
+      - Wiring: example/wiring.md
+      - Tubing: example/tubing.md
+      - All components: example/all.md

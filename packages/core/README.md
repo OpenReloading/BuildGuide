@@ -1,6 +1,6 @@
 # BuildGuide core
 
-Browser library, JSON Schema and check CLI. Plain JavaScript and CSS, no build step. Example guide: `example/` (`npm run serve`, then http://127.0.0.1:8080/example/).
+Browser components (BOM checklist, wiring and tubing boards), JSON Schema and check CLI. Plain JavaScript and CSS, no build step. Example pages: `example/` (`npm run serve`, then http://127.0.0.1:8080/example/).
 
 ## Use
 
@@ -11,32 +11,33 @@ Browser library, JSON Schema and check CLI. Plain JavaScript and CSS, no build s
    tar -xzf buildguide-0.1.0.tar.gz -C assets/
    ```
 
-2. Write one HTML page per guide page. The first page sits at the site root, every other page at `<id>/` (or the page's `path`):
+2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist or one board (wiring or tubing). Use as many as you like on one page:
 
    ```html
-   <link rel="stylesheet" href="../assets/buildguide-0.1.0/buildguide.css">
-   <div id="assembly-guide" data-page="wiring" data-site="../" data-src="../guide.json"><noscript>This guide needs JavaScript.</noscript></div>
-   <script src="../assets/buildguide-0.1.0/buildguide.js" defer></script>
+   <link rel="stylesheet" href="assets/buildguide-0.1.0/buildguide.css">
+   <div data-buildguide="bom" data-src="guide.json"></div>
+   <div data-buildguide="board" data-board="wiring" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+   <script src="assets/buildguide-0.1.0/buildguide.js" defer></script>
    ```
 
    | Attribute | Meaning | Default |
    |---|---|---|
-   | `data-page` | page `id` from `pages` | the first page |
-   | `data-site` | site root, relative to this page | `./` |
-   | `data-assets` | folder of brand mark, BOM images and intro media, relative to the site root | `assets/` |
-   | `data-src` | URL of the guide data | the JSON in `<script type="application/json" id="guide-data">` |
+   | `data-buildguide` | `bom` or `board` | required |
+   | `data-board` | key in `boards`, for `board` | required for `board` |
+   | `data-src` | URL of the guide data. Components with the same URL share one request | the JSON in `<script type="application/json" id="guide-data">` |
+   | `data-assets` | folder of BOM images, relative to the page | `assets/` (or the `data-assets` of `#guide-data`) |
 
-   The script mounts `#assembly-guide` by itself. `BuildGuide.mount(root, data, {page, site, assets})` mounts any other element. Board pages load `vendor/joint/` and `buildguide-board.js` from the script's own folder.
+   The script mounts every `[data-buildguide]` element by itself. `BuildGuide.mount(root, data, {view, board, assets})` mounts any other element and returns a function that removes the component again (listeners, drawing, markup). An element that names an unknown view or board shows `Unknown guide component`.
 
-   Colours are `--ag-*` custom properties on `#assembly-guide` (list at the top of `buildguide.css`). A site overrides them in its own stylesheet, for example `#assembly-guide{--ag-accent:#0a5}`.
+   Each component carries the class `ag-guide`, takes the width of its container and has no title: the host page names it. Boards keep their position in the URL hash, one `key=step/number` pair per board, for example `#wiring=B/4&tubing=3`. Use each board once per page.
+
+   Colours are `--ag-*` custom properties on `.ag-guide` (list at the top of `buildguide.css`). A site overrides them in its own stylesheet, for example `.ag-guide{--ag-accent:#0a5}`. `--ag-page` is the component background.
 
 3. Write the guide data. `buildguide.schema.json` (JSON Schema 2020-12) describes it, and `example/guide.json` uses every part of it.
 
-   - `storage`: localStorage key for the ticks. A tick belongs to one exact connection (number and both ends): changing an end clears it.
-   - `pages`: `intro`, `bom` or `board` views, in navigation order.
-   - `intro`, `bom`: text, steps, media placeholders, BOM items with groups, search and CSV export.
-   - `boards`: parts with terminals on their sides (`ports`), connections in `steps` from `PART:terminal` to `PART:terminal`, colour codes, part kinds, areas with cable glands, and `rules` such as connections per terminal. Routes are computed (libavoid), not drawn.
-   - Links: `<page>/#<step>/<no>`, or `#<step>` for a step with one connection.
+   - `storage`: localStorage key for the ticks, shared by all components. A tick belongs to one exact connection (number and both ends): changing an end clears it. Each component says at its bottom whether progress is saved.
+   - `bom`: note, BOM items with groups, search and CSV export.
+   - `boards`: one entry per board key, with a required `title` (step navigation label, list heading, accessible name). Parts with terminals on their sides (`ports`), connections in `steps` from `PART:terminal` to `PART:terminal`, colour codes, part kinds, areas with cable glands, and `rules` such as connections per terminal. Routes are computed (libavoid), not drawn.
 
 4. Check the data before publishing:
 
@@ -44,7 +45,7 @@ Browser library, JSON Schema and check CLI. Plain JavaScript and CSS, no build s
    node assets/buildguide-0.1.0/buildguide-check.mjs guide.json
    ```
 
-   It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part, the per-terminal limit, and pages that `next` and `board` point to. It prints one line per problem and exits 1, or 2 without a file. `check(data)` from the same module returns the list. The schema itself is checked with any JSON Schema validator.
+   It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part and the per-terminal limit. It prints one line per problem and exits 1, or 2 without a file. `check(data)` from the same module returns the list. The schema itself is checked with any JSON Schema validator.
 
 ## Development
 
