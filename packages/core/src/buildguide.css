@@ -44,7 +44,7 @@ body:has(#assembly-guide){background:#f6f7f4;color:#24342e}
  --ag-danger-ink:#5a1f1f;
  --ag-danger-label:#b71c1c;
 }
-#assembly-guide{color:var(--ag-ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+#assembly-guide{background:var(--ag-page);color:var(--ag-ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 #assembly-guide *{box-sizing:border-box}
 #assembly-guide h1,#assembly-guide h2,#assembly-guide h3,#assembly-guide p,#assembly-guide figure{margin:0;color:inherit}
 #assembly-guide h1{font-size:28px;font-weight:650;line-height:1.25;letter-spacing:-.8px}
@@ -257,6 +257,7 @@ body.ag-no-scroll{overflow:hidden}
  #assembly-guide .ag-intro{display:block}
  #assembly-guide .ag-intro-media{display:none}
  body:has(#assembly-guide){background:#fff}
+ #assembly-guide{background:#fff}
  #assembly-guide .ag-top,#assembly-guide .ag-nav,#assembly-guide .ag-footer button,#assembly-guide .ag-steps,#assembly-guide .ag-board-toolbar,#assembly-guide .ag-wire-navigation,#assembly-guide .ag-bom-tools,#assembly-guide [data-action=export]{display:none}
  #assembly-guide .ag-main{padding:0;max-width:none}
  #assembly-guide .ag-board-canvas{height:auto;overflow:visible}

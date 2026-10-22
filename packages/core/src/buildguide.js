@@ -60,7 +60,7 @@
     function focusSelector() {
       const el = document.activeElement;
       if (!root.contains(el)) return null;
-      for (const name of ['data-action', 'data-step', 'data-wire', 'data-goto']) if (el.hasAttribute(name)) return `[${name}="${CSS.escape(el.getAttribute(name))}"]`;
+      for (const name of ['data-action', 'data-step', 'data-conn']) if (el.hasAttribute(name)) return `[${name}="${CSS.escape(el.getAttribute(name))}"]`;
       return el.id ? '#' + CSS.escape(el.id) : null;
     }
     let drawing, stopSizing;
@@ -175,7 +175,7 @@
     }
     function connectionRow(c, selected, index) {
       const key = connKey(c), done = checked(key), swatch = board.listColor !== false && !color(c).diode ? color(c).swatch || color(c).line : null, paint = swatch && CSS.supports('color', swatch);
-      const target = index >= 0 ? `data-wire="${index}"` : `data-goto="${esc(c.no)}"`;
+      const target = `data-conn="${esc(c.no)}" ` + (index >= 0 ? `data-wire="${index}"` : `data-goto="${esc(c.no)}"`);
       return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="Connection ${esc(c.no)}" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
     }
     const bom = D.bom || {}, items = bom.items || [];

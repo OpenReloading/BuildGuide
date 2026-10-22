@@ -2,6 +2,7 @@
 
 import html
 import json
+import math
 import shutil
 from pathlib import Path
 
@@ -16,6 +17,17 @@ from .check import problems
 
 HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
+
+
+def finite(value):
+    """False when a float anywhere in the data is NaN or infinite: json.dumps would write it as non-standard JSON."""
+    if isinstance(value, float):
+        return math.isfinite(value)
+    if isinstance(value, dict):
+        return all(finite(item) for item in value.values())
+    if isinstance(value, list):
+        return all(finite(item) for item in value)
+    return True
 
 
 class BuildGuidePlugin(BasePlugin):
@@ -34,6 +46,8 @@ class BuildGuidePlugin(BasePlugin):
                 raise PluginError(f"{data}: not valid JSON or YAML: {error}") from error
         if not isinstance(self.guide, dict):
             raise PluginError(f"{data}: not a guide object")
+        if not finite(self.guide):
+            raise PluginError(f"{data}: NaN or Infinity is not valid in a guide")
         if found := problems(self.guide):
             raise PluginError(f"{data}:\n" + "\n".join(found))
         config.watch.append(data)

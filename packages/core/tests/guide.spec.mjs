@@ -120,6 +120,21 @@ test('keyboard: focus stays on the control after a step or connection changes', 
   await expect(page.locator('[data-step="1"]')).toBeFocused();
 });
 
+test('keyboard: focus follows a connection chosen from another step', async ({ page }) => {
+  await page.goto(BASE + 'tubing/'); await ready(page);
+  const row = page.locator('.ag-wire-row [data-goto]').first();
+  const no = await row.getAttribute('data-conn');
+  await row.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator(`.ag-wire-row [data-conn="${no}"][data-wire]`)).toBeFocused();
+});
+
+test('colour: --ag-page paints the guide', async ({ page }) => {
+  await page.goto(BASE + 'bom/');
+  await page.locator('#assembly-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(1, 2, 3)'));
+  expect(await page.locator('#assembly-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(1, 2, 3)');
+});
+
 test('tubing: all connections listed, last connection ends the guide, keyboard selection', async ({ page }) => {
   const b = D.boards.tubing, all = b.steps.flatMap(s => s.connections);
   await page.goto(BASE + 'tubing/'); await ready(page);

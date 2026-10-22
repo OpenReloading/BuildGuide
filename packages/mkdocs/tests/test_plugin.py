@@ -79,3 +79,24 @@ def test_a_guide_page_without_a_mkdocs_page_fails_a_strict_build(tmp_path, caplo
     with pytest.raises(Abort):
         site(tmp_path, pages={k: v for k, v in PAGES.items() if k != "tubing"}, strict=True)
     assert "guide page tubing has no MkDocs page" in caplog.text
+
+
+@pytest.mark.parametrize("number", ["NaN", "Infinity", "-Infinity"])
+def test_non_finite_numbers_stop_the_build(tmp_path, caplog, number):
+    guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    guide["boards"]["wiring"]["size"][0] = "@@"
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "guide.json").write_text(json.dumps(guide).replace('"@@"', number), encoding="utf-8")
+    (tmp_path / "mkdocs.yml").write_text("site_name: Test\nplugins:\n  - buildguide:\n      data: guide.json\n", encoding="utf-8")
+    with pytest.raises(Abort):
+        build(load_config(str(tmp_path / "mkdocs.yml")))
+    assert "NaN or Infinity" in caplog.text
+
+
+def test_non_finite_numbers_in_yaml_stop_the_build(tmp_path, caplog):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "guide.yml").write_text("storage: s\nx:\n  - .nan\n", encoding="utf-8")
+    (tmp_path / "mkdocs.yml").write_text("site_name: Test\nplugins:\n  - buildguide:\n      data: guide.yml\n", encoding="utf-8")
+    with pytest.raises(Abort):
+        build(load_config(str(tmp_path / "mkdocs.yml")))
+    assert "NaN or Infinity" in caplog.text
