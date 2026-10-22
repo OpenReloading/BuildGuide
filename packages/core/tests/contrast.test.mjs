@@ -19,7 +19,9 @@ const ratio = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x,
 const TEXT = [['ink', 'surface'], ['ink', 'page'], ['muted', 'surface'], ['muted', 'page'], ['muted', 'surface-head'], ['muted', 'surface-soft'], ['muted', 'step-current-bg'],
   ['text', 'surface'], ['text', 'bom-hover'], ['accent', 'surface'], ['accent', 'page'], ['surface', 'primary'], ['surface', 'primary-hover'], ['surface', 'done'],
   ['control-ink', 'surface'], ['control-ink', 'control-hover'], ['ink', 'step-current-bg'], ['ink', 'row-selected'], ['ink', 'row-hover'], ['ink', 'error-bg'], ['muted', 'row-hover']];
-const GRAPHICS = [['control-line', 'surface'], ['focus', 'surface'], ['focus', 'page'], ['glow', 'surface'], ['swatch-line', 'surface'], ['diode-body', 'surface'], ['diode-band', 'diode-body'], ['step-current-line', 'surface']];
+const GRAPHICS = [['control-line', 'surface'], ['control-line', 'page'], ['control-line', 'control-hover'], ['control-line', 'surface-soft'], ['focus', 'surface'], ['focus', 'page'],
+  ['glow', 'surface'], ['swatch-line', 'surface'], ['swatch-line', 'row-selected'], ['swatch-line', 'row-hover'], ['swatch-line', 'bom-hover'], ['diode-body', 'surface'],
+  ['diode-band', 'diode-body'], ['step-current-line', 'surface']];
 
 test('the dark tokens are the same set as the light ones', () => {
   assert.ok(Object.keys(tokens.light).length > 25);
@@ -27,11 +29,10 @@ test('the dark tokens are the same set as the light ones', () => {
 });
 
 for (const scheme of ['dark', 'light']) {
-  test(`${scheme} tokens: text pairs reach 4.5${scheme === 'dark' ? ', controls and parts 3' : ''}`, () => {
+  test(`${scheme} tokens: text pairs reach 4.5, control borders, focus rings and drawn parts 3`, () => {
     const t = tokens[scheme], low = [];
     for (const [a, b] of TEXT) if (ratio(t[a], t[b]) < 4.5) low.push(`${a} on ${b}: ${ratio(t[a], t[b]).toFixed(2)}`);
-    // the light set keeps its soft control borders (1.5 to 2.5); the dark set was designed to the 3 for them
-    if (scheme === 'dark') for (const [a, b] of GRAPHICS) if (ratio(t[a], t[b]) < 3) low.push(`${a} on ${b}: ${ratio(t[a], t[b]).toFixed(2)}`);
+    for (const [a, b] of GRAPHICS) if (ratio(t[a], t[b]) < 3) low.push(`${a} on ${b}: ${ratio(t[a], t[b]).toFixed(2)}`);
     assert.deepEqual(low, []);
   });
 }
