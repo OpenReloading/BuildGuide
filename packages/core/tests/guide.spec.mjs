@@ -370,6 +370,17 @@ test('a foreign hash fragment keeps the boards where they are and stays in the h
   await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
 });
 
+test('a name-only fragment equal to a board key is an anchor, not a position', async ({ page }) => {
+  await inlinePage(page, 'same/', D, '<h2 id="wiring">Wiring</h2><div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'same/');
+  const wiring = boardOf(page, 'wiring');
+  await ready(wiring);
+  await wiring.locator('[data-step="1"]').click();
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await setHash(page, 'wiring');
+  await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+});
+
 test('history navigation without a hashchange moves the board', async ({ page }) => {
   const w = D.boards.wiring, s = w.steps[1], c = s.connections[1];
   await page.goto(url('wiring')); await ready(page);

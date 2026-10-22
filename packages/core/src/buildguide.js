@@ -36,7 +36,8 @@
     // the page-wide hash holds one key=value pair per board, so boards on one page keep their own position
     const param = encodeURIComponent(boardKey ?? '');
     const pairs = () => location.hash.slice(1).split('&').filter(Boolean);
-    const nameOf = pair => decode(pair.split('=')[0]);
+    // a fragment without = is an anchor (#wiring), never a board's position
+    const nameOf = pair => pair.includes('=') ? decode(pair.split('=')[0]) : null;
     let persistent = true, saved = {};
     const load = () => {
       let raw = null, found = {};
