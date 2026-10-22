@@ -1,4 +1,5 @@
-// <BuildGuide page="wiring"/>: mounts that page of the guide. Data and URLs come from the plugin's #buildguide-data.
+// <BuildGuide view="bom"/> and <BuildGuide view="board" board="wiring"/>: one guide component, any number per page.
+// Data and URLs come from the plugin's #buildguide-data.
 import React, { useEffect, useRef } from 'react';
 
 let core;
@@ -15,17 +16,26 @@ const loadCore = (src) =>
     document.head.appendChild(script);
   }));
 
-export default function BuildGuide({ page }) {
+export default function BuildGuide({ view, board }) {
   const root = useRef(null);
   useEffect(() => {
     const el = document.getElementById('buildguide-data');
-    const { core: url, site, assets } = el.dataset;
+    const { core: url, assets } = el.dataset;
+    let unmount;
+    let gone = false;
     loadCore(`${url}buildguide.js`)
-      .then((B) => B.mount(root.current, JSON.parse(el.textContent), { page, site, assets }))
+      .then((B) => {
+        // the component may be gone before core has loaded (navigation, StrictMode)
+        if (!gone) unmount = B.mount(root.current, JSON.parse(el.textContent), { view, board, assets });
+      })
       .catch(() => {
         if (root.current) root.current.textContent = 'Guide data unavailable.';
       });
-  }, [page]);
+    return () => {
+      gone = true;
+      unmount?.();
+    };
+  }, [view, board]);
   // the root stays empty for React: core owns its content
-  return React.createElement(React.Fragment, null, React.createElement('div', { id: 'assembly-guide', ref: root }), React.createElement('noscript', null, 'This guide needs JavaScript.'));
+  return React.createElement(React.Fragment, null, React.createElement('div', { ref: root }), React.createElement('noscript', null, 'This guide needs JavaScript.'));
 }
