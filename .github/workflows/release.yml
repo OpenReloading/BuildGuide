@@ -1,6 +1,7 @@
 name: Release
 # release-please keeps one release PR. Merging it tags each changed component (<component>-vX.Y.Z) and creates its
-# GitHub Release; the assets are built here.
+# GitHub Release; the assets are built here. The release PR's CI runs wait for a maintainer's approval (Approve
+# workflows to run), because github-actions opens the PR.
 on:
   push:
     branches: [main]
@@ -31,19 +32,6 @@ jobs:
           # API commits are unsigned)
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-      # CI runs for a pull request opened or updated with GITHUB_TOKEN wait for approval, so its required checks stay open.
-      # Closing and reopening it with RELEASE_PLEASE_TOKEN (fine-grained token, this repository only, Pull requests
-      # read and write) starts CI on the signed head. Without the secret, close and reopen it by hand.
-      - if: steps.release.outputs.prs_created == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-        run: |
-          if [ -z "$GH_TOKEN" ]; then echo "RELEASE_PLEASE_TOKEN not set: close and reopen the release pull request"; exit 0; fi
-          prs=$(gh pr list -R "$GITHUB_REPOSITORY" --state open --label 'autorelease: pending' --json number --jq '.[].number')
-          for pr in $prs; do
-            gh pr close "$pr" -R "$GITHUB_REPOSITORY"
-            gh pr reopen "$pr" -R "$GITHUB_REPOSITORY"
-          done
   core:
     needs: release-please
     if: needs.release-please.outputs.core == 'true'
