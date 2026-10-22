@@ -88,6 +88,7 @@
 .ag-guide .ag-detail-arrow{color:var(--ag-arrow)}
 .ag-guide .ag-verify{margin-left:auto;display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;font-size:12px}
 .ag-guide .ag-wire-navigation{position:sticky;bottom:0;z-index:10;display:flex;justify-content:space-between;align-items:center;margin:8px 0 20px;padding:6px 0;background:var(--ag-page);font-size:11px;color:var(--ag-muted)}
+.ag-guide .ag-step-note{margin:14px 0 0;padding:9px 12px;border-left:4px solid var(--ag-step-current-line);border-radius:0 6px 6px 0;background:var(--ag-surface-soft);font-size:13px}
 .ag-guide .ag-list-heading{margin:14px 0 10px}
 .ag-guide .ag-wire-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--ag-line);border-radius:8px;overflow:hidden;background:var(--ag-surface)}
 .ag-guide .ag-wire-row{display:flex;align-items:center;gap:13px;padding:0 14px;border-bottom:1px solid var(--ag-line);border-right:1px solid var(--ag-line)}
@@ -173,8 +174,8 @@ body.ag-no-scroll{overflow:hidden}
    wire detail, navigation and the step's connection list sit beside it. Below 900 px the controls follow the board. */
 @container (min-width:900px){
  .ag-guide .ag-work,.ag-guide.ag-expanded .ag-work{display:grid;grid-template-columns:minmax(0,1fr) clamp(320px,30vw,440px);column-gap:20px;
-  grid-template-rows:auto auto auto auto auto auto 1fr;
-  grid-template-areas:"board head" "board tool" "board detail" "board nav" "board lhead" "board list" "board ."}
+  grid-template-rows:auto auto auto auto auto auto auto 1fr;
+  grid-template-areas:"board head" "board tool" "board detail" "board nav" "board note" "board lhead" "board list" "board ."}
  .ag-guide .ag-board-toolbar{grid-area:tool;flex-wrap:wrap;gap:8px;margin:0 0 10px}
  .ag-guide .ag-work-heading{grid-area:head;margin-bottom:8px}
  .ag-guide .ag-work-heading h2{margin:0}
@@ -185,6 +186,7 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-connection-detail>.ag-cable{flex-basis:100%}
  .ag-guide .ag-verify{width:100%;margin:0;padding-top:8px;border-top:1px solid var(--ag-divider)}
  .ag-guide .ag-wire-navigation{grid-area:nav;margin:8px 0 0}
+ .ag-guide .ag-step-note{grid-area:note;margin:10px 0 6px}
  .ag-guide .ag-list-heading{grid-area:lhead;margin:4px 0 8px}
  .ag-guide .ag-wire-list{grid-area:list;align-self:start;grid-template-columns:1fr}
  .ag-guide .ag-wire-row{border-right:0}

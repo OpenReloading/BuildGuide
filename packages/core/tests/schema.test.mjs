@@ -17,3 +17,11 @@ test('the schema rejects a board without title and a misspelt key', () => {
   assert.equal(validate(guide), false);
   assert.deepEqual(validate.errors.map(e => e.instancePath).sort((x, y) => x.localeCompare(y)), ['/boards/tubing', '/bom/items/0']);
 });
+
+test('the schema accepts a step note and rejects one that is not text', () => {
+  const guide = read('../example/guide.json');
+  assert.equal(typeof guide.boards.wiring.steps[0].note, 'string');
+  guide.boards.wiring.steps[0].note = 1;
+  assert.equal(validate(guide), false);
+  assert.deepEqual(validate.errors.map(e => e.instancePath), ['/boards/wiring/steps/0/note']);
+});
