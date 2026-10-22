@@ -1,0 +1,11 @@
+/* Docusaurus signals its colour mode on <html>: dark gets the dark tokens, light the light ones, whatever the browser prefers. */
+@media screen {
+  html[data-theme='dark'] .ag-guide {
+    color-scheme: dark;
+    --ag-board-filter: invert(0.9) hue-rotate(180deg);
+  }
+  html[data-theme='light'] .ag-guide {
+    color-scheme: light;
+    --ag-board-filter: none;
+  }
+}

@@ -46,7 +46,7 @@
     const holder = document.createElement('div');
     const paper = new dia.Paper({
       el: holder, model: graph, width: W, height: H, cellViewNamespace: ns, interactive: false,
-      background: {color: '#ffffff'}, async: false,
+      background: {color: 'transparent'}, async: false,   // the canvas behind it carries the surface colour
       labelsLayer: true,   // connection numbers above the parts, never hidden under a terminal
     });
 

@@ -120,6 +120,51 @@ test('host styles do not restyle the components', async ({ page }) => {
   expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
 });
 
+// the stylesheet's own colours: --ag-<name>:light-dark(light, dark)
+const css = readFileSync(new URL('../src/buildguide.css', import.meta.url), 'utf8');
+const rgb = hex => { const full = hex.length === 4 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex, n = parseInt(full.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
+const token = (name, scheme) => rgb(css.match(new RegExp(`--ag-${name}:light-dark\\((#[0-9a-f]+), (#[0-9a-f]+)\\)`))[scheme === 'dark' ? 2 : 1]);
+// the signal of the host under test: Material's body attribute, Docusaurus' html attribute, or only the browser preference (core example)
+const signal = (page, want) => page.evaluate(scheme => {
+  if (document.body.hasAttribute('data-md-color-scheme')) { document.body.setAttribute('data-md-color-scheme', scheme === 'dark' ? 'slate' : 'default'); return 'host'; }
+  if (document.documentElement.hasAttribute('data-theme')) { document.documentElement.setAttribute('data-theme', scheme); return 'host'; }
+  if (scheme === 'light') document.documentElement.setAttribute('data-ag-scheme', 'light');
+  return 'browser';
+}, want);
+
+for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
+  test(`colour scheme: a ${want} host in a browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    const kind = await signal(page, want);
+    // a host signal beats the browser preference; the core example has none, so the preference decides unless the page opts out
+    const expected = kind === 'host' || want === 'light' ? want : os;
+    const style = await page.locator('.ag-guide').evaluate(el => ({ background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color, scheme: getComputedStyle(el).colorScheme,
+      filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter, surface: getComputedStyle(el.querySelector('.ag-panel')).backgroundColor }));
+    expect(style.background).toBe(token('page', expected));
+    expect(style.color).toBe(token('ink', expected));
+    expect(style.surface).toBe(token('surface', expected));
+    // the browser's own light scheme is 'normal' when no host or rule names one
+    expect(style.scheme === 'dark').toBe(expected === 'dark');
+    expect(style.filter).toBe(expected === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
+  });
+}
+
+test('colour scheme: a component prints light on a dark host', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto(url('wiring')); await ready(page);
+  await signal(page, 'dark');
+  await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
+  expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
+});
+
+test('colour scheme: a host sets a token itself in both schemes', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto(url('bom'));
+  await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(9, 8, 7)'));
+  expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 8, 7)');
+});
+
 test('tubing: all connections listed, keyboard selection', async ({ page }) => {
   const b = D.boards.tubing, all = b.steps.flatMap(s => s.connections);
   await page.goto(url('tubing')); await ready(page);
@@ -236,7 +281,11 @@ test('phones: no sideways scrolling, the next action stays on screen', async ({ 
 });
 
 test('storage blocked: ticks last for the visit, each component says so', async ({ page }) => {
-  await page.addInitScript(() => Object.defineProperty(window, 'localStorage', { get() { throw Error('blocked'); } }));
+  // the guide's key is blocked; a host's own use of localStorage (Material's palette) keeps working
+  await page.addInitScript(key => {
+    const real = window.localStorage, blocked = () => { throw Error('blocked'); };
+    Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? blocked() : real.getItem(k)), setItem: (k, v) => (k === key ? blocked() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
+  }, D.storage);
   await page.goto(url('wiring'));
   await expect(page.locator('.ag-status')).toHaveText('Storage unavailable: progress is not saved.');
   await page.locator('.ag-verify input').check();

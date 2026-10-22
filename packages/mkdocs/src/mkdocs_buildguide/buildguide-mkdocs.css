@@ -1,2 +1,7 @@
 /* MkDocs Material: component tables stay out of Material's table wrapper. */
 .ag-guide .md-typeset__scrollwrap,.ag-guide .md-typeset__table{display:block;width:100%;margin:0;padding:0;overflow:visible}
+/* Material signals its scheme on <body>: the slate scheme gets the dark tokens, any other scheme the light ones, whatever the browser prefers. */
+@media screen{
+ [data-md-color-scheme="slate"] .ag-guide{color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}
+ body[data-md-color-scheme]:not([data-md-color-scheme="slate"]) .ag-guide{color-scheme:light;--ag-board-filter:none}
+}
