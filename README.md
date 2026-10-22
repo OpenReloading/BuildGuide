@@ -12,6 +12,8 @@ Interactive build guides from one JSON file: introduction, BOM checklist, and wi
 
 Docs and the live example guide: https://openreloading.github.io/BuildGuide/. Each component has its own version, changelog and tag. Releases: [GitHub Releases](https://github.com/OpenReloading/BuildGuide/releases).
 
+Questions and ideas: [Discord](https://discord.gg/KkYJ5fdukR).
+
 ## Development
 
 Builds and tests run in the dev container (`.devcontainer/`, Playwright image with uv):
