@@ -17,9 +17,16 @@ from .check import problems
 
 HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
-# an opening tag with data-buildguide, and whether the element is empty
-COMPONENT = re.compile(r"""(<div\b[^>]*?\bdata-buildguide=["']?(\w+)["']?[^>]*>)(</div>)?""")
-BOARD = re.compile(r"""\bdata-board=["']?([^"'\s>]+)""")
+# a div's opening tag; quoted attribute values may hold a >
+TAG = re.compile(r"""<div\b(?:[^>"']|"[^"]*"|'[^']*')*>""")
+
+
+def attribute(tag, name):
+    """The value of an attribute as the browser reads it ('' when bare or empty), None when the tag has none."""
+    match = re.search(rf"""(?<![\w-]){name}(?![\w-])(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?""", tag)
+    if match is None:
+        return None
+    return html.unescape(next((g for g in match.groups() if g is not None), ""))
 
 
 def finite(value):
@@ -60,22 +67,28 @@ class BuildGuidePlugin(BasePlugin):
 
     # components are found in the rendered page; an unknown view or board key is a warning, an error with --strict
     def on_page_content(self, output, page, config, files):
-        def component(match):
-            tag, view, empty = match.groups()
-            board = BOARD.search(tag)
-            key = board and html.unescape(board.group(1))
-            if view == "bom":
-                known = "bom" in self.guide
-            elif view == "board":
-                known = key in self.guide.get("boards", {})
-            else:
-                known = False
-            if not known:
+        for tag in TAG.findall(output):
+            view = attribute(tag, "data-buildguide")
+            if view is None:
+                continue
+            key = attribute(tag, "data-board")
+            if view == "":
+                log.warning(f"{page.file.src_uri}: data-buildguide has no value")
+            elif not (
+                (view == "bom" and "bom" in self.guide) or (view == "board" and key in (self.guide.get("boards") or {}))
+            ):
                 log.warning(f"{page.file.src_uri}: no guide component {view}{' ' + key if key else ''}")
             self.pages.add(page.file.src_uri)
-            return tag + ("<noscript>This guide needs JavaScript.</noscript></div>" if empty else "")
+        return output
 
-        return COMPONENT.sub(component, output)
+    # the note for visitors without JavaScript goes in here, after the search index took the content
+    def add_note(self, output):
+        def note(match):
+            tag = match.group(0)
+            empty = match.string.startswith("</div>", match.end())
+            return tag + ("<noscript>This guide needs JavaScript.</noscript>" if empty and attribute(tag, "data-buildguide") is not None else "")
+
+        return TAG.sub(note, output)
 
     # the data goes in after the content, so the search index leaves it out; only pages with a component get it
     def on_post_page(self, output, page, config):
@@ -89,7 +102,7 @@ class BuildGuidePlugin(BasePlugin):
             f'<script type="application/json" id="guide-data" data-assets="{html.escape(assets)}">{data}</script>'
             f'<script src="{core}buildguide.js" defer></script>'
         )
-        output = output.replace("</head>", styles + "</head>", 1)
+        output = self.add_note(output).replace("</head>", styles + "</head>", 1)
         at = output.rfind("</body>")
         return output[:at] + scripts + output[at:]
 

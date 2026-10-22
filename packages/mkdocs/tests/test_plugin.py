@@ -21,7 +21,7 @@ def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None):
         (tmp_path / "docs" / src).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs" / src).write_text(text, encoding="utf-8")
     (tmp_path / "mkdocs.yml").write_text(
-        "site_name: Test\nplugins:\n  - buildguide:\n      data: guide.json\n      assets: media/\n", encoding="utf-8"
+        "site_name: Test\nplugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n", encoding="utf-8"
     )
     build(load_config(str(tmp_path / "mkdocs.yml"), strict=strict))
     return tmp_path / "site"
@@ -87,6 +87,10 @@ def test_problems_in_the_data_stop_the_build(tmp_path, caplog):
         ('<div data-buildguide="video"></div>', "no guide component video"),
         ('<div data-buildguide="board" data-board="nowhere"></div>', "no guide component board nowhere"),
         ('<div data-buildguide="board"></div>', "no guide component board"),
+        ('<div data-buildguide="bom-x"></div>', "no guide component bom-x"),
+        ('<div data-buildguide="boards" data-board="wiring"></div>', "no guide component boards wiring"),
+        ('<div data-buildguide></div>', "data-buildguide has no value"),
+        ('<div data-buildguide=""></div>', "data-buildguide has no value"),
     ],
 )
 def test_an_unknown_component_fails_a_strict_build(tmp_path, caplog, tag, message):
@@ -127,3 +131,23 @@ def test_non_finite_numbers_in_yaml_stop_the_build(tmp_path, caplog):
     with pytest.raises(Abort):
         build(load_config(str(tmp_path / "mkdocs.yml")))
     assert "NaN or Infinity" in caplog.text
+
+
+@pytest.mark.parametrize("attribute", ['data-board="wiring box"', "data-board='wiring box'", 'class="x" data-board="wiring box" id="y"'])
+def test_a_board_key_may_hold_spaces_and_any_quote(tmp_path, attribute):
+    guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    guide["boards"]["wiring box"] = guide["boards"].pop("wiring")
+    out = site(tmp_path, guide=guide, pages={"index.md": f'<div data-buildguide="board" {attribute}></div>\n'}, strict=True)
+    assert "guide-data" in (out / "index.html").read_text(encoding="utf-8")
+
+
+def test_the_no_javascript_note_is_on_the_page_but_not_in_the_search_index(tmp_path):
+    out = site(tmp_path)
+    assert "needs JavaScript" in (out / "all/index.html").read_text(encoding="utf-8")
+    assert "needs JavaScript" not in (out / "search/search_index.json").read_text(encoding="utf-8")
+
+
+def test_a_component_with_content_keeps_it(tmp_path):
+    pages = {"index.md": '<div data-buildguide="bom">Plain text</div>\n'}
+    index = (site(tmp_path, pages=pages) / "index.html").read_text(encoding="utf-8")
+    assert '<div data-buildguide="bom">Plain text</div>' in index
