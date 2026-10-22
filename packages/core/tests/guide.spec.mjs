@@ -81,6 +81,33 @@ test('wiring: scopes, ticks per exact connection, the last connection ends the b
   await expect(page.locator('[data-action=next-wire]')).toHaveText('Last connection');
 });
 
+for (const [key, b] of boards) {
+  test(`${key}: the note of a step shows with that step, above its connection list`, async ({ page }) => {
+    expect(b.steps.some(s => s.note)).toBe(true);
+    expect(b.steps.some(s => !s.note)).toBe(true);
+    await page.goto(url(key)); await ready(page);
+    for (const [i, s] of b.steps.entries()) {
+      await page.locator(`.ag-steps [data-step="${i}"]`).click();
+      await expect(page.locator(`.ag-steps [data-step="${i}"]`)).toHaveAttribute('aria-current', 'step');
+      await expect(page.locator('.ag-step-note')).toHaveCount(s.note ? 1 : 0);
+      if (s.note) {
+        await expect(page.locator('.ag-step-note')).toHaveText(s.note);
+        await expect(page.locator('.ag-step-note + .ag-list-heading')).toHaveCount(1);
+      }
+    }
+  });
+}
+
+test('a step note is text, not markup', async ({ page }) => {
+  const d = structuredClone(D);
+  d.boards.wiring.steps[0].note = '<b>Unplug</b> & check <img src=x onerror=window.hit=1>';
+  await inlinePage(page, 'note/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'note/'); await ready(page);
+  await expect(page.locator('.ag-step-note')).toHaveText(d.boards.wiring.steps[0].note);
+  await expect(page.locator('.ag-step-note b, .ag-step-note img')).toHaveCount(0);
+  expect(await page.evaluate(() => window.hit)).toBeUndefined();
+});
+
 test('keyboard: focus stays on the control after a step or connection changes', async ({ page }) => {
   await page.goto(url('wiring')); await ready(page);
   await page.locator('[data-action=next-wire]').focus();

@@ -58,7 +58,7 @@
         "X1": { "kind": "join", "name": "Join X1", "sub": "0 V", "at": [300, 520], "size": [160, 36], "ports": { "top": ["1", "2", "3", "4"] } }
       },
       "steps": [
-        { "id": "A", "title": "Supply", "connections": [
+        { "id": "A", "title": "Supply", "note": "Unplug the 12 V supply before you touch a terminal. Check that the fuse is out of its holder.", "connections": [
           { "no": "1", "a": "PSU:+", "b": "F1:1", "color": "RD", "cable": "Supply cable", "size": "2 x 0.75 mm²" },
           { "no": "2", "a": "PSU:-", "b": "X1:1", "color": "BK", "cable": "Supply cable", "size": "2 x 0.75 mm²" }
         ] },
@@ -68,7 +68,7 @@
           { "no": "5", "a": "S1:4", "b": "K1:A1", "color": "RD", "size": "0.5 mm²" },
           { "no": "6", "a": "K1:A2", "b": "X1:2", "color": "BK", "size": "0.5 mm²" }
         ] },
-        { "id": "C", "title": "Valve", "connections": [
+        { "id": "C", "title": "Valve", "note": "Check the diode: the ring end goes to the plus terminal of the valve coil.", "connections": [
           { "no": "7", "a": "F1:2", "b": "K1:11", "color": "RD", "size": "0.5 mm²" },
           { "no": "8", "a": "K1:14", "b": "Y1:1", "color": "RD", "cable": "Valve cable", "size": "2 x 0.5 mm²" },
           { "no": "9", "a": "Y1:2", "b": "X1:3", "color": "BK", "cable": "Valve cable", "size": "2 x 0.5 mm²" },
@@ -103,7 +103,7 @@
         { "id": "2", "title": "Regulator to valve", "connections": [{ "no": "2", "a": "REG:out", "b": "V1:P", "color": "AIR", "la": "Regulator OUT", "lb": "Valve P" }] },
         { "id": "3", "title": "Valve A to cap end", "connections": [{ "no": "3", "a": "V1:A", "b": "CYL:cap", "color": "AIR", "la": "Valve A", "lb": "Cylinder cap end" }] },
         { "id": "4", "title": "Valve B to rod end", "connections": [{ "no": "4", "a": "V1:B", "b": "CYL:rod", "color": "AIR", "la": "Valve B", "lb": "Cylinder rod end" }] },
-        { "id": "5", "title": "Exhaust R", "connections": [{ "no": "5", "a": "V1:R", "b": "SIL:R", "color": "AIR", "la": "Valve R", "lb": "Silencer R" }] },
+        { "id": "5", "title": "Exhaust R", "note": "Fit the silencers before you apply air.", "connections": [{ "no": "5", "a": "V1:R", "b": "SIL:R", "color": "AIR", "la": "Valve R", "lb": "Silencer R" }] },
         { "id": "6", "title": "Exhaust S", "connections": [{ "no": "6", "a": "V1:S", "b": "SIL:S", "color": "AIR", "la": "Valve S", "lb": "Silencer S" }] }
       ]
     }

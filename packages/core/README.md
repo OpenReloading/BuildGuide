@@ -39,7 +39,7 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    - `storage`: localStorage key for the ticks, shared by all components. A tick belongs to one exact connection (number and both ends): changing an end clears it. Each component says at its bottom whether progress is saved.
    - `bom`: note, BOM items with groups, search and CSV export.
-   - `boards`: one entry per board key, with a required `title` (step navigation label, list heading, accessible name). Parts with terminals on their sides (`ports`), connections in `steps` from `PART:terminal` to `PART:terminal`, colour codes, part kinds, areas with cable glands, and `rules` such as connections per terminal. Routes are computed (libavoid), not drawn.
+   - `boards`: one entry per board key, with a required `title` (step navigation label, list heading, accessible name). Parts with terminals on their sides (`ports`), connections in `steps` (each step has an `id`, a `title`, an optional `note` shown as plain text with the step above its connection list, and its `connections`) from `PART:terminal` to `PART:terminal`, colour codes, part kinds, areas with cable glands, and `rules` such as connections per terminal. Routes are computed (libavoid), not drawn.
 
 4. Check the data before publishing:
 

@@ -148,6 +148,7 @@
             "properties": {
               "id": { "type": "string" },
               "title": { "type": "string" },
+              "note": { "type": "string", "description": "text shown with the step, above its connection list" },
               "connections": {
                 "type": "array",
                 "minItems": 1,
