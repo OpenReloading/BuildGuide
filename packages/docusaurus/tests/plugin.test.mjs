@@ -19,7 +19,7 @@ test('loads and checks the data, injects it with the core URLs', async () => {
 
 test('assets is a folder below baseUrl', () => {
   const url = (assets) => site(example, assets === undefined ? {} : { assets }).injectHtmlTags({ content: {} }).headTags[1].match(/data-assets="([^"]*)"/)[1];
-  assert.deepEqual([undefined, '/media', 'media/', 'a/b'].map(url), ['/docs/assets/', '/docs/media/', '/docs/media/', '/docs/a/b/']);
+  assert.deepEqual([undefined, '/', '', '/media', 'media/', 'a/b'].map(url), ['/docs/assets/', '/docs/', '/docs/', '/docs/media/', '/docs/media/', '/docs/a/b/']);
 });
 
 test('problems in the data stop the build, one line each', async () => {

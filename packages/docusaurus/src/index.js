@@ -12,7 +12,8 @@ module.exports = function buildguide(context, options = {}) {
   const data = path.resolve(context.siteDir, options.data);
   const core = `${context.baseUrl}assets/buildguide/`;
   // the folder of BOM images below baseUrl, as a URL path with one trailing slash
-  const assets = context.baseUrl + (options.assets ?? 'assets/').replace(/^\/+|\/+$/g, '') + '/';
+  const below = (options.assets ?? 'assets/').replace(/^\/+|\/+$/g, '');
+  const assets = context.baseUrl + (below && `${below}/`);
   return {
     name: 'docusaurus-plugin-buildguide',
     getThemePath: () => './theme',
