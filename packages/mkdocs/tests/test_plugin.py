@@ -12,9 +12,9 @@ EXAMPLE = Path(__file__).parents[2] / "core/example/guide.json"
 PAGES = {"tubing": "a/tubing.md", "bom": "bom.md", "wiring": "wiring.md", "intro": "index.md"}
 
 
-def site(tmp_path, pages=PAGES, guide=None, strict=False):
+def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None):
     guide = guide or json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    (tmp_path / "guide.json").write_text(json.dumps(guide), encoding="utf-8")
+    (tmp_path / "guide.json").write_text(json.dumps(guide, indent=indent), encoding="utf-8")
     for page_id, src in pages.items():
         (tmp_path / "docs" / src).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs" / src).write_text(f"---\nbuildguide: {page_id}\n---\n", encoding="utf-8")
@@ -54,6 +54,11 @@ def test_inline_data_cannot_end_its_script(tmp_path):
     page = (site(tmp_path, guide=guide) / "index.html").read_text(encoding="utf-8")
     assert "</script><script>alert(1)" not in page
     assert guide_data(page)["intro"]["title"] == guide["intro"]["title"]
+
+
+def test_json_data_indented_with_tabs_is_read(tmp_path):
+    page = (site(tmp_path, indent="\t") / "index.html").read_text(encoding="utf-8")
+    assert guide_data(page)["storage"]
 
 
 def test_problems_in_the_data_stop_the_build(tmp_path, caplog):

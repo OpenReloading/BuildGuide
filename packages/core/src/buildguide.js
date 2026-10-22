@@ -10,10 +10,11 @@
   const decode = v => { try { return decodeURIComponent(v); } catch { return v; } };
   const button = (text, action, extra = '') => `<button type="button" data-action="${action}" ${extra}>${text}</button>`;
   const loaded = {};
+  // a failed load is not cached: the next render tries again
   const loadScript = src => loaded[src] ||= new Promise((resolve, reject) => {
     const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('cannot load ' + src));
     document.head.appendChild(s);
-  });
+  }).catch(error => { delete loaded[src]; throw error; });
   // JointJS and the board renderer load only on board pages
   const boardRenderer = () => loadScript(new URL('vendor/joint/joint.min.js', HERE).href)
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
@@ -55,8 +56,16 @@
       const j = steps[state.step].connections.findIndex(c => c.no === bits[1]); state.wire = j >= 0 ? j : 0;
     }
 
+    // a render replaces the markup: the focused control is found again by its data attribute or id
+    function focusSelector() {
+      const el = document.activeElement;
+      if (!root.contains(el)) return null;
+      for (const name of ['data-action', 'data-step', 'data-wire', 'data-goto']) if (el.hasAttribute(name)) return `[${name}="${CSS.escape(el.getAttribute(name))}"]`;
+      return el.id ? '#' + CSS.escape(el.id) : null;
+    }
     let drawing, stopSizing;
     function render() {
+      const refocus = focusSelector();
       stopSizing?.();
       drawing?.destroy(); drawing = null;
       root.classList.toggle('ag-diagram-page', !!board);
@@ -64,8 +73,8 @@
       const B = D.brand || {}, words = [].concat(B.wordmark || []);
       // board pages: the short text, the full text one click away
       const notice = (n, cls, fallback, role) => !n ? '' : board && n.short != null
-        ? `<div class="${cls}" role="${role}"><details><summary><b>${esc(n.label || fallback)}</b> ${esc(n.short)}</summary><p>${esc(n.text)}</p></details></div>`
-        : `<p class="${cls}" role="${role}"><b>${esc(n.label || fallback)}</b> ${esc(n.text)}</p>`;
+        ? `<div class="ag-notice ${cls}" role="${role}"><details class="ag-notice-details"><summary class="ag-notice-summary"><b>${esc(n.label || fallback)}</b> ${esc(n.short)}</summary><p class="ag-notice-full">${esc(n.text)}</p></details></div>`
+        : `<p class="ag-notice ${cls}" role="${role}"><b>${esc(n.label || fallback)}</b> ${esc(n.text)}</p>`;
       root.innerHTML = `<header class="ag-top"><div class="ag-top-inner"><a class="ag-brand" href="${esc(pageURL(pages[0]))}">${B.mark ? `<img class="ag-mark" src="${esc(safeURL(B.mark, ASSETS))}" alt="" width="36" height="36">` : ''}<span class="ag-wordmark">${esc(words[0])}${words[1] ? `<span>${esc(words[1])}</span>` : ''}</span>${B.label ? `<span class="ag-brand-label">${esc(B.label)}</span>` : ''}</a></div></header>
       <main class="ag-main">${notice(D.prerelease, 'ag-prerelease', 'Pre-release', 'alert')}<nav class="ag-nav" aria-label="Guide pages">${pages.map(p => `<a href="${esc(pageURL(p))}" ${p === page ? 'aria-current="page"' : ''}>${esc(p.title)}</a>`).join('')}</nav>${notice(D.warning, 'ag-warning', 'Safety', 'note')}<div id="ag-content">${page.view === 'intro' ? renderIntro() : page.view === 'bom' ? renderBOM() : renderBoard()}</div>
       <footer class="ag-footer"><span>${board ? (persistent ? 'Progress saved in this browser' : 'Storage unavailable · progress lasts for this visit') : esc(B.footer || '')}${D.revision ? ' · revision ' + esc(D.revision) : ''}</span>${button('Print', 'print')}</footer></main>`;
@@ -77,7 +86,7 @@
           if (rendered.dead) return;
           rendered.inner = mountBoard(canvas, board, {key: page.board, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(page, i, steps[i].connections.findIndex(c => c.no === no)); }});
-        }).catch(() => { canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
+        }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
         root.querySelectorAll('[data-wire]').forEach(row => {
           const no = steps[state.step].connections[Number(row.dataset.wire)].no;
           row.onmouseenter = () => drawing?.highlight(no, true);
@@ -86,6 +95,7 @@
         stopSizing = fitWorkspace();
       }
       updateScreenButton();
+      if (refocus) root.querySelector(refocus)?.focus({preventScroll: true});
       // phones: bring the current step into the strip without moving the page
       const strip = root.querySelector('.ag-steps'), current = strip?.querySelector('[aria-current]');
       if (current) { const a = strip.getBoundingClientRect(), b = current.getBoundingClientRect(); strip.scrollLeft += b.left - a.left - (a.width - b.width) / 2; }
@@ -166,10 +176,10 @@
     function connectionRow(c, selected, index) {
       const key = connKey(c), done = checked(key), swatch = board.listColor !== false && !color(c).diode ? color(c).swatch || color(c).line : null, paint = swatch && CSS.supports('color', swatch);
       const target = index >= 0 ? `data-wire="${index}"` : `data-goto="${esc(c.no)}"`;
-      return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="Connection ${esc(c.no)} checked" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
+      return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="Connection ${esc(c.no)}" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
     }
     const bom = D.bom || {}, items = bom.items || [];
-    const filteredParts = () => items.filter(p => `${p.part} ${p.spec} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()));
+    const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()));
     function renderBOM() {
       return `<section><div class="ag-page-heading"><div><h1>${esc(page.title)}</h1>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions"><span class="ag-progress">${count(items, bomKey)} / ${items.length} checked</span>${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" id="ag-search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label></div><div id="ag-bom-results">${bomRows()}</div></section>`;
     }
@@ -181,7 +191,7 @@
         const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)}</th></tr>` : ''; group = p.group;
         const link = p.link ? ` <a class="ag-source-link" href="${esc(safeURL(p.link, location.href))}" target="_blank" rel="noopener">${esc(bom.linkLabel || 'Link')} ↗</a>` : '';
         const done = checked(bomKey(p));
-        return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)} checked" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<img src="${esc(safeURL(p.image, ASSETS))}" alt="" loading="lazy">` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
+        return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)}" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<img src="${esc(safeURL(p.image, ASSETS))}" alt="" loading="lazy">` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
       };
       return `<div class="ag-bom-table"><table><caption class="ag-sr">Bill of materials</caption><thead><tr><th scope="col">Qty</th><th scope="col">Component</th><th scope="col">Specification</th></tr></thead><tbody>${parts.map(row).join('')}</tbody></table></div><p class="ag-result-count">${parts.length} / ${items.length} components</p>`;
     }

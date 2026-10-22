@@ -20,12 +20,18 @@ log = get_plugin_logger(__name__)
 
 class BuildGuidePlugin(BasePlugin):
     # a typed Config cannot have an option named data (it is the UserDict's own attribute)
-    config_scheme = (("data", c.File(exists=True)), ("assets", c.Type(str, default="assets/")))
+    config_scheme = (("data", c.File(exists=True, required=True)), ("assets", c.Type(str, default="assets/")))
 
     def on_config(self, config):
         data = self.config["data"]
-        with open(data, encoding="utf-8") as f:
-            self.guide = yaml.safe_load(f)  # YAML or JSON
+        text = Path(data).read_text(encoding="utf-8")
+        try:
+            self.guide = json.loads(text)  # YAML does not read JSON that is indented with tabs
+        except ValueError:
+            try:
+                self.guide = yaml.safe_load(text)
+            except yaml.YAMLError as error:
+                raise PluginError(f"{data}: not valid JSON or YAML: {error}") from error
         if not isinstance(self.guide, dict):
             raise PluginError(f"{data}: not a guide object")
         if found := problems(self.guide):
