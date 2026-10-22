@@ -110,7 +110,9 @@ test('colour: --ag-page paints the component', async ({ page }) => {
 test('host styles do not restyle the components', async ({ page }) => {
   await page.goto(url('wiring')); await ready(page);
   const size = sel => page.locator(sel).first().evaluate(el => getComputedStyle(el).fontSize);
-  expect(await size('.ag-guide .ag-work-heading h2')).toBe('20px');
+  // the stylesheet's own value: 18px in a component narrower than 760px, else 20px
+  const narrow = await page.locator('.ag-guide').evaluate(el => el.clientWidth <= 760);
+  expect(await size('.ag-guide .ag-work-heading h2')).toBe(narrow ? '18px' : '20px');
   await page.goto(url('bom'));
   expect(await size('.ag-bom-table th')).toBe('11px');
   expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
