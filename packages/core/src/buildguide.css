@@ -1,40 +1,41 @@
-/* Colours are --ag-* custom properties on .ag-guide: a site overrides them there.
+/* Colours are --ag-* custom properties on .ag-guide: a site overrides them there. Each is light-dark(light, dark): the dark value
+   applies where the component's color-scheme is dark (see the end of this file).
    BuildGuide styles. Everything is scoped to .ag-guide, the class a mounted component carries. Layout follows the width of
    the component (container queries), not of the window. */
 .ag-guide{
- --ag-ink:#24342e;
- --ag-muted:#637164;
- --ag-accent:#21634c;
- --ag-line:#dce3dc;
- --ag-text:#526253;
- --ag-page:#f6f7f4;
- --ag-surface:#fff;
- --ag-surface-soft:#edf2e8;
- --ag-surface-head:#eef2e8;
- --ag-surface-chip:#f5f7f2;
- --ag-primary:#2c664c;
- --ag-primary-hover:#215339;
- --ag-done:#326349;
- --ag-focus:#408967;
- --ag-glow:#2fa559;
- --ag-divider:#d8e1d0;
- --ag-detail-line:#dce5d4;
- --ag-step-current-bg:#e7f1e2;
- --ag-step-current-line:#639168;
- --ag-control-line:#cbd8c8;
- --ag-control-ink:#354d35;
- --ag-control-hover:#e6eee0;
- --ag-placeholder-line:#a9b9ab;
- --ag-swatch-line:#98a79c;
- --ag-row-arrow:#819375;
- --ag-arrow:#718567;
- --ag-row-selected:#eff5e9;
- --ag-row-selected-bar:#5c8a57;
- --ag-row-hover:#f3f7ee;
- --ag-bom-hover:#fafcf7;
- --ag-error-bg:#fff0d5;
- --ag-diode-body:#202d28;
- --ag-diode-band:#c4cdd0;
+ --ag-ink:light-dark(#24342e, #e4ebe6);
+ --ag-muted:light-dark(#5e6c5f, #a9b6ac);
+ --ag-accent:light-dark(#21634c, #72d6aa);
+ --ag-line:light-dark(#dce3dc, #3b4740);
+ --ag-text:light-dark(#526253, #bac6bd);
+ --ag-page:light-dark(#f6f7f4, #171c19);
+ --ag-surface:light-dark(#fff, #202722);
+ --ag-surface-soft:light-dark(#edf2e8, #2a332d);
+ --ag-surface-head:light-dark(#eef2e8, #2b352e);
+ --ag-surface-chip:light-dark(#f5f7f2, #273029);
+ --ag-primary:light-dark(#2c664c, #66d3a3);
+ --ag-primary-hover:light-dark(#215339, #8ae2bb);
+ --ag-done:light-dark(#326349, #66d3a3);
+ --ag-focus:light-dark(#408967, #72d6aa);
+ --ag-glow:light-dark(#2fa559, #4ade80);
+ --ag-divider:light-dark(#d8e1d0, #3b4740);
+ --ag-detail-line:light-dark(#dce5d4, #415046);
+ --ag-step-current-bg:light-dark(#e7f1e2, #24382c);
+ --ag-step-current-line:light-dark(#639168, #5fae80);
+ --ag-control-line:light-dark(#cbd8c8, #7f8d84);
+ --ag-control-ink:light-dark(#354d35, #d8e2da);
+ --ag-control-hover:light-dark(#e6eee0, #34413a);
+ --ag-placeholder-line:light-dark(#a9b9ab, #5f6d64);
+ --ag-swatch-line:light-dark(#98a79c, #8c9b91);
+ --ag-row-arrow:light-dark(#819375, #9aab92);
+ --ag-arrow:light-dark(#718567, #9aab92);
+ --ag-row-selected:light-dark(#eff5e9, #263b2e);
+ --ag-row-selected-bar:light-dark(#5c8a57, #5fae80);
+ --ag-row-hover:light-dark(#f3f7ee, #2b362f);
+ --ag-bom-hover:light-dark(#fafcf7, #29322c);
+ --ag-error-bg:light-dark(#fff0d5, #4a3b17);
+ --ag-diode-body:light-dark(#202d28, #cfd6d1);
+ --ag-diode-band:light-dark(#c4cdd0, #4a554e);
 }
 .ag-guide{container-type:inline-size;padding:12px;background:var(--ag-page);color:var(--ag-ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .ag-guide *{box-sizing:border-box}
@@ -71,7 +72,7 @@
 .ag-guide .ag-panel{background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:10px;overflow:hidden}
 .ag-guide .ag-board-canvas{position:relative;display:flex;height:var(--ag-canvas-height,240px);overflow:auto;background:var(--ag-surface);cursor:grab;overscroll-behavior:auto}
 .ag-guide .ag-board-canvas:active{cursor:grabbing}
-.ag-guide .ag-board-canvas>div{margin:auto;flex-shrink:0}
+.ag-guide .ag-board-canvas>div{margin:auto;flex-shrink:0;filter:var(--ag-board-filter,none)}
 .ag-guide .ag-board-canvas svg{display:block;width:100%;height:100%;max-width:none;font-family:inherit}
 .ag-guide .ag-board-canvas [data-connection],.ag-guide .ag-board-canvas .joint-labels-layer{cursor:pointer}
 .ag-guide .ag-board-canvas [data-connection]:focus{outline:none;filter:drop-shadow(0 0 3px var(--ag-glow))}
@@ -198,4 +199,13 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-part-cell{min-width:0}
  .ag-guide .ag-bom-table th,.ag-guide .ag-bom-table td{padding:8px}
  .ag-guide .ag-panel,.ag-guide tr{break-inside:avoid}
+}
+/* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,
+   wire and part colours keep their hue). A host that signals dark sets color-scheme:dark and the filter on .ag-guide;
+   without a host signal the browser preference decides. Opt out with data-ag-scheme="light" on the component or an ancestor. */
+@media screen and (prefers-color-scheme: dark){
+ .ag-guide:not([data-ag-scheme=light], [data-ag-scheme=light] *){color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}
+}
+@media print{
+ .ag-guide{color-scheme:light}
 }

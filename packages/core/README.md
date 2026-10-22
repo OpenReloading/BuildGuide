@@ -33,6 +33,8 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    Colours are `--ag-*` custom properties on `.ag-guide` (list at the top of `buildguide.css`). A site overrides them in its own stylesheet, for example `.ag-guide{--ag-accent:#0a5}`. `--ag-page` is the component background.
 
+   Dark theme: every colour is a `light-dark()` pair (Chrome 123, Firefox 120, Safari 17.5 and later) that follows the component's `color-scheme`. Without a host signal the browser preference applies (`prefers-color-scheme`); `data-ag-scheme="light"` on the component or an ancestor opts out. A host that signals dark sets `color-scheme: dark` and `--ag-board-filter: invert(.9) hue-rotate(180deg)` on `.ag-guide`, which also darkens the board drawing. Print is always light.
+
 3. Write the guide data. `buildguide.schema.json` (JSON Schema 2020-12) describes it, and `example/guide.json` uses every part of it.
 
    - `storage`: localStorage key for the ticks, shared by all components. A tick belongs to one exact connection (number and both ends): changing an end clears it. Each component says at its bottom whether progress is saved.

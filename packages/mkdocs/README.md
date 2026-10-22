@@ -46,7 +46,7 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
 
 The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a `data-buildguide` without value, or a BOM component without `bom` data, is a warning (an error with `--strict`).
 
-On pages with a component the plugin sets `data-assets` on the inline data, inlines the data once, and loads core from `assets/buildguide/` in the built site. Other pages get nothing. `buildguide-mkdocs.css` only keeps component tables out of Material's table wrapper: the Material header, tabs, sidebars and footer stay. Leave Material's `navigation.instant` off (not tested with components).
+On pages with a component the plugin sets `data-assets` on the inline data, inlines the data once, and loads core from `assets/buildguide/` in the built site. Other pages get nothing. `buildguide-mkdocs.css` only keeps component tables out of Material's table wrapper: the Material header, tabs, sidebars and footer stay. Leave Material's `navigation.instant` off (not tested with components). Dark theme: `[data-md-color-scheme="slate"] .ag-guide` gets the dark tokens, every other Material scheme the light ones, whatever the browser prefers.
 
 The data and the core files reach the browser from the site only. Use the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
 

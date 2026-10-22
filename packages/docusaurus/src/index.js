@@ -17,6 +17,7 @@ module.exports = function buildguide(context, options = {}) {
   return {
     name: 'docusaurus-plugin-buildguide',
     getThemePath: () => './theme',
+    getClientModules: () => [path.join(__dirname, 'buildguide-docusaurus.css')],
     getPathsToWatch: () => [data],
     async loadContent() {
       const guide = JSON.parse(readFileSync(data, 'utf8'));
