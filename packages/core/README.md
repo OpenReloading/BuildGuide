@@ -28,6 +28,8 @@ Browser library, JSON Schema and check CLI. Plain JavaScript and CSS, no build s
 
    The script mounts `#assembly-guide` by itself. `BuildGuide.mount(root, data, {page, site, assets})` mounts any other element. Board pages load `vendor/joint/` and `buildguide-board.js` from the script's own folder.
 
+   Colours are `--ag-*` custom properties on `#assembly-guide` (list at the top of `buildguide.css`). A site overrides them in its own stylesheet, for example `#assembly-guide{--ag-accent:#0a5}`.
+
 3. Write the guide data. `buildguide.schema.json` (JSON Schema 2020-12) describes it, and `example/guide.json` uses every part of it.
 
    - `storage`: localStorage key for the ticks. A tick belongs to one exact connection (number and both ends): changing an end clears it.

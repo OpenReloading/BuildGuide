@@ -101,6 +101,40 @@ test('wiring: scopes, ticks per exact connection, step order into the next page'
   await expect(page).toHaveURL(`${BASE}${b.next}/#${hashOf(next, next.connections[0])}`);
 });
 
+test('notices: the text keeps the notice colour in a dark colour scheme', async ({ browser }) => {
+  const page = await browser.newPage({ colorScheme: 'dark' });
+  await page.goto(BASE + boards[0].id + '/');
+  const color = sel => page.locator(sel).evaluate(el => getComputedStyle(el).color);
+  const notice = await color('.ag-warning');
+  for (const part of ['.ag-warning summary', '.ag-warning .ag-notice-full']) expect(await color(part)).toBe(notice);
+  await page.close();
+});
+
+test('keyboard: focus stays on the control after a step or connection changes', async ({ page }) => {
+  await page.goto(BASE + boards[0].id + '/'); await ready(page);
+  await page.locator('[data-action=next-wire]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-action=next-wire]')).toBeFocused();
+  await page.locator('[data-step="1"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('[data-step="1"]')).toBeFocused();
+});
+
+test('keyboard: focus follows a connection chosen from another step', async ({ page }) => {
+  await page.goto(BASE + 'tubing/'); await ready(page);
+  const row = page.locator('.ag-wire-row [data-goto]').first();
+  const no = await row.getAttribute('data-conn');
+  await row.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator(`.ag-wire-row [data-conn="${no}"][data-wire]`)).toBeFocused();
+});
+
+test('colour: --ag-page paints the guide', async ({ page }) => {
+  await page.goto(BASE + 'bom/');
+  await page.locator('#assembly-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(1, 2, 3)'));
+  expect(await page.locator('#assembly-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(1, 2, 3)');
+});
+
 test('tubing: all connections listed, last connection ends the guide, keyboard selection', async ({ page }) => {
   const b = D.boards.tubing, all = b.steps.flatMap(s => s.connections);
   await page.goto(BASE + 'tubing/'); await ready(page);
@@ -150,7 +184,7 @@ test('BOM: ticks, search, row click and CSV export', async ({ page }) => {
   await page.locator('tbody tr:not(.ag-group)').nth(2).locator('td').nth(2).click();
   await expect(page.locator('.ag-progress')).toHaveText(`2 / ${items.length} checked`);
   await page.locator('#ag-search').fill('valve');
-  await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(items.filter(i => `${i.part} ${i.spec} ${i.group}`.toLowerCase().includes('valve')).length);
+  await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(items.filter(i => `${i.part} ${i.spec ?? ''} ${i.group}`.toLowerCase().includes('valve')).length);
   await page.locator('#ag-search').fill('');
   await expect(page.locator('tbody a', { hasText: D.bom.linkLabel })).toHaveCount(items.filter(i => i.link).length);
   const download = page.waitForEvent('download');

@@ -2,6 +2,7 @@
 
 import html
 import json
+import math
 import shutil
 from pathlib import Path
 
@@ -18,16 +19,35 @@ HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
 
 
+def finite(value):
+    """False when a float anywhere in the data is NaN or infinite: json.dumps would write it as non-standard JSON."""
+    if isinstance(value, float):
+        return math.isfinite(value)
+    if isinstance(value, dict):
+        return all(finite(item) for item in value.values())
+    if isinstance(value, list):
+        return all(finite(item) for item in value)
+    return True
+
+
 class BuildGuidePlugin(BasePlugin):
     # a typed Config cannot have an option named data (it is the UserDict's own attribute)
-    config_scheme = (("data", c.File(exists=True)), ("assets", c.Type(str, default="assets/")))
+    config_scheme = (("data", c.File(exists=True, required=True)), ("assets", c.Type(str, default="assets/")))
 
     def on_config(self, config):
         data = self.config["data"]
-        with open(data, encoding="utf-8") as f:
-            self.guide = yaml.safe_load(f)  # YAML or JSON
+        text = Path(data).read_text(encoding="utf-8")
+        try:
+            self.guide = json.loads(text)  # YAML does not read JSON that is indented with tabs
+        except ValueError:
+            try:
+                self.guide = yaml.safe_load(text)
+            except yaml.YAMLError as error:
+                raise PluginError(f"{data}: not valid JSON or YAML: {error}") from error
         if not isinstance(self.guide, dict):
             raise PluginError(f"{data}: not a guide object")
+        if not finite(self.guide):
+            raise PluginError(f"{data}: NaN or Infinity is not valid in a guide")
         if found := problems(self.guide):
             raise PluginError(f"{data}:\n" + "\n".join(found))
         config.watch.append(data)

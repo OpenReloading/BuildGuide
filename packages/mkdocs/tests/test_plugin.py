@@ -12,9 +12,9 @@ EXAMPLE = Path(__file__).parents[2] / "core/example/guide.json"
 PAGES = {"tubing": "a/tubing.md", "bom": "bom.md", "wiring": "wiring.md", "intro": "index.md"}
 
 
-def site(tmp_path, pages=PAGES, guide=None, strict=False):
+def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None):
     guide = guide or json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    (tmp_path / "guide.json").write_text(json.dumps(guide), encoding="utf-8")
+    (tmp_path / "guide.json").write_text(json.dumps(guide, indent=indent), encoding="utf-8")
     for page_id, src in pages.items():
         (tmp_path / "docs" / src).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs" / src).write_text(f"---\nbuildguide: {page_id}\n---\n", encoding="utf-8")
@@ -56,6 +56,11 @@ def test_inline_data_cannot_end_its_script(tmp_path):
     assert guide_data(page)["intro"]["title"] == guide["intro"]["title"]
 
 
+def test_json_data_indented_with_tabs_is_read(tmp_path):
+    page = (site(tmp_path, indent="\t") / "index.html").read_text(encoding="utf-8")
+    assert guide_data(page)["storage"]
+
+
 def test_problems_in_the_data_stop_the_build(tmp_path, caplog):
     guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
     guide["boards"]["wiring"]["next"] = "nowhere"
@@ -74,3 +79,24 @@ def test_a_guide_page_without_a_mkdocs_page_fails_a_strict_build(tmp_path, caplo
     with pytest.raises(Abort):
         site(tmp_path, pages={k: v for k, v in PAGES.items() if k != "tubing"}, strict=True)
     assert "guide page tubing has no MkDocs page" in caplog.text
+
+
+@pytest.mark.parametrize("number", ["NaN", "Infinity", "-Infinity"])
+def test_non_finite_numbers_stop_the_build(tmp_path, caplog, number):
+    guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    guide["boards"]["wiring"]["size"][0] = "@@"
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "guide.json").write_text(json.dumps(guide).replace('"@@"', number), encoding="utf-8")
+    (tmp_path / "mkdocs.yml").write_text("site_name: Test\nplugins:\n  - buildguide:\n      data: guide.json\n", encoding="utf-8")
+    with pytest.raises(Abort):
+        build(load_config(str(tmp_path / "mkdocs.yml")))
+    assert "NaN or Infinity" in caplog.text
+
+
+def test_non_finite_numbers_in_yaml_stop_the_build(tmp_path, caplog):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "guide.yml").write_text("storage: s\nx:\n  - .nan\n", encoding="utf-8")
+    (tmp_path / "mkdocs.yml").write_text("site_name: Test\nplugins:\n  - buildguide:\n      data: guide.yml\n", encoding="utf-8")
+    with pytest.raises(Abort):
+        build(load_config(str(tmp_path / "mkdocs.yml")))
+    assert "NaN or Infinity" in caplog.text

@@ -7,7 +7,7 @@
     if (!library) library = import(base + 'index.js').then(async ({AvoidLib}) => {
       await AvoidLib.load(base + 'libavoid.wasm');
       return AvoidLib.getInstance();
-    });
+    }).catch(error => { library = null; throw error; });
     return library;
   }
   const FONT = 'system-ui, Segoe UI, Helvetica, Arial, sans-serif';
