@@ -20,15 +20,18 @@
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
 
   const mounted = new WeakMap();
+  // data keys come from anyone: only own properties count, never Object.prototype's
+  const own = (object, key) => Object.hasOwn(object ?? {}, key) ? object[key] : undefined;
 
   // mount(root, data, {view, board, assets}) renders one component into root and returns the function that removes it again
   function mount(root, D, options = {}) {
     mounted.get(root)?.();
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
-    const board = view === 'board' ? D.boards?.[boardKey] : null;
+    const board = view === 'board' ? own(D.boards, boardKey) : null;
     if (view === 'bom' ? !D.bom : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
     const ASSETS = new URL(options.assets ?? root.dataset.assets ?? 'assets/', location.href);
     const steps = board?.steps || [];
+    const title = board?.title || boardKey;
     const prefix = board?.prefix || boardKey;
     // the page-wide hash holds one key=value pair per board, so boards on one page keep their own position
     const param = encodeURIComponent(boardKey ?? '');
@@ -43,30 +46,34 @@
     };
     saved = load();
     const checked = key => saved[key] === true;
-    // other components on the page store into the same object: read it again before each write
-    const save = (key, value) => { saved = load(); saved[key] = value; try { localStorage.setItem(D.storage, JSON.stringify(saved)); } catch { persistent = false; } };
+    // other components on the page store into the same object: merge what is stored into the copy in memory before each write,
+    // so ticks survive in memory when the storage is blocked or full
+    const save = (key, value) => { saved = {...saved, ...load()}; saved[key] = value; try { localStorage.setItem(D.storage, JSON.stringify(saved)); } catch { persistent = false; } };
     // a tick belongs to one exact connection: change either end and it is unchecked again
     const connKey = c => `${prefix}-${c.no}:${c.a}:${c.b}`, bomKey = p => `bom-${p.id}:${p.part}`;
     const count = (items, key) => items.filter(x => checked(key(x))).length;
     const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 1, expanded: false, search: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
-    const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${board.parts[id]?.name ?? id} · ${pin}`)(end(c[side]));
-    const color = c => board.colors[c.color] || {};
+    const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
+    const color = c => own(board.colors, c.color) || {};
     const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
     const cleanups = [];
     const listen = (target, type, handler) => { target.addEventListener(type, handler); cleanups.push(() => target.removeEventListener(type, handler)); };
 
     function navigate(index = 0, wire = 0) {
       // this board's pair keeps its place among the others
-      const own = `${param}=${hashOf(steps[index], steps[index].connections[wire])}`, all = pairs();
-      const next = (all.some(p => nameOf(p) === boardKey) ? all.map(p => nameOf(p) === boardKey ? own : p) : [...all, own]).join('&');
+      const mine = `${param}=${hashOf(steps[index], steps[index].connections[wire])}`, all = pairs();
+      const next = (all.some(p => nameOf(p) === boardKey) ? all.map(p => nameOf(p) === boardKey ? mine : p) : [...all, mine]).join('&');
       if (location.hash.slice(1) === next) { readHash(); render(); } else location.hash = next;
     }
-    // true when this board's position changed
+    // true when this board's position changed. A foreign fragment such as #intro stays in the hash, but once a board pair
+    // is added the browser no longer scrolls to it: the whole fragment is the anchor name
     function readHash() {
       if (!board) return false;
-      const own = pairs().find(p => nameOf(p) === boardKey);
-      const bits = (own?.slice(own.indexOf('=') + 1) ?? '').split('/').map(decode);
+      const mine = pairs().find(p => nameOf(p) === boardKey);
+      // no pair of this board (a heading anchor, another tool's hash): the board stays where it is
+      if (mine === undefined) return false;
+      const bits = mine.slice(mine.indexOf('=') + 1).split('/').map(decode);
       const {step, wire} = state;
       const i = steps.findIndex(s => s.id === bits[0]); state.step = i >= 0 ? i : 0;
       const j = steps[state.step].connections.findIndex(c => c.no === bits[1]); state.wire = j >= 0 ? j : 0;
@@ -94,7 +101,7 @@
         drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoom(v) { this.inner?.zoom(v); }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
-          rendered.inner = mountBoard(canvas, board, {key: boardKey, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
+          rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(i, steps[i].connections.findIndex(c => c.no === no)); }});
         }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
         root.querySelectorAll('[data-wire]').forEach(row => {
@@ -136,7 +143,7 @@
       return () => { observer.disconnect(); window.removeEventListener('resize', fit); cancelAnimationFrame(frame); };
     }
     function stepNavigation() {
-      return `<nav class="ag-steps" aria-label="${esc(board.title)} steps">${steps.map((s, i) => {
+      return `<nav class="ag-steps" aria-label="${esc(title)} steps">${steps.map((s, i) => {
         const total = s.connections.length, done = count(s.connections, connKey);
         return `<button type="button" data-step="${i}" ${i === state.step ? 'aria-current="step"' : ''}><span class="ag-step-id ${done === total ? 'complete' : ''}">${done === total ? '✓' : esc(s.id)}</span><span><b>${esc(s.title)}</b><small>${done} / ${total}</small></span></button>`;
       }).join('')}</nav>`;
@@ -157,11 +164,11 @@
       const next = state.wire === s.connections.length - 1 ? 'Next step →' : 'Next connection →';
       const listed = board.listAll ? all : s.connections;
       return `<section class="ag-workspace"><div class="ag-head"><span class="ag-progress">${count(all, connKey)} / ${all.length} checked</span></div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
-      <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(board.label || board.title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(board.legend || []).map(legendItem).join('')}</div></div>
+      <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(board.label || title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(board.legend || []).map(legendItem).join('')}</div></div>
       ${toolbar()}
       ${connectionSummary(c)}
       <div class="ag-wire-navigation">${button('← Previous', 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? 'Last connection' : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
-      <div class="ag-list-heading"><h3>${board.listAll ? `All ${esc(board.title.toLowerCase())} connections` : 'Connections in this step'}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
+      <div class="ag-list-heading"><h3>${board.listAll ? `All ${esc(title.toLowerCase())} connections` : 'Connections in this step'}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
       </div></section>`;
     }
     function connectionRow(c, selected, index) {
@@ -240,9 +247,12 @@
         }
       };
     }
-    listen(window, 'hashchange', () => { if (readHash()) render(); });
+    // history.pushState alone fires neither event: a host that pushes a hash dispatches popstate or hashchange itself
+    const follow = () => { if (readHash()) render(); };
+    listen(window, 'hashchange', follow); listen(window, 'popstate', follow);
     readHash(); render();
     const destroy = () => {
+      if (mounted.get(root) !== destroy) return;
       for (const stop of cleanups) stop();
       stopSizing?.(); drawing?.destroy(); drawing = null;
       if (state.expanded) { document.body.classList.remove('ag-no-scroll'); if (document.fullscreenElement === root) document.exitFullscreen(); }
@@ -260,6 +270,6 @@
   const fetchData = src => requests[src] ||= fetch(new URL(src, location.href)).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
   for (const root of document.querySelectorAll('[data-buildguide]')) {
     const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent));
-    data.then(D => D && mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets})).catch(() => { root.textContent = 'Guide data unavailable.'; });
+    data.then(D => { if (!D) throw new Error('no guide data'); mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = 'Guide data unavailable.'; });
   }
 })();
