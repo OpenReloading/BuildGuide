@@ -5,6 +5,7 @@ import json
 import math
 import re
 import shutil
+from html.parser import HTMLParser
 from pathlib import Path
 
 import yaml
@@ -17,16 +18,27 @@ from .check import problems
 
 HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
-# a div's opening tag; quoted attribute values may hold a >
-TAG = re.compile(r"""<div\b(?:[^>"']|"[^"]*"|'[^']*')*>""")
+CLOSED = re.compile(r"\s*</div>")  # nothing but whitespace before the closing tag
 
 
-def attribute(tag, name):
-    """The value of an attribute as the browser reads it ('' when bare or empty), None when the tag has none."""
-    match = re.search(rf"""(?<![\w-]){name}(?![\w-])(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?""", tag)
-    if match is None:
-        return None
-    return html.unescape(next((g for g in match.groups() if g is not None), ""))
+class Divs(HTMLParser):
+    """The opening tags of the divs in a page as the browser reads them: (start, end, attributes). Comments and scripts are skipped."""
+
+    def __init__(self, text):
+        super().__init__(convert_charrefs=False)
+        self.lines = [0] + [m.end() for m in re.finditer("\n", text)]
+        self.found = []
+        self.feed(text)
+        self.close()
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "div":
+            line, column = self.getpos()
+            start = self.lines[line - 1] + column
+            values = {}
+            for name, value in attrs:  # the first of a repeated attribute wins, a bare one is ''
+                values.setdefault(name, "" if value is None else value)
+            self.found.append((start, start + len(self.get_starttag_text()), values))
 
 
 def finite(value):
@@ -67,11 +79,11 @@ class BuildGuidePlugin(BasePlugin):
 
     # components are found in the rendered page; an unknown view or board key is a warning, an error with --strict
     def on_page_content(self, output, page, config, files):
-        for tag in TAG.findall(output):
-            view = attribute(tag, "data-buildguide")
+        for _, _, attributes in Divs(output).found:
+            view = attributes.get("data-buildguide")
             if view is None:
                 continue
-            key = attribute(tag, "data-board")
+            key = attributes.get("data-board")
             if view == "":
                 log.warning(f"{page.file.src_uri}: data-buildguide has no value")
             elif not (
@@ -83,12 +95,10 @@ class BuildGuidePlugin(BasePlugin):
 
     # the note for visitors without JavaScript goes in here, after the search index took the content
     def add_note(self, output):
-        def note(match):
-            tag = match.group(0)
-            empty = match.string.startswith("</div>", match.end())
-            return tag + ("<noscript>This guide needs JavaScript.</noscript>" if empty and attribute(tag, "data-buildguide") is not None else "")
-
-        return TAG.sub(note, output)
+        for _, end, attributes in reversed(Divs(output).found):
+            if "data-buildguide" in attributes and CLOSED.match(output, end):
+                output = output[:end] + "<noscript>This guide needs JavaScript.</noscript>" + output[end:]
+        return output
 
     # the data goes in after the content, so the search index leaves it out; only pages with a component get it
     def on_post_page(self, output, page, config):

@@ -151,3 +151,29 @@ def test_a_component_with_content_keeps_it(tmp_path):
     pages = {"index.md": '<div data-buildguide="bom">Plain text</div>\n'}
     index = (site(tmp_path, pages=pages) / "index.html").read_text(encoding="utf-8")
     assert '<div data-buildguide="bom">Plain text</div>' in index
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '<!-- <div data-buildguide="video"></div> -->',
+        '<div title="data-buildguide=video"></div>',
+        '<div class="x" title=\'a data-board="nowhere"\'></div>',
+    ],
+)
+def test_only_real_component_divs_count(tmp_path, text):
+    index = (site(tmp_path, pages={"index.md": f"{text}\n"}, strict=True) / "index.html").read_text(encoding="utf-8")
+    assert "guide-data" not in index
+
+
+def test_a_data_board_inside_another_value_is_not_the_board_key(tmp_path, caplog):
+    page = '<div data-buildguide="board" title="data-board=wiring"></div>\n'
+    with pytest.raises(Abort):
+        site(tmp_path, pages={"index.md": page}, strict=True)
+    assert "no guide component board" in caplog.text
+
+
+@pytest.mark.parametrize("inside", ["\n", " ", "\n  \n"])
+def test_a_whitespace_only_component_gets_the_note(tmp_path, inside):
+    index = (site(tmp_path, pages={"index.md": f'<div data-buildguide="bom">{inside}</div>\n'}) / "index.html").read_text(encoding="utf-8")
+    assert "<noscript>This guide needs JavaScript.</noscript>" in index
