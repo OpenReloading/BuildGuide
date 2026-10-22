@@ -27,7 +27,7 @@ devcontainer exec --workspace-folder . npm run docs           # docs site into s
 devcontainer exec --workspace-folder . npm run dist           # release archives
 ```
 
-Pull requests: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [SECURITY.md](SECURITY.md).
+Pull requests: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [security policy](https://github.com/OpenReloading/.github/blob/main/SECURITY.md).
 
 ## Licenses
 
