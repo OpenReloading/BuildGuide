@@ -110,7 +110,7 @@
       const pins = [];   // at the terminals themselves: the last leg of a connection runs straight into its terminal
       for (const [side, names] of Object.entries(part.ports || {})) {
         const pos = el.getPortsPositions(side);
-        for (const pin of names) pins.push({key: el.id + ':' + pin, x: b.x + pos[pin].x, y: b.y + pos[pin].y, ox: b.x - x0 + pos[pin].x, oy: b.y + pos[pin].y - y0, dir: DIR[side]});
+        for (const pin of names) pins.push({key: el.id + ':' + pin, ox: b.x - x0 + pos[pin].x, oy: b.y + pos[pin].y - y0, dir: DIR[side]});
       }
       return {id: el.id, x0, y0, x1, y1, pins};
     });
@@ -132,7 +132,7 @@
     // the room between parts shrinks with the buffer around them: the widest that finds a route for every connection wins
     function route(Avoid, list) {
       let routes;
-      for (const buffer of [14, 8, 4, 0]) { routes = attempt(Avoid, list, buffer); if (routes.every(orthogonal)) break; }
+      for (const buffer of [14, 8, 4, 0]) { routes = attempt(Avoid, list, buffer); if (routes.every((pts, i) => colorOf(list[i]).diode || orthogonal(pts))) break; }
       return routes.map(pts => pts.slice(1, -1));   // the terminals are the connection's ends: the vertices are the bends between
     }
     function attempt(Avoid, list, buffer) {
