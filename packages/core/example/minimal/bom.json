@@ -1,0 +1,10 @@
+{
+  "storage": "minimal-bom",
+  "bom": {
+    "items": [
+      { "id": "psu", "group": "Electrical", "part": "Power supply", "spec": "12 V DC, 2 A", "qty": 1 },
+      { "id": "lamp", "group": "Electrical", "part": "Lamp", "spec": "12 V", "qty": 2 },
+      { "id": "tube", "group": "Pneumatic", "part": "Tube", "spec": "6 x 4 mm PU, 3 m", "qty": 1 }
+    ]
+  }
+}
