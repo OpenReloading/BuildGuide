@@ -1,0 +1,4 @@
+/* scrolls and anchors land below the sticky header: its repository link must not cover a component's buttons */
+html {
+  scroll-padding-top: 3rem;
+}

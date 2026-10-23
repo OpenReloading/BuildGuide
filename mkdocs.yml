@@ -2,10 +2,13 @@ site_name: BuildGuide
 # the browser tests build with SITE_URL=http://127.0.0.1:8080/: instant navigation only follows links to URLs of the sitemap, which has the site_url
 site_url: !ENV [SITE_URL, 'https://openreloading.github.io/BuildGuide/']
 site_description: Interactive build guides from one data file, with the MkDocs plugin and the core browser library.
+repo_url: https://github.com/OpenReloading/BuildGuide
+repo_name: OpenReloading/BuildGuide
 copyright: MIT license
 
 theme:
   name: material
+  custom_dir: overrides   # partials/source.html: header facts rendered at build time
   font: false   # system fonts: no requests outside the site
   features:
     - navigation.instant   # pages swap without a reload: the components must follow
@@ -22,6 +25,9 @@ theme:
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
+
+extra_css:
+  - assets/repo-widget.css
 
 plugins:
   - search
@@ -41,13 +47,14 @@ validation:
     anchors: warn
     unrecognized_links: warn
 
-# agent instructions in docs/agents/ and the generator hook are not pages
+# agent instructions in docs/agents/ and the hooks are not pages
 exclude_docs: |
   agents/
   hooks/
 
 hooks:
   - docs/hooks/reference.py
+  - docs/hooks/repo_facts.py
 
 nav:
   - Home: index.md
