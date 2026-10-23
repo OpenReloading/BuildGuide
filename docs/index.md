@@ -12,8 +12,8 @@ Interactive build guide components from one data file: a BOM checklist, and wiri
 
 ## Then
 
+- [Examples](examples.md): one small guide per component, with the files for plain HTML, MkDocs and Docusaurus.
 - [Data format](data-format.md): every key of the guide data, with the example.
 - [Theming and dark mode](theming.md): colour tokens, the dark theme, print, browser support.
 - [Reference](reference.md): the markup, hash, storage and script surface a site can rely on, the check CLI and the plugin options.
-- [Migration](migration.md): from the page shell to components only.
 - [Example guide](example/index.md): the components on pages of this site, from `packages/core/example/guide.json`. [All components](example/all.md) shows three on one page.

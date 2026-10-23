@@ -1,1 +1,3 @@
---8<-- "packages/mkdocs/README.md"
+# MkDocs
+
+--8<-- "packages/mkdocs/README.md:docs"

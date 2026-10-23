@@ -2,6 +2,7 @@
 
 Docusaurus 3 plugin: checks the guide data at build time, serves the core browser files and provides the `<BuildGuide />` component for a BOM checklist or a wiring or tubing board. Your pages, notices and navigation stay your own.
 
+<!-- --8<-- [start:docs] -->
 ## Use
 
 1. Install the package, from GitHub Packages or from a release file.
@@ -52,7 +53,9 @@ Docusaurus 3 plugin: checks the guide data at build time, serves the core browse
    | `view` | `bom` or `board` |
    | `board` | key in `boards`, for `board` |
 
-The build stops on a problem the core check finds (`buildguide-check.mjs`), one line per problem. Core is served from `<baseUrl>assets/buildguide/` in `docusaurus start` and `docusaurus build`. Every page carries the data in `<script type="application/json" id="buildguide-data">` and loads `buildguide.css`. The component loads `buildguide.js`, calls `BuildGuide.mount` and removes the component when it unmounts, so client-side navigation between pages works. An unknown view or board key shows `Unknown guide component` in the page. Dark theme: `html[data-theme="dark"] .ag-guide` gets the dark tokens and `html[data-theme="light"] .ag-guide` the light ones (the plugin's own stylesheet), whatever the browser prefers.
+The build stops on a problem the core check finds, one line per problem. An unknown view or board key shows `Unknown guide component` in the page. The theme follows Docusaurus's colour mode ([Theming](https://openreloading.github.io/BuildGuide/theming/)).
+
+<!-- --8<-- [end:docs] -->
 
 ## Development
 

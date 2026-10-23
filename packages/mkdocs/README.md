@@ -2,6 +2,7 @@
 
 MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing board) anywhere in a Markdown page. The plugin checks the data at build time and bundles the core browser files. Your pages, notices and navigation stay your own.
 
+<!-- --8<-- [start:docs] -->
 ## Use
 
 1. Download the wheel from an `mkdocs-v*` [release](https://github.com/OpenReloading/BuildGuide/releases) and install it next to MkDocs 1.6:
@@ -46,9 +47,9 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
 
 The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a `data-buildguide` without value, or a BOM component without `bom` data, is a warning (an error with `--strict`).
 
-On pages with a component the plugin puts the data once into a hidden `<div id="guide-data">` with `data-assets`, and loads core from `assets/buildguide/` in the built site, both at the end of the page's `<article>` (Material's instant navigation swaps the article and runs its scripts, and drops the rest of the body). Other pages get nothing. `buildguide-mkdocs.css` only keeps component tables out of Material's table wrapper: the Material header, tabs, sidebars and footer stay. Material's `navigation.instant` works: core mounts the components of each page it swaps in and unmounts those that left (`BuildGuide.scan`, run on Material's `document$`). Instant navigation follows only links to URLs of the sitemap, so a test build served from another origin sets `site_url` to that origin. Dark theme: `[data-md-color-scheme="slate"] .ag-guide` gets the dark tokens, every other Material scheme the light ones, whatever the browser prefers.
+Pages with a component also get the data and core, so Material's `navigation.instant` works. The theme follows Material's colour scheme ([Theming](https://openreloading.github.io/BuildGuide/theming/)). The data and the core files reach the browser from the site only: set the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
 
-The data and the core files reach the browser from the site only. Use the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
+<!-- --8<-- [end:docs] -->
 
 ## Development
 
