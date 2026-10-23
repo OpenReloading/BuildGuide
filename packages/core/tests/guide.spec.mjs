@@ -142,6 +142,9 @@ test('host styles do not restyle the components', async ({ page }) => {
   // the stylesheet's own value: 18px in a component narrower than 760px, else 20px
   const narrow = await page.locator('.ag-guide').evaluate(el => el.clientWidth <= 760);
   expect(await size('.ag-guide .ag-work-heading h2')).toBe(narrow ? '18px' : '20px');
+  // Material dims every <small> of its own pages (opacity .75), which would lower the contrast of the component's labels
+  const opacity = sel => page.locator(sel).first().evaluate(el => getComputedStyle(el).opacity);
+  expect([await opacity('.ag-steps small'), await opacity('.ag-connection-detail small')]).toEqual(['1', '1']);
   await page.goto(url('bom'));
   expect(await size('.ag-bom-table th')).toBe('11px');
   expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
