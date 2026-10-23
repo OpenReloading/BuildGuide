@@ -9,7 +9,8 @@ ROOT = Path(__file__).parents[2]
 SCHEMA = ROOT / "packages/core/schema/buildguide.schema.json"
 CSS = ROOT / "packages/core/src/buildguide.css"
 MARKER = re.compile(r"<!-- generated: (schema|tokens)(?: (\S+))? -->")
-TOKEN = re.compile(r"--ag-([\w-]+):light-dark\((#[0-9a-f]+), (#[0-9a-f]+)\)")
+TOKEN = re.compile(r"--ag-([\w-]+):light-dark\((#[0-9a-fA-F]+), (#[0-9a-fA-F]+)\)")
+DECLARED = re.compile(r"--ag-[\w-]+:\s*light-dark\(")
 
 
 def resolve(schema, node):
@@ -49,8 +50,12 @@ def walk(schema, node, path, required):
         rows += walk(schema, child, f"{path}.{key}", key in node.get("required", []))
     if isinstance(node.get("additionalProperties"), dict):
         rows += walk(schema, node["additionalProperties"], f"{path}.<key>", False)
-    if isinstance(node.get("items"), dict) and {"properties", "oneOf"} & set(resolve(schema, node["items"])):
-        rows += walk(schema, node["items"], f"{path}[]", False)
+    item = resolve(schema, node["items"]) if isinstance(node.get("items"), dict) else {}
+    if "properties" in item:  # the element's own row would repeat the list's row
+        for key, child in item["properties"].items():
+            rows += walk(schema, child, f"{path}[].{key}", key in item.get("required", []))
+    elif "oneOf" in item:
+        rows += walk(schema, item, f"{path}[]", False)
     for alternative in node.get("oneOf", []):
         if "properties" in alternative:
             for key, child in alternative["properties"].items():
@@ -82,8 +87,8 @@ def schema_table(name):
 
 def token_table(css):
     found = TOKEN.findall(css)
-    if not found:
-        raise ValueError("no --ag-* colour with light-dark() found in the stylesheet")
+    if not found or len(found) != len(DECLARED.findall(css)):
+        raise ValueError("an --ag-* colour of the stylesheet is not written as light-dark(#hex, #hex)")
     return table(["Token", "Light", "Dark"], [(f"`--ag-{name}`", f"`{light}`", f"`{dark}`") for name, light, dark in found])
 
 

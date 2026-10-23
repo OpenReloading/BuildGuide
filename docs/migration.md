@@ -2,7 +2,7 @@
 
 ## From the page shell to components only
 
-The first release of each package (core 0.2.0, mkdocs 0.1.0, docusaurus 1.0.0) dropped the page shell: BuildGuide no longer draws a title, navigation, notices or a footer. Your page owns those, and a component draws only a BOM checklist or one board.
+The components-only release of each package (core 0.2.0, mkdocs 0.1.0, docusaurus 1.0.0) dropped the page shell: BuildGuide no longer draws a title, navigation, notices or a footer. Your page owns those, and a component draws only a BOM checklist or one board.
 
 Removed:
 

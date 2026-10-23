@@ -21,6 +21,7 @@ def test_board_table_walks_maps_arrays_and_refs():
     assert rows["boards.<key>.steps[].connections[].no"][1] == "string"
     assert rows["boards.<key>.legend[].text"][2] == "yes"  # object alternative of a oneOf item
     assert rows["boards.<key>.scope"][1].startswith("one of")
+    assert "boards.<key>.steps[]" not in rows and "boards.<key>.steps" in rows  # no second row for the list's elements
     assert rows["boards.<key>.areas.<key>.glands"][1] == "array of array of [number, string]"
 
 
@@ -43,6 +44,8 @@ def test_token_table_lists_every_colour_with_both_schemes():
     assert len(table_rows(reference.token_table((ROOT / "packages/core/src/buildguide.css").read_text(encoding="utf-8")))) > 20
     with pytest.raises(ValueError):
         reference.token_table("a{}")
+    with pytest.raises(ValueError, match="light-dark"):  # a token the pattern cannot read must not drop out silently
+        reference.token_table(":root{--ag-ink:light-dark(#111, #eee); --ag-x:light-dark(rgb(0,0,0), #000);}")
 
 
 def test_markers_are_replaced_and_unknown_ones_fail():
