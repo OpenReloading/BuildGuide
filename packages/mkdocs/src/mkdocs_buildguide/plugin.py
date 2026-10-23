@@ -1,4 +1,4 @@
-"""MkDocs plugin: `<div data-buildguide="bom"></div>` and `<div data-buildguide="board" data-board="KEY"></div>` in a page become guide components."""
+"""MkDocs plugin: `<div data-buildguide="bom"></div>`, `<div data-buildguide="board" data-board="KEY"></div>` and `<div data-buildguide="guide"></div>` in a page become guide components."""
 
 import html
 import json
@@ -77,6 +77,13 @@ class BuildGuidePlugin(BasePlugin):
     def on_pre_build(self, config):
         self.pages = set()
 
+    def known(self, view, key):
+        boards = self.guide.get("boards") or {}
+        if view == "guide":  # data-board is a space separated list of 'bom' and board keys, empty for all of them
+            keys = (key or "").split() or [*(["bom"] if "bom" in self.guide else []), *boards]
+            return bool(keys) and all(("bom" in self.guide) if k == "bom" else k in boards for k in keys)
+        return ("bom" in self.guide) if view == "bom" else (view == "board" and key in boards)
+
     # components are found in the rendered page; an unknown view or board key is a warning, an error with --strict
     def on_page_content(self, output, page, config, files):
         for _, _, attributes in Divs(output).found:
@@ -86,9 +93,7 @@ class BuildGuidePlugin(BasePlugin):
             key = attributes.get("data-board")
             if view == "":
                 log.warning(f"{page.file.src_uri}: data-buildguide has no value")
-            elif not (
-                (view == "bom" and "bom" in self.guide) or (view == "board" and key in (self.guide.get("boards") or {}))
-            ):
+            elif not self.known(view, key):
                 log.warning(f"{page.file.src_uri}: no guide component {view}{' ' + key if key else ''}")
             self.pages.add(page.file.src_uri)
         return output

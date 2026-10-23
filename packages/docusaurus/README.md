@@ -50,8 +50,8 @@ Docusaurus 3 plugin: checks the guide data at build time, serves the core browse
 
    | Prop | Meaning |
    |---|---|
-   | `view` | `bom` or `board` |
-   | `board` | key in `boards`, for `board` |
+   | `view` | `bom`, `board`, or `guide` (the BOM and all boards behind tabs) |
+   | `board` | key in `boards`, for `board`; for `guide` a space separated list of `bom` and board keys to show, in that order |
 
 The build stops on a problem the core check finds, one line per problem. An unknown view or board key shows `Unknown guide component` in the page. The theme follows Docusaurus's colour mode ([Theming](https://openreloading.github.io/BuildGuide/theming/)).
 

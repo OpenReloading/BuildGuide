@@ -1,5 +1,5 @@
 // Browser checks of the example guide components. Every expectation is derived from example/guide.json.
-// The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,wiring,tubing,all}/.
+// The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,wiring,tubing,all,guide}/.
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
@@ -47,7 +47,7 @@ for (const [key, b] of boards) {
 }
 
 // every example page: components only, so the audit covers .ag-guide and not the host's own chrome
-const PAGES = ['bom', 'wiring', 'tubing', 'all'];
+const PAGES = ['bom', 'wiring', 'tubing', 'all', 'guide'];
 const settled = async page => { for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true'); };
 
 for (const key of PAGES) {
@@ -632,21 +632,23 @@ test('invalid inline data and unknown components say so', async ({ page }) => {
   await expect(page.locator('[data-buildguide]')).toHaveText(['Unknown guide component: board nowhere.', 'Unknown guide component: intro.', 'Unknown guide component: board constructor.', 'Unknown guide component: board __proto__.']);
 });
 
+// window and document listeners added after the marker and not removed yet
+const trackListeners = page => page.addInitScript(() => {
+  const live = [], add = EventTarget.prototype.addEventListener, remove = EventTarget.prototype.removeEventListener;
+  window.__live = live;
+  EventTarget.prototype.addEventListener = function (type, fn, opts) {
+    if ((this === window || this === document) && window.__mark) live.push([this, type, fn]);
+    return add.call(this, type, fn, opts);
+  };
+  EventTarget.prototype.removeEventListener = function (type, fn, opts) {
+    const i = live.findIndex(l => l[0] === this && l[1] === type && l[2] === fn);
+    if (i >= 0) live.splice(i, 1);
+    return remove.call(this, type, fn, opts);
+  };
+});
+
 test('unmounting removes every listener and the markup, mounting again works', async ({ page }) => {
-  // window and document listeners added after the marker and not removed yet
-  await page.addInitScript(() => {
-    const live = [], add = EventTarget.prototype.addEventListener, remove = EventTarget.prototype.removeEventListener;
-    window.__live = live;
-    EventTarget.prototype.addEventListener = function (type, fn, opts) {
-      if ((this === window || this === document) && window.__mark) live.push([this, type, fn]);
-      return add.call(this, type, fn, opts);
-    };
-    EventTarget.prototype.removeEventListener = function (type, fn, opts) {
-      const i = live.findIndex(l => l[0] === this && l[1] === type && l[2] === fn);
-      if (i >= 0) live.splice(i, 1);
-      return remove.call(this, type, fn, opts);
-    };
-  });
+  await trackListeners(page);
   await inlinePage(page, 'remount/', D, '<div id="host"></div>');
   await page.goto(BASE + 'remount/');
   await page.waitForFunction(() => window.BuildGuide);
@@ -670,6 +672,240 @@ test('unmounting removes every listener and the markup, mounting again works', a
   await setHash(page, 'wiring=B');
   await expect(page.locator('.ag-guide')).toHaveCount(0);
 });
+
+// the combined component: a tab for the BOM and one per board, the active tab's component in one panel
+const TABS = ['Bill of materials', ...boards.map(([, b]) => b.title)];
+const tabOf = (page, name) => page.getByRole('tab', { name, exact: true });
+const panelOf = page => page.getByRole('tabpanel');
+const hashNow = page => page.evaluate(() => decodeURIComponent(location.hash));
+const selected = (page, name) => expect(page.getByRole('tab', { selected: true })).toHaveText(name);
+
+test('guide: a tab for the BOM and one per board, in the order of the data, and the BOM component in the panel', async ({ page }) => {
+  await page.goto(url('guide'));
+  await expect(page.getByRole('tab')).toHaveText(TABS);
+  await expect(page.getByRole('tablist')).toHaveCount(1);
+  await selected(page, TABS[0]);
+  await expect(panelOf(page)).toHaveAccessibleName(TABS[0]);
+  await expect(panelOf(page).locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
+  // only the active tab's component exists
+  await expect(page.locator('.ag-steps')).toHaveCount(0);
+  await tabOf(page, TABS[1]).click();
+  await selected(page, TABS[1]); await ready(panelOf(page));
+  await expect(panelOf(page)).toHaveAccessibleName(TABS[1]);
+  await expect(panelOf(page).locator(`nav[aria-label="${boards[0][1].title} steps"]`)).toHaveCount(1);
+  await expect(page.locator('.ag-bom')).toHaveCount(0);
+});
+
+for (const [key, b] of boards) {
+  test(`guide: ${key} is drawn at its real size when its tab is first shown, zoom and fit work`, async ({ page }) => {
+    await page.goto(url('guide'));
+    await tabOf(page, b.title).click(); await ready(panelOf(page));
+    const canvas = panelOf(page).locator('.ag-board-canvas'), paper = canvas.locator('.joint-paper');
+    expect((await canvas.boundingBox()).height).toBeGreaterThan(200);
+    const width = (await paper.boundingBox()).width;
+    expect(width).toBeGreaterThan(200);
+    await panelOf(page).locator('[data-action=zoom-in]').click();
+    expect((await paper.boundingBox()).width).toBeGreaterThan(width);
+    await panelOf(page).locator('[data-action=zoom-fit]').click();
+    expect((await paper.boundingBox()).width).toBe(width);
+    // the connections of the first step are drawn, not squeezed into a hidden box
+    await expect(canvas.locator('[data-connection]')).toHaveCount((b.scope || 'step') === 'all' ? b.steps.flatMap(s => s.connections).length : b.steps[0].connections.length);
+  });
+}
+
+test('guide: keyboard, arrows move between the tabs, Home and End jump, one tab stop', async ({ page }) => {
+  await page.goto(url('guide'));
+  const tabs = page.getByRole('tab');
+  await expect(tabs.first()).toHaveAttribute('tabindex', '0');
+  await expect(tabs.nth(1)).toHaveAttribute('tabindex', '-1');
+  await tabs.first().focus();
+  await page.keyboard.press('ArrowRight');
+  await selected(page, TABS[1]); await expect(tabs.nth(1)).toBeFocused(); await ready(panelOf(page));
+  await expect(tabs.nth(1)).toHaveAttribute('tabindex', '0');
+  await expect(tabs.first()).toHaveAttribute('tabindex', '-1');
+  await page.keyboard.press('End');
+  await selected(page, TABS.at(-1)); await expect(tabs.last()).toBeFocused(); await ready(panelOf(page));
+  await page.keyboard.press('ArrowRight');
+  await selected(page, TABS[0]); await expect(tabs.first()).toBeFocused();
+  await page.keyboard.press('ArrowLeft');
+  await selected(page, TABS.at(-1)); await ready(panelOf(page));
+  await page.keyboard.press('Home');
+  await selected(page, TABS[0]); await expect(panelOf(page).locator('.ag-bom')).toHaveCount(1);
+  // Tab leaves the tab list for the panel
+  await page.keyboard.press('Tab');
+  await expect(tabs.first()).not.toBeFocused();
+});
+
+test('guide: the tab is in the hash next to the board pairs, and the back button returns through the tabs', async ({ page }) => {
+  const [w, t] = [D.boards.wiring, D.boards.tubing];
+  await page.goto(url('guide'));
+  expect(await hashNow(page)).toBe('');
+  await tabOf(page, w.title).click(); await ready(panelOf(page));
+  expect(await hashNow(page)).toBe('#guide=wiring');
+  await panelOf(page).locator('[data-step="1"]').click();
+  await expect(panelOf(page).locator('[data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  expect(await hashNow(page)).toBe(`#guide=wiring&wiring=${hashOf(w.steps[1], w.steps[1].connections[0])}`);
+  await tabOf(page, t.title).click(); await ready(panelOf(page));
+  expect(await hashNow(page)).toBe(`#guide=tubing&wiring=${hashOf(w.steps[1], w.steps[1].connections[0])}`);
+  // the board that was left keeps its place
+  await tabOf(page, w.title).click(); await ready(panelOf(page));
+  await expect(panelOf(page).locator('[data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await page.goBack(); await selected(page, t.title); await ready(panelOf(page));
+  await page.goBack(); await selected(page, w.title); await ready(panelOf(page));
+  await page.goBack(); await selected(page, w.title);
+  await page.goBack(); await selected(page, TABS[0]);
+  await expect(panelOf(page).locator('.ag-bom')).toHaveCount(1);
+  await page.goForward(); await selected(page, w.title);
+});
+
+test('guide: the tab comes back from the hash on load, a board pair opens its tab, the guide pair wins over it', async ({ page }) => {
+  const [w, t] = [D.boards.wiring, D.boards.tubing], tubingAt = at('tubing', t.steps[2], t.steps[2].connections[0]), wiringAt = at('wiring', w.steps[1], w.steps[1].connections[0]);
+  await page.goto(`${url('guide')}#guide=tubing`); await selected(page, t.title); await ready(panelOf(page));
+  await expect(panelOf(page).locator('[data-step="0"]')).toHaveAttribute('aria-current', 'step');
+  await page.goto(`${url('guide')}#guide=bom`); await selected(page, TABS[0]);
+  await page.goto(`${url('guide')}#${tubingAt}`); await selected(page, t.title); await ready(panelOf(page));
+  await expect(panelOf(page).locator('[data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  await page.goto(`${url('guide')}#${wiringAt}&guide=tubing&${tubingAt}`); await selected(page, t.title); await ready(panelOf(page));
+  await page.reload(); await selected(page, t.title); await ready(panelOf(page));
+  // an unknown tab is no tab: the first one stays
+  await page.goto(`${url('guide')}#guide=nowhere`); await selected(page, TABS[0]);
+  // a link to a board pair opens that board's tab
+  await page.goto(url('guide')); await selected(page, TABS[0]);
+  await setHash(page, wiringAt);
+  await selected(page, w.title); await ready(panelOf(page));
+  await expect(panelOf(page).locator('[data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await setHash(page, `${wiringAt}&${tubingAt}`);
+  await selected(page, t.title); await ready(panelOf(page));
+  await expect(panelOf(page).locator('[data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  // the pair of the tab that is shown moves its board and keeps the tab
+  await setHash(page, `${wiringAt}&${at('tubing', t.steps[1], t.steps[1].connections[0])}`);
+  await selected(page, t.title);
+  await expect(panelOf(page).locator('[data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  // an anchor leaves the tab where it is
+  await setHash(page, 'top'); await selected(page, t.title);
+});
+
+test('guide: a tab that is already shown keeps its component, Alt+Arrow is left to the browser', async ({ page }) => {
+  await page.goto(url('guide'));
+  const search = panelOf(page).locator('[data-role=search]');
+  await search.fill('relay');
+  await tabOf(page, TABS[0]).click();
+  await expect(search).toHaveValue('relay');
+  await tabOf(page, TABS[0]).focus();
+  await page.keyboard.press('Home');
+  await expect(search).toHaveValue('relay');
+  await tabOf(page, TABS[0]).focus();
+  await page.keyboard.press('Alt+ArrowRight');
+  await selected(page, TABS[0]);
+});
+
+test('guide: a hash set from outside opens one tab, and back to a board pair without tab pair opens that board', async ({ page }) => {
+  const [w, t] = [D.boards.wiring, D.boards.tubing], wiringAt = at('wiring', w.steps[1], w.steps[1].connections[0]);
+  await page.goto(url('guide'));
+  await page.evaluate(() => { window.__drawn = new Set(); new MutationObserver(() => document.querySelectorAll('nav.ag-steps').forEach(n => { window.__drawn.add(n.getAttribute('aria-label')); })).observe(document.body, { childList: true, subtree: true }); });
+  await setHash(page, `guide=tubing&${wiringAt}`);
+  await selected(page, t.title); await ready(panelOf(page));
+  expect(await page.evaluate(() => [...window.__drawn])).toEqual([`${t.title} steps`]);
+  await page.goto(`${url('guide')}#${wiringAt}`); await selected(page, w.title); await ready(panelOf(page));
+  await tabOf(page, t.title).click(); await ready(panelOf(page));
+  await page.goBack(); await selected(page, w.title);
+});
+
+test('guide: ticks of the BOM and the boards survive switching tabs and reloading', async ({ page }) => {
+  const w = D.boards.wiring, all = w.steps.flatMap(s => s.connections);
+  await page.goto(url('guide'));
+  await panelOf(page).locator('tbody input[type=checkbox]').first().check();
+  await tabOf(page, w.title).click(); await ready(panelOf(page));
+  await panelOf(page).locator('.ag-verify input').check();
+  await expect(panelOf(page).locator('.ag-progress')).toHaveText(`1 / ${all.length} checked`);
+  await tabOf(page, TABS[0]).click();
+  await expect(panelOf(page).locator('.ag-progress')).toHaveText(`1 / ${D.bom.items.length} checked`);
+  await expect(panelOf(page).locator('tbody input[type=checkbox]').first()).toBeChecked();
+  await page.reload();
+  await expect(panelOf(page).locator('.ag-progress')).toHaveText(`1 / ${D.bom.items.length} checked`);
+  // the status line and the progress tools exist once: those of the shown component
+  await expect(page.locator('.ag-status')).toHaveCount(1);
+  await expect(panelOf(page).locator('[data-role=import-file]')).toHaveCount(1);
+});
+
+test('guide: data-board picks tabs in the order given, an unknown key says so', async ({ page }) => {
+  await inlinePage(page, 'subset/', D, '<div data-buildguide="guide" data-board="tubing   bom wiring"></div>');
+  await page.goto(BASE + 'subset/');
+  await expect(page.getByRole('tab')).toHaveText([D.boards.tubing.title, TABS[0], D.boards.wiring.title]);
+  await selected(page, D.boards.tubing.title); await ready(panelOf(page));
+  await tabOf(page, D.boards.wiring.title).click(); await ready(panelOf(page));
+  await inlinePage(page, 'one/', D, '<div data-buildguide="guide" data-board="wiring"></div>');
+  await page.goto(BASE + 'one/');
+  await expect(page.getByRole('tab')).toHaveText([D.boards.wiring.title]);
+  await ready(panelOf(page));
+  const noBom = structuredClone(D); delete noBom.bom;
+  await inlinePage(page, 'nobom/', noBom, '<div data-buildguide="guide"></div>');
+  await page.goto(BASE + 'nobom/');
+  await expect(page.getByRole('tab')).toHaveText(TABS.slice(1));
+  await inlinePage(page, 'unknown-tabs/', D, '<div data-buildguide="guide" data-board="wiring nowhere"></div><div data-buildguide="guide" data-board="constructor"></div>');
+  await page.goto(BASE + 'unknown-tabs/');
+  await expect(page.locator('[data-buildguide]')).toHaveText(['Unknown guide component: guide wiring nowhere.', 'Unknown guide component: guide constructor.']);
+  await inlinePage(page, 'empty-tabs/', { storage: 'x' }, '<div data-buildguide="guide"></div>');
+  await page.goto(BASE + 'empty-tabs/');
+  await expect(page.locator('[data-buildguide]')).toHaveText('Unknown guide component: guide.');
+});
+
+test('guide: the minimal example with a BOM and both boards mounts as three tabs', async ({ page }) => {
+  const all = minimal('all');
+  await inlinePage(page, 'minimal-guide/', all, '<div data-buildguide="guide"></div>');
+  await page.goto(BASE + 'minimal-guide/');
+  await expect(page.getByRole('tab')).toHaveText(['Bill of materials', all.boards.wiring.title, all.boards.tubing.title]);
+  await expect(panelOf(page).locator('tbody tr:not(.ag-group)')).toHaveCount(all.bom.items.length);
+  await tabOf(page, all.boards.tubing.title).click(); await ready(panelOf(page));
+  await expect(panelOf(page).locator('.ag-steps [data-step]')).toHaveCount(all.boards.tubing.steps.length);
+});
+
+test('guide: unmounting removes the tabs, the panel and every listener, mounting again works', async ({ page }) => {
+  await trackListeners(page);
+  await inlinePage(page, 'tabs-remount/', D, '<div id="host"></div>');
+  await page.goto(BASE + 'tabs-remount/');
+  await page.waitForFunction(() => window.BuildGuide);
+  await page.evaluate(() => { window.__mark = true; });
+  for (const subset of ['', 'tubing wiring']) {
+    await page.evaluate(([data, board]) => {
+      const host = document.getElementById('host'), el = document.createElement('div');
+      host.replaceChildren(el);
+      window.__stop = window.BuildGuide.mount(el, data, { view: 'guide', board });
+    }, [D, subset || undefined]);
+    await expect(page.getByRole('tab')).toHaveCount(subset ? 2 : TABS.length);
+    await tabOf(page, D.boards.wiring.title).click(); await ready(panelOf(page));
+    expect(await page.evaluate(() => window.__live.length)).toBeGreaterThan(0);
+    await page.evaluate(() => window.__stop());
+    expect(await page.evaluate(() => window.__live.length)).toBe(0);
+    await expect(page.getByRole('tab')).toHaveCount(0);
+    await expect(page.locator('.ag-guide')).toHaveCount(0);
+    expect(await page.evaluate(() => document.getElementById('host').textContent)).toBe('');
+  }
+  await setHash(page, 'tubing=B&guide=wiring');
+  await expect(page.locator('.ag-guide')).toHaveCount(0);
+});
+
+test('guide: a print shows the active component without the tabs', async ({ page }) => {
+  await page.goto(url('guide'));
+  await tabOf(page, D.boards.wiring.title).click(); await ready(panelOf(page));
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.getByRole('tablist')).toBeHidden();
+  await expect(panelOf(page).locator('.ag-board-canvas')).toBeVisible();
+  await expect(panelOf(page).locator('[data-action=print]')).toBeHidden();
+});
+
+for (const want of ['light', 'dark']) {
+  test(`guide: the tabs follow a ${want} scheme`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: want });
+    await page.goto(url('guide'));
+    await signal(page, want);
+    const colors = await page.locator('.ag-tabs').evaluate(el => {
+      const [on, off] = [el.querySelector('[aria-selected=true]'), el.querySelector('[aria-selected=false]')];
+      return { on: getComputedStyle(on).color, bar: getComputedStyle(on).borderBottomColor, off: getComputedStyle(off).color };
+    });
+    expect(colors).toEqual({ on: token('ink', want), bar: token('accent', want), off: token('muted', want) });
+  });
+}
 
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });

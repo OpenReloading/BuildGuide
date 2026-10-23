@@ -42,10 +42,11 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
    |---|---|
    | BOM checklist | `<div data-buildguide="bom"></div>` |
    | A board | `<div data-buildguide="board" data-board="KEY"></div>`, `KEY` is a key in `boards` |
+   | BOM and all boards behind tabs | `<div data-buildguide="guide"></div>`; `data-board="wiring tubing"` picks tabs (`bom` is the BOM) |
 
-   Attribute values may use double or single quotes; a board key may hold spaces. The view must be exactly `bom` or `board`. An empty element gets a no-JavaScript note after the search index is built. Elements in code blocks and inline code are text, not components.
+   Attribute values may use double or single quotes; a board key may hold spaces. The view must be exactly `bom`, `board` or `guide`. An empty element gets a no-JavaScript note after the search index is built. Elements in code blocks and inline code are text, not components.
 
-The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a `data-buildguide` without value, or a BOM component without `bom` data, is a warning (an error with `--strict`).
+The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a `data-buildguide` without value, or a BOM component without `bom` data, or a `guide` with a key in `data-board` that does not exist, is a warning (an error with `--strict`).
 
 Pages with a component also get the data and core, so Material's `navigation.instant` works. The theme follows Material's colour scheme ([Theming](https://openreloading.github.io/BuildGuide/theming/)). The data and the core files reach the browser from the site only: set the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
 

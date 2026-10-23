@@ -1,5 +1,5 @@
-/* BuildGuide components: a BOM checklist and board workspaces (wiring, tubing) from one guide data object.
-   Markup: <div data-buildguide="bom"></div> or <div data-buildguide="board" data-board="wiring"></div>, any number per page,
+/* BuildGuide components: a BOM checklist and board workspaces (wiring, tubing) from one guide data object, alone or behind tabs.
+   Markup: <div data-buildguide="bom"></div>, <div data-buildguide="board" data-board="wiring"></div> or <div data-buildguide="guide"></div>, any number per page,
    plus the data in <script type="application/json" id="guide-data"> (any element with that id) or a data-src="guide.json" URL on the div. */
 (() => {
   'use strict';
@@ -24,22 +24,31 @@
   const mounted = new WeakMap();
   // data keys come from anyone: only own properties count, never Object.prototype's
   const own = (object, key) => Object.hasOwn(object ?? {}, key) ? object[key] : undefined;
+  // the page-wide hash holds one key=value pair per board, so boards on one page keep their own position
+  const pairs = () => location.hash.slice(1).split('&').filter(Boolean);
+  // a fragment without = is an anchor (#wiring), never a board's position
+  const nameOf = pair => pair.includes('=') ? decode(pair.split('=')[0]) : null;
+  const pairValue = pair => pair.slice(pair.indexOf('=') + 1);
+  // the pair of name keeps its place among the others. False when pushState failed and the hash was set instead: hashchange follows
+  function putPair(name, value) {
+    const mine = `${encodeURIComponent(name)}=${value}`, all = pairs();
+    const next = (all.some(p => nameOf(p) === name) ? all.map(p => nameOf(p) === name ? mine : p) : [...all, mine]).join('&');
+    // pushState, not location.hash: it fires no popstate, which Material's instant navigation answers with a swap of the whole page (on the first hash change)
+    if (location.hash.slice(1) !== next) { try { history.pushState(history.state, '', `${location.pathname}${location.search}#${next}`); } catch { location.hash = next; return false; } }
+    return true;
+  }
 
   // mount(root, data, {view, board, assets}) renders one component into root and returns the function that removes it again
   function mount(root, D, options = {}) {
     mounted.get(root)?.();
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
+    if (view === 'guide') return mountTabs(root, D, options);
     const board = view === 'board' ? own(D.boards, boardKey) : null;
     if (view === 'bom' ? !D.bom : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
     const ASSETS = new URL(options.assets ?? root.dataset.assets ?? 'assets/', location.href);
     const steps = board?.steps || [];
     const title = board?.title || boardKey;
     const prefix = board?.prefix || boardKey;
-    // the page-wide hash holds one key=value pair per board, so boards on one page keep their own position
-    const param = encodeURIComponent(boardKey ?? '');
-    const pairs = () => location.hash.slice(1).split('&').filter(Boolean);
-    // a fragment without = is an anchor (#wiring), never a board's position
-    const nameOf = pair => pair.includes('=') ? decode(pair.split('=')[0]) : null;
     let persistent = true, saved = {};
     const load = () => {
       let raw = null, found = {};
@@ -64,12 +73,7 @@
     const listen = (target, type, handler) => { target.addEventListener(type, handler); cleanups.push(() => target.removeEventListener(type, handler)); };
 
     function navigate(index = 0, wire = 0) {
-      // this board's pair keeps its place among the others
-      const mine = `${param}=${hashOf(steps[index], steps[index].connections[wire])}`, all = pairs();
-      const next = (all.some(p => nameOf(p) === boardKey) ? all.map(p => nameOf(p) === boardKey ? mine : p) : [...all, mine]).join('&');
-      // pushState, not location.hash: it fires no popstate, which Material's instant navigation answers with a swap of the whole page (on the first hash change)
-      if (location.hash.slice(1) !== next) { try { history.pushState(history.state, '', `${location.pathname}${location.search}#${next}`); } catch { location.hash = next; return; } }
-      readHash(); render();
+      if (putPair(boardKey, hashOf(steps[index], steps[index].connections[wire]))) { readHash(); render(); }
     }
     // true when this board's position changed. A foreign fragment such as #intro stays in the hash; scan() scrolls to it,
     // because once a board pair follows it the whole fragment is the anchor name and the browser finds no element
@@ -78,7 +82,7 @@
       const mine = pairs().find(p => nameOf(p) === boardKey);
       // no pair of this board (a heading anchor, another tool's hash): the board stays where it is
       if (mine === undefined) return false;
-      const bits = mine.slice(mine.indexOf('=') + 1).split('/').map(decode);
+      const bits = pairValue(mine).split('/').map(decode);
       const {step, wire} = state;
       const i = steps.findIndex(s => s.id === bits[0]); state.step = i >= 0 ? i : 0;
       const j = steps[state.step].connections.findIndex(c => c.no === bits[1]); state.wire = j >= 0 ? j : 0;
@@ -296,6 +300,61 @@
       stopSizing?.(); drawing?.destroy(); drawing = null;
       if (state.expanded) { document.body.classList.remove('ag-no-scroll'); if (document.fullscreenElement === root) document.exitFullscreen(); }
       root.replaceChildren(); root.classList.remove('ag-guide', 'ag-expanded');
+      mounted.delete(root);
+    };
+    mounted.set(root, destroy);
+    return destroy;
+  }
+
+  // The combined component: tabs for the BOM and the boards over one panel. Only the shown tab is mounted, so a board is never drawn in a hidden box
+  // and a tab that is left releases its drawing. Hash: one guide=<key> pair next to the boards' own pairs; 'bom' names the BOM.
+  let tabSeq = 0;
+  function mountTabs(root, D, options) {
+    const asked = (options.board ?? root.dataset.board ?? '').split(/\s+/).filter(Boolean);
+    const keys = asked.length ? asked : [...(D.bom ? ['bom'] : []), ...Object.keys(D.boards ?? {})];
+    if (!keys.length || keys.some(k => k === 'bom' ? !D.bom : !own(D.boards, k))) { root.textContent = `Unknown guide component: guide${asked.map(k => ' ' + k).join('')}.`; return () => {}; }
+    const id = `ag-tabs-${++tabSeq}`, assets = options.assets ?? root.dataset.assets;
+    root.classList.add('ag-guide', 'ag-tabbed');
+    root.innerHTML = `<div class="ag-tabs" role="tablist" aria-label="Guide">${keys.map((k, i) => `<button type="button" role="tab" id="${id}-${i}" aria-controls="${id}">${esc(k === 'bom' ? 'Bill of materials' : own(D.boards, k).title || k)}</button>`).join('')}</div><div id="${id}" role="tabpanel"></div>`;
+    const tabs = [...root.querySelectorAll('[role=tab]')], panel = root.lastElementChild;
+    let active = -1, seen = new Map(), handled = null;
+    const show = i => {
+      active = i;
+      tabs.forEach((tab, j) => { tab.setAttribute('aria-selected', String(j === i)); tab.tabIndex = j === i ? 0 : -1; });
+      panel.setAttribute('aria-labelledby', tabs[i].id);
+      mount(panel, D, keys[i] === 'bom' ? {view: 'bom', assets} : {view: 'board', board: keys[i], assets});
+    };
+    // seen: the pairs and handled: the hash this component acted on last
+    const sync = () => { seen = read(); handled = location.hash; };
+    const select = i => { if (putPair('guide', encodeURIComponent(keys[i]))) { sync(); if (i !== active) show(i); } };
+    tabs.forEach((tab, i) => { tab.onclick = () => select(i); });
+    root.firstElementChild.onkeydown = e => {
+      const i = {ArrowRight: active + 1, ArrowLeft: active - 1, Home: 0, End: keys.length - 1}[e.key];
+      // Alt+Arrow is the browser's history shortcut
+      if (typeof i !== 'number' || e.altKey || e.ctrlKey || e.metaKey) return;
+      e.preventDefault(); const to = (i + keys.length) % keys.length; select(to); tabs[to].focus();
+    };
+    const read = () => new Map(pairs().filter(p => nameOf(p)).map(p => [nameOf(p), pairValue(p)]));
+    // Which tab the hash asks for: the one the guide pair names, else the board whose pair changed since the last look (on load: the first pair).
+    // Else an anchor or the shown board's own pair leaves the tab as it is, else the first board pair opens its tab, else the first tab shows.
+    function follow() {
+      // a hash set from outside fires popstate and hashchange: the second finds it handled
+      if (location.hash === handled) return;
+      const now = read(), named = keys.indexOf(decode(now.get('guide') ?? ''));
+      const moved = keys.findIndex((k, i) => i !== active && k !== 'bom' && now.has(k) && now.get(k) !== seen.get(k));
+      const stay = pairs().some(p => !nameOf(p)) || now.has(keys[active]);
+      const target = Math.max(named >= 0 ? named : moved >= 0 ? moved : stay ? active : keys.findIndex(k => k !== 'bom' && now.has(k)), 0);
+      sync();
+      if (target !== active) show(target);
+    }
+    // the listeners of the shown component come after these, so a tab that changes is replaced before the old board hears the same event
+    window.addEventListener('hashchange', follow); window.addEventListener('popstate', follow);
+    follow();
+    const destroy = () => {
+      if (mounted.get(root) !== destroy) return;
+      window.removeEventListener('hashchange', follow); window.removeEventListener('popstate', follow);
+      mounted.get(panel)?.();
+      root.replaceChildren(); root.classList.remove('ag-guide', 'ag-tabbed');
       mounted.delete(root);
     };
     mounted.set(root, destroy);
