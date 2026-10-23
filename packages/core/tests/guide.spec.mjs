@@ -72,6 +72,49 @@ test('screenshots of the example pages', async ({ page }, info) => {
   }
 });
 
+test('following links between pages mounts each component once', async ({ page }) => {
+  // the hashchange listeners of this library: one per mounted component. A host's own listeners differ by source.
+  await page.addInitScript(() => {
+    const ours = new Set(), add = EventTarget.prototype.addEventListener, remove = EventTarget.prototype.removeEventListener;
+    window.__ours = ours;
+    EventTarget.prototype.addEventListener = function (type, fn, opts) { if (this === window && type === 'hashchange' && String(fn).includes('readHash')) ours.add(fn); return add.call(this, type, fn, opts); };
+    EventTarget.prototype.removeEventListener = function (type, fn, opts) { if (this === window && type === 'hashchange') ours.delete(fn); return remove.call(this, type, fn, opts); };
+  });
+  const link = name => page.getByRole('link', { name, exact: true }).first();
+  const mounted = async count => {
+    await expect(page.locator('.ag-guide')).toHaveCount(count);
+    await expect.poll(() => page.evaluate(() => window.__ours.size)).toBe(count);
+  };
+  await page.goto(BASE); await mounted(0);
+  await link('BOM').click(); await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length); await mounted(1);
+  await link('Wiring').click(); await ready(page); await mounted(1);
+  await page.goBack(); await expect(page.locator('.ag-bom')).toHaveCount(1); await mounted(1);
+  await page.goForward(); await ready(page); await mounted(1);
+  await link('All components').click(); await ready(page.locator('.ag-guide').nth(1)); await mounted(3);
+  await link('Introduction').click(); await mounted(0);
+  await link('Wiring').click(); await ready(page); await mounted(1);
+  // a hash change moves the board once: the new step renders, and the rendering is not repeated by a second listener
+  const w = D.boards.wiring, s = w.steps[1], c = s.connections[1];
+  await page.evaluate(() => { window.__renders = 0; new MutationObserver(m => { window.__renders += m.filter(r => r.target.classList?.contains('ag-guide') && r.addedNodes.length).length; }).observe(document.querySelector('.ag-guide'), { childList: true }); });
+  await setHash(page, at('wiring', s, c));
+  await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+  expect(await page.evaluate(() => window.__renders)).toBe(1);
+});
+
+test('a step change keeps the page and its components, and the back button returns to the step', async ({ page }) => {
+  // Material's instant navigation swaps the page on the first popstate: a step change must not cause one
+  await page.goto(url('wiring')); await ready(page);
+  await page.evaluate(() => { window.__root = document.querySelector('.ag-guide'); });
+  await page.locator('.ag-steps [data-step="1"]').click();
+  await expect(page.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  expect(await page.evaluate(() => window.__root.isConnected && window.__root === document.querySelector('.ag-guide'))).toBe(true);
+  await page.locator('.ag-steps [data-step="2"]').click();
+  await expect(page.locator('.ag-steps [data-step="2"]')).toHaveAttribute('aria-current', 'step');
+  await page.goBack();
+  await expect(page.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  await ready(page);
+});
+
 test('components carry no h1 and no page chrome', async ({ page }) => {
   await page.goto(url('wiring')); await ready(page);
   await expect(page.locator('.ag-guide h1')).toHaveCount(0);
@@ -398,6 +441,15 @@ test('a foreign hash fragment keeps the boards where they are and stays in the h
   // the anchor click replaced the hash: the wiring pair is gone from the URL, the board keeps its step, the anchor stays
   expect(await page.evaluate(() => decodeURIComponent(location.hash))).toBe(`#top&tubing=${hashOf(t.steps[2], t.steps[2].connections[0])}`);
   await expect(wiring.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+});
+
+test('the anchor stays in view when a board pair follows it', async ({ page }) => {
+  const w = D.boards.wiring, s = w.steps[1], c = s.connections[1];
+  await inlinePage(page, 'scrolled/', D, `<div style="height:3000px"></div><h2 id="top">Top</h2><div data-buildguide="board" data-board="wiring"></div>`);
+  await page.goto(`${BASE}scrolled/#top&${at('wiring', s, c)}`);
+  await ready(page);
+  await expect(page.locator('#top')).toBeInViewport();
+  await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
 });
 
 test('a name-only fragment equal to a board key is an anchor, not a position', async ({ page }) => {

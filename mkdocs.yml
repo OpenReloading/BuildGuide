@@ -1,11 +1,14 @@
 site_name: BuildGuide
-site_url: https://openreloading.github.io/BuildGuide/
+# the browser tests build with SITE_URL=http://127.0.0.1:8080/: instant navigation only follows links to URLs of the sitemap, which has the site_url
+site_url: !ENV [SITE_URL, 'https://openreloading.github.io/BuildGuide/']
 site_description: Interactive build guides from one data file, with the MkDocs plugin and the core browser library.
 copyright: MIT license
 
 theme:
   name: material
   font: false   # system fonts: no requests outside the site
+  features:
+    - navigation.instant   # pages swap without a reload: the components must follow
   palette:
     - scheme: default
       primary: blue grey

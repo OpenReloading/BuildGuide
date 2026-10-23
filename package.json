@@ -9,7 +9,7 @@
   "scripts": {
     "lint": "biome check . && node scripts/text-check.mjs && uv run --project packages/mkdocs ruff check packages/mkdocs",
     "test": "npm test --workspaces --if-present && uv run --project packages/mkdocs pytest packages/mkdocs",
-    "test:browser": "npm run test:browser --workspaces --if-present && npm run docs && BUILDGUIDE_SITE=../../site npm run test:browser -w packages/core && npm run build -w packages/docusaurus && BUILDGUIDE_SITE=../docusaurus/example/build npm run test:browser -w packages/core",
+    "test:browser": "npm run test:browser --workspaces --if-present && SITE_URL=http://127.0.0.1:8080/ npm run docs && BUILDGUIDE_SITE=../../site npm run test:browser -w packages/core && npm run build -w packages/docusaurus && BUILDGUIDE_SITE=../docusaurus/example/build npm run test:browser -w packages/core",
     "docs": "uv run --project packages/mkdocs mkdocs build --strict",
     "dist": "npm run dist --workspaces --if-present && uv build packages/mkdocs"
   },
