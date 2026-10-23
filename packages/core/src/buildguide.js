@@ -1,8 +1,10 @@
 /* BuildGuide components: a BOM checklist and board workspaces (wiring, tubing) from one guide data object.
    Markup: <div data-buildguide="bom"></div> or <div data-buildguide="board" data-board="wiring"></div>, any number per page,
-   plus the data in <script type="application/json" id="guide-data"> or a data-src="guide.json" URL on the div. */
+   plus the data in <script type="application/json" id="guide-data"> (any element with that id) or a data-src="guide.json" URL on the div. */
 (() => {
   'use strict';
+  // a second evaluation (Material's instant navigation runs the scripts of the new page again) only mounts what is new
+  if (window.BuildGuide) { window.BuildGuide.scan(); return; }
   const HERE = new URL('.', document.currentScript.src);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   // guide data may come from anyone: URLs from it resolve to web or file locations only, anything else becomes '#'
@@ -65,10 +67,12 @@
       // this board's pair keeps its place among the others
       const mine = `${param}=${hashOf(steps[index], steps[index].connections[wire])}`, all = pairs();
       const next = (all.some(p => nameOf(p) === boardKey) ? all.map(p => nameOf(p) === boardKey ? mine : p) : [...all, mine]).join('&');
-      if (location.hash.slice(1) === next) { readHash(); render(); } else location.hash = next;
+      // pushState, not location.hash: it fires no popstate, which Material's instant navigation answers with a swap of the whole page (on the first hash change)
+      if (location.hash.slice(1) !== next) { try { history.pushState(history.state, '', `${location.pathname}${location.search}#${next}`); } catch { location.hash = next; return; } }
+      readHash(); render();
     }
-    // true when this board's position changed. A foreign fragment such as #intro stays in the hash, but once a board pair
-    // is added the browser no longer scrolls to it: the whole fragment is the anchor name
+    // true when this board's position changed. A foreign fragment such as #intro stays in the hash; scan() scrolls to it,
+    // because once a board pair follows it the whole fragment is the anchor name and the browser finds no element
     function readHash() {
       if (!board) return false;
       const mine = pairs().find(p => nameOf(p) === boardKey);
@@ -265,13 +269,28 @@
     return destroy;
   }
 
-  window.BuildGuide = {mount};
   // every [data-buildguide] element mounts itself; elements that name the same data-src share one request
-  const inline = document.getElementById('guide-data'), requests = {};
-  let inlineData;
-  const fetchData = src => requests[src] ||= fetch(new URL(src, location.href)).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); });
-  for (const root of document.querySelectorAll('[data-buildguide]')) {
-    const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent));
-    data.then(D => { if (!D) throw new Error('no guide data'); mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = 'Guide data unavailable.'; });
+  const auto = new Map(), requests = {};
+  const fetchData = src => { const url = new URL(src, location.href).href; requests[url] ||= fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(error => { delete requests[url]; throw error; }); return requests[url]; };
+  // Runs at load and whenever the page changes without a reload (Material's document$): mounts the new components, unmounts those that left the document
+  function scan() {
+    for (const [root, entry] of auto) if (!root.isConnected) { auto.delete(root); entry.dead = true; entry.stop?.(); }
+    const inline = document.getElementById('guide-data'), pending = [];
+    let inlineData;
+    for (const root of document.querySelectorAll('[data-buildguide]')) {
+      if (auto.has(root)) continue;
+      const entry = {dead: false};
+      auto.set(root, entry);
+      const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent));
+      pending.push(data.then(D => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = 'Guide data unavailable.'; }));
+    }
+    // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
+    if (pending.length) Promise.allSettled(pending).then(() => {
+      const anchor = location.hash.slice(1).split('&').find(pair => pair && !pair.includes('='));
+      if (anchor) document.getElementById(decode(anchor))?.scrollIntoView();
+    });
   }
+  window.BuildGuide = {mount, scan};
+  scan();
+  window.document$?.subscribe(scan);
 })();

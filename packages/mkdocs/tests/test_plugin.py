@@ -1,3 +1,4 @@
+import html
 import json
 import re
 from pathlib import Path
@@ -14,21 +15,22 @@ TUBING = '<div data-buildguide="board" data-board="tubing"></div>'
 PAGES = {"a/tubing.md": f"# Tubing\n\n{TUBING}\n", "all.md": f"# All\n\n{BOM}\n\n{WIRING}\n\ntext\n\n{TUBING}\n", "index.md": "# Home\n"}
 
 
-def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None):
+def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None, theme=None):
     guide = guide or json.loads(EXAMPLE.read_text(encoding="utf-8"))
     (tmp_path / "guide.json").write_text(json.dumps(guide, indent=indent), encoding="utf-8")
     for src, text in pages.items():
         (tmp_path / "docs" / src).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs" / src).write_text(text, encoding="utf-8")
     (tmp_path / "mkdocs.yml").write_text(
-        "site_name: Test\nplugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n", encoding="utf-8"
+        "site_name: Test\n" + (f"theme:\n  name: {theme}\n" if theme else "") + "plugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n",
+        encoding="utf-8",
     )
     build(load_config(str(tmp_path / "mkdocs.yml"), strict=strict))
     return tmp_path / "site"
 
 
 def guide_data(page):
-    return json.loads(re.search(r'<script type="application/json" id="guide-data"[^>]*>(.*?)</script>', page).group(1))
+    return json.loads(html.unescape(re.search(r'<div id="guide-data"[^>]*>(.*?)</div>', page, re.DOTALL).group(1)))
 
 
 def test_pages_with_components_get_inline_data_and_core_once(tmp_path):
@@ -48,6 +50,15 @@ def test_pages_with_components_get_inline_data_and_core_once(tmp_path):
         assert (out / "assets/buildguide" / name).is_file()
 
 
+def test_material_gets_data_and_core_inside_the_article(tmp_path):
+    # instant navigation swaps the article and runs its scripts again, and drops what follows it in the body
+    page = (site(tmp_path, theme="material") / "all/index.html").read_text(encoding="utf-8")
+    article = page[page.index("<article") : page.rindex("</article>")]
+    assert 'id="guide-data"' in article
+    assert '<script src="../assets/buildguide/buildguide.js" defer></script>' in article
+    assert guide_data(page) == json.loads(EXAMPLE.read_text(encoding="utf-8"))
+
+
 def test_pages_without_a_component_get_nothing(tmp_path):
     index = (site(tmp_path) / "index.html").read_text(encoding="utf-8")
     for text in ("guide-data", "buildguide", "data-buildguide"):
@@ -60,11 +71,11 @@ def test_code_samples_are_not_components(tmp_path):
     assert "guide-data" not in index
 
 
-def test_inline_data_cannot_end_its_script(tmp_path):
+def test_inline_data_cannot_end_its_element(tmp_path):
     guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    guide["boards"]["wiring"]["title"] = "Kit </script><script>alert(1)</script>"
+    guide["boards"]["wiring"]["title"] = "Kit </div><script>alert(1)</script> &amp; "
     page = (site(tmp_path, guide=guide) / "all/index.html").read_text(encoding="utf-8")
-    assert "</script><script>alert(1)" not in page
+    assert "<script>alert(1)" not in page
     assert guide_data(page)["boards"]["wiring"]["title"] == guide["boards"]["wiring"]["title"]
 
 

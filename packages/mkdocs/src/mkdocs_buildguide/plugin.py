@@ -107,13 +107,17 @@ class BuildGuidePlugin(BasePlugin):
         core = get_relative_url("assets/buildguide/", page.url).rstrip("/") + "/"
         assets = get_relative_url(self.config["assets"], page.url).rstrip("/") + "/"
         styles = f'<link rel="stylesheet" href="{core}buildguide.css"><link rel="stylesheet" href="{core}buildguide-mkdocs.css">'
-        data = json.dumps(self.guide).replace("<", "\\u003c")
+        # a hidden element, not <script type="application/json">: Material's instant navigation runs the page's scripts again and drops the type
+        data = html.escape(json.dumps(self.guide), quote=False)
         scripts = (
-            f'<script type="application/json" id="guide-data" data-assets="{html.escape(assets)}">{data}</script>'
+            f'<div id="guide-data" data-assets="{html.escape(assets)}" hidden>{data}</div>'
             f'<script src="{core}buildguide.js" defer></script>'
         )
         output = self.add_note(output).replace("</head>", styles + "</head>", 1)
-        at = output.rfind("</body>")
+        # inside the page's article with Material: Material's instant navigation swaps the article and runs its scripts, but drops the rest of the body
+        at = output.rfind("</article>") if config.theme.name == "material" else -1
+        if at < 0:
+            at = output.rfind("</body>")
         return output[:at] + scripts + output[at:]
 
     def on_post_build(self, config):
