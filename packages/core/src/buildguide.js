@@ -55,7 +55,7 @@
     // a tick belongs to one exact connection: change either end and it is unchecked again
     const connKey = c => `${prefix}-${c.no}:${c.a}:${c.b}`, bomKey = p => `bom-${p.id}:${p.part}`;
     const count = (items, key) => items.filter(x => checked(key(x))).length;
-    const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 1, expanded: false, search: ''};
+    const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 1, expanded: false, search: '', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
     const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
     const color = c => own(board.colors, c.color) || {};
@@ -99,7 +99,11 @@
       drawing?.destroy(); drawing = null;
       root.classList.add('ag-guide');
       root.classList.toggle('ag-expanded', state.expanded);
-      root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>`;
+      const message = state.message; state.message = '';
+      root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
+        <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status"></span></div>`;
+      // a live region announces text added to an element that already exists, not text that arrives with it
+      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live) live.textContent = message; }, 50);
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
@@ -185,7 +189,7 @@
     const bom = D.bom || {}, items = bom.items || [];
     const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()));
     function renderBOM() {
-      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions"><span class="ag-progress">${count(items, bomKey)} / ${items.length} checked</span>${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions"><span class="ag-progress">${count(items, bomKey)} / ${items.length} checked</span>${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label></div><div class="ag-bom-results">${bomRows()}</div></section>`;
     }
     function bomRows() {
       const parts = filteredParts();
@@ -205,6 +209,31 @@
       const cell = v => '"' + String(v ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"';
       const blob = new Blob(['﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'});
       const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = bom.export || 'bom.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    // progress files hold one object of true/false values, the shape this script stores
+    const isProgress = v => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'boolean');
+    // every mounted component on the page takes the new object, so a later tick does not write the old ticks back
+    const shareProgress = (progress, message = '') => {
+      state.message = message;
+      document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress}}));
+    };
+    listen(document, 'buildguide-progress', e => { if (e.detail?.storage === D.storage && isProgress(e.detail.saved)) { saved = {...e.detail.saved}; render(); } });
+    function exportProgress() {
+      const blob = new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${D.storage}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+    async function importProgress(file) {
+      let progress;
+      try { progress = file.size < 1e6 && JSON.parse(await file.text()); } catch {}
+      if (mounted.get(root) !== destroy) return;
+      if (!isProgress(progress)) { state.message = file.size < 1e6 ? 'Not imported: the file is not a progress export.' : 'Not imported: the file is larger than 1 MB.'; render(); return; }
+      try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; }
+      shareProgress(progress, persistent ? 'Progress imported.' : 'Imported, but storage is unavailable: progress is not saved.');
+    }
+    function resetProgress() {
+      if (!confirm('Reset all saved progress of this guide, in every component on the page?')) return;
+      try { localStorage.removeItem(D.storage); } catch { persistent = false; }
+      shareProgress({}, persistent ? 'Progress reset.' : 'Reset for this visit: storage is unavailable.');
     }
     function moveWire(dir) {
       let i = state.step, j = state.wire + dir;
@@ -239,6 +268,7 @@
       for (const b of root.querySelectorAll('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); };
       bindChecks(root);
+      const file = root.querySelector('[data-role=import-file]'); file.onchange = () => { if (file.files[0]) importProgress(file.files[0]); };
       const search = root.querySelector('[data-role=search]'); if (search) search.oninput = () => { state.search = search.value; const results = root.querySelector('.ag-bom-results'); results.innerHTML = bomRows(); bindChecks(results); };
       for (const b of root.querySelectorAll('[data-action]')) b.onclick = () => {
         switch (b.dataset.action) {
@@ -250,6 +280,9 @@
           case 'prev-wire': moveWire(-1); break;
           case 'export': exportCSV(); break;
           case 'print': window.print(); break;
+          case 'export-progress': exportProgress(); break;
+          case 'import-progress': root.querySelector('[data-role=import-file]').click(); break;
+          case 'reset-progress': resetProgress(); break;
         }
       };
     }
