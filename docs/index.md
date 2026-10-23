@@ -2,10 +2,18 @@
 
 Interactive build guide components from one data file: a BOM checklist, and wiring and tubing boards with a tick per connection, to place in your own documentation pages. Plain JavaScript and CSS, no requests outside the site. Source and releases: [OpenReloading/BuildGuide](https://github.com/OpenReloading/BuildGuide).
 
-| Component | Use | Release |
-|---|---|---|
-| [Core](core.md) | browser components, JSON Schema and check CLI for any static site | `core-v*`: `buildguide-<version>.tar.gz` |
-| [MkDocs plugin](mkdocs.md) | `<div data-buildguide="...">` in Markdown, data checked at build time | `mkdocs-v*`: wheel and sdist |
-| [Docusaurus plugin](docusaurus.md) | `<BuildGuide view="..."/>` component, data checked at build time | `docusaurus-v*`: npm .tgz |
+## Getting started
 
-The [data format](data-format.md) is the same for every component. The [example pages](example/index.md) on this site embed the components with the MkDocs plugin from `packages/core/example/guide.json`; [All components](example/all.md) shows three on one page.
+| Your site | Use | Release |
+|---|---|---|
+| [Plain HTML](core.md) | browser components, JSON Schema and check CLI for any static site | `core-v*`: `buildguide-<version>.tar.gz`, npm package on GitHub Packages |
+| [MkDocs](mkdocs.md) | `<div data-buildguide="...">` in Markdown, data checked at build time | `mkdocs-v*`: wheel and sdist |
+| [Docusaurus](docusaurus.md) | `<BuildGuide view="..."/>` component, data checked at build time | `docusaurus-v*`: npm package on GitHub Packages |
+
+## Then
+
+- [Data format](data-format.md): every key of the guide data, with the example.
+- [Theming and dark mode](theming.md): colour tokens, the dark theme, print, browser support.
+- [Reference](reference.md): the markup, hash, storage and script surface a site can rely on, the check CLI and the plugin options.
+- [Migration](migration.md): from the page shell to components only.
+- [Example guide](example/index.md): the components on pages of this site, from `packages/core/example/guide.json`. [All components](example/all.md) shows three on one page.

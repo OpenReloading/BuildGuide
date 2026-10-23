@@ -41,16 +41,24 @@ validation:
     anchors: warn
     unrecognized_links: warn
 
-# agent instructions in docs/agents/ are not pages
+# agent instructions in docs/agents/ and the generator hook are not pages
 exclude_docs: |
   agents/
+  hooks/
+
+hooks:
+  - docs/hooks/reference.py
 
 nav:
   - Home: index.md
-  - Core: core.md
-  - MkDocs plugin: mkdocs.md
-  - Docusaurus plugin: docusaurus.md
+  - Getting started:
+      - Plain HTML: core.md
+      - MkDocs: mkdocs.md
+      - Docusaurus: docusaurus.md
   - Data format: data-format.md
+  - Theming and dark mode: theming.md
+  - Reference: reference.md
+  - Migration: migration.md
   - Example guide:
       - Introduction: example/index.md
       - BOM: example/bom.md

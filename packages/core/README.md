@@ -33,15 +33,9 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    Each component carries the class `ag-guide`, takes the width of its container and has no title: the host page names it. Boards keep their position in the URL hash, one `key=step/number` pair per board, for example `#wiring=B/4&tubing=3`. A board changes the hash with `history.pushState`, so it fires no `hashchange` and no `popstate` (Material's instant navigation swaps the page on a `popstate`). Use each board once per page. A hash without a board's pair (a heading anchor such as `#intro`) leaves that board where it is; a foreign fragment stays in the hash and is scrolled to when the components mount. Boards also follow `popstate`.
 
-   Colours are `--ag-*` custom properties on `.ag-guide` (list at the top of `buildguide.css`). A site overrides them in its own stylesheet, for example `.ag-guide{--ag-accent:#0a5}`. `--ag-page` is the component background.
+   Colours, the dark theme and print: [Theming and dark mode](https://openreloading.github.io/BuildGuide/theming/).
 
-   Dark theme: every colour is a `light-dark()` pair (Chrome 123, Firefox 120, Safari 17.5 and later) that follows the component's `color-scheme`. Without a host signal the browser preference applies (`prefers-color-scheme`); `data-ag-scheme="light"` on the component or an ancestor opts out. A host that signals dark sets `color-scheme: dark` and `--ag-board-filter: invert(.9) hue-rotate(180deg)` on `.ag-guide`, which also darkens the board drawing. Print is always light.
-
-3. Write the guide data. `buildguide.schema.json` (JSON Schema 2020-12) describes it, and `example/guide.json` uses every part of it.
-
-   - `storage`: localStorage key for the ticks, shared by all components. A tick belongs to one exact connection (number and both ends): changing an end clears it. Each component says at its bottom whether progress is saved. Below that, `Export progress` downloads `<storage>.json`, `Import progress` replaces the saved progress from such a file (only an object of `true` and `false` values is accepted) and `Reset progress` removes it after a confirmation. Both change every component on the page at once through a `buildguide-progress` event on `document` (`detail: {storage, saved}`). The BOM also has a `Print` button.
-   - `bom`: note, BOM items with groups, search and CSV export.
-   - `boards`: one entry per board key, with a required `title` (step navigation label, list heading, accessible name). Parts with terminals on their sides (`ports`), connections in `steps` (each step has an `id`, a `title`, an optional `note` shown as plain text with the step above its connection list, and its `connections`) from `PART:terminal` to `PART:terminal`, colour codes, part kinds, areas with cable glands, and `rules` such as connections per terminal. Routes are computed (libavoid), not drawn.
+3. Write the guide data: [Data format](https://openreloading.github.io/BuildGuide/data-format/) describes every key, `buildguide.schema.json` (JSON Schema 2020-12) is the formal definition, and `example/guide.json` uses every part of it.
 
 4. Check the data before publishing:
 
