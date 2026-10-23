@@ -19,7 +19,7 @@ async function drawn(page) {
       const cmds = [...d.matchAll(/([MLC])([^MLC]*)/g)].map(m => ({ c: m[1], n: m[2].trim().split(/\s+/).map(num) }));
       const pts = [];
       let cur;
-      for (const { c, n } of cmds) {
+      cmds.forEach(({ c, n }, i) => {
         if (c === 'C') {
           const [x1, y1, x2, y2, x, y] = n;
           const a = Math.hypot(x1 - cur[0], y1 - cur[1]) > 1e-6 ? [x1 - cur[0], y1 - cur[1]] : [x2 - cur[0], y2 - cur[1]];
@@ -30,9 +30,12 @@ async function drawn(page) {
             pts.push([cur[0] + a[0] * t, cur[1] + a[1] * t]);
           }
           cur = [x, y];
-        } else cur = n;
-        pts.push(cur);
-      }
+        } else {
+          cur = n;
+          if (cmds[i + 1]?.c !== 'C') pts.push(cur);   // a point before a curve is where the curve starts, not a bend
+        }
+        if (c === 'C' && i === cmds.length - 1) pts.push(cur);
+      });
       // the bends only: a point on a straight line between its neighbours is dropped
       const same = (p, q, k) => Math.abs(p[k] - q[k]) < 0.01;
       return pts.filter((p, i) => !i || i === pts.length - 1 || !(same(p, pts[i - 1], 0) && same(p, pts[i + 1], 0) || same(p, pts[i - 1], 1) && same(p, pts[i + 1], 1)));
@@ -100,7 +103,7 @@ function problems(b, g, shown) {
     for (const [id, part] of Object.entries(g.parts)) for (const r of [part.body, ...part.labels]) if (hits(x, inside(r, SLACK))) found.push(`badge ${x.no} on ${id}`);
     for (const l of g.captions) if (hits(x, inside(l, SLACK))) found.push(`badge ${x.no} on a caption`);
     // the badge of a connection sits on a straight stretch: no bend of any connection under it
-    if (x.pill) for (const [no, pts] of Object.entries(g.connections)) for (const p of pts.slice(1, -1)) if (hits(x, { x0: p[0], y0: p[1], x1: p[0], y1: p[1] })) found.push(`badge ${x.no} on a bend of ${no}`);
+    if (x.pill) for (const [no, pts] of Object.entries(g.connections)) for (const p of pts.slice(1, -1)) if (hits(x, { x0: p[0], y0: p[1], x1: p[0], y1: p[1] })) found.push(`badge ${x.no} (${x.x0},${x.y0},${x.x1},${x.y1}) on a bend of ${no} at ${p}`);
   }
   return found;
 }
@@ -108,7 +111,7 @@ function problems(b, g, shown) {
 for (const [key, b] of Object.entries(D.boards)) {
   const all = b.steps.flatMap(s => s.connections);
   const views = [{ name: 'all connections', shown: all, go: async page => { await page.goto(`${ORIGIN}/example/${key}/`); if ((b.scope || 'step') !== 'all') await page.locator('[data-role=scope]').selectOption('all'); } },
-    ...b.steps.map((s, i) => ({ name: `step ${s.id}`, shown: s.connections, go: async page => { await page.goto(`${ORIGIN}/example/${key}/#${encodeURIComponent(key)}=${encodeURIComponent(s.id)}`); await page.locator('[data-role=scope]').selectOption('step'); } }))];
+    ...b.steps.map(s => ({ name: `step ${s.id}`, shown: s.connections, go: async page => { await page.goto(`${ORIGIN}/example/${key}/#${encodeURIComponent(key)}=${encodeURIComponent(s.id)}`); } }))];
   for (const v of (b.scope === 'all' ? views.slice(0, 1) : views)) {
     test(`${key}, ${v.name}: wires are orthogonal, apart, clear of parts, labels and each other's numbers`, async ({ page }) => {
       await v.go(page);

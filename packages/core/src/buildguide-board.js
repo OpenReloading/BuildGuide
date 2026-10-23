@@ -276,12 +276,12 @@
           const p = lines[i][k], long = Math.hypot(q.x - p.x, q.y - p.y);
           return [.5, .35, .65, .2, .8].map(t => ({x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, long, room: long * Math.min(t, 1 - t)}));
         }).sort((u, v) => v.long - u.long);
-        // shortcut: the box of a number is a fixed 26 x 24 px, whatever its text
+        // shortcut: the box of a number is a fixed 30 x 24 px, enough for two digits
         const spot = [[20, [...fixed, ...near]], [20, fixed], [10, fixed]].reduce((found, [room, others]) =>
-          found ?? spots.find(s => s.room >= room && free({x0: s.x - 13, y0: s.y - 12, x1: s.x + 13, y1: s.y + 12}, others)), null);
+          found ?? spots.find(s => s.room >= room && free({x0: s.x - 15, y0: s.y - 12, x1: s.x + 15, y1: s.y + 12}, others)), null);
         const view = views[i], at = spot ?? view.getPointAtRatio(.5);
         links[c.no].label(0, {position: spot ? view.getClosestPointLength(at) / view.getConnectionLength() : .5});
-        placed.push({x0: at.x - 15, y0: at.y - 14, x1: at.x + 15, y1: at.y + 14});
+        placed.push({x0: at.x - 17, y0: at.y - 14, x1: at.x + 17, y1: at.y + 14});
       });
       highlight(selected.no, true);
       root.dataset.ready = 'true';
