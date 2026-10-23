@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.1.1](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.0...mkdocs-v0.1.1) (2026-10-23)
+
+
+### Features
+
+* **core,mkdocs,docusaurus:** combined guide component with tab navigation ([#44](https://github.com/OpenReloading/BuildGuide/issues/44)) ([776ec45](https://github.com/OpenReloading/BuildGuide/commit/776ec45deb2ffc4010d90b0dd04b8b414be20884))
+
+
+### Bug fixes
+
+* **core,mkdocs:** Material instant navigation, anchor with a board pair ([#29](https://github.com/OpenReloading/BuildGuide/issues/29)) ([f1ca2e8](https://github.com/OpenReloading/BuildGuide/commit/f1ca2e82ea3571c4e27afa437c7c2512293f31c7))
+
+
+### Documentation
+
+* getting started per host, reference, theming, migration ([#35](https://github.com/OpenReloading/BuildGuide/issues/35)) ([5251848](https://github.com/OpenReloading/BuildGuide/commit/525184837df00c45719b752ad0abc464296a55a8))
+* usage examples per host, remove migration page, trim READMEs ([#42](https://github.com/OpenReloading/BuildGuide/issues/42)) ([7cbec68](https://github.com/OpenReloading/BuildGuide/commit/7cbec688d2adddbf4961504434023f2fa186a5cc))
+
 ## 0.1.0 (2026-10-22)
 
 
