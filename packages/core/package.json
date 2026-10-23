@@ -3,11 +3,24 @@
   "version": "0.2.0",
   "description": "Interactive build guides for hardware: BOM checklist, wiring and tubing boards from one JSON file",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenReloading/BuildGuide.git",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
-  "private": true,
   "bin": {
     "buildguide-check": "src/buildguide-check.mjs"
   },
+  "files": [
+    "src",
+    "schema",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test",

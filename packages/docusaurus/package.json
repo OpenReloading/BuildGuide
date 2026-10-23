@@ -3,7 +3,14 @@
   "version": "1.0.0",
   "description": "Docusaurus plugin for BuildGuide: interactive build guides (BOM checklist, wiring and tubing boards) from one JSON file",
   "license": "MIT",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenReloading/BuildGuide.git",
+    "directory": "packages/docusaurus"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "main": "src/index.js",
   "files": [
     "src",

@@ -11,6 +11,8 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
    tar -xzf buildguide-0.1.0.tar.gz -C assets/
    ```
 
+   Or install `@openreloading/buildguide` from GitHub Packages (see [GitHub Packages](#github-packages)) and copy `node_modules/@openreloading/buildguide/src/` into the site's assets.
+
 2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist or one board (wiring or tubing). Use as many as you like on one page:
 
    ```html
@@ -48,6 +50,17 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
    ```
 
    It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part, the per-terminal limit, a board `title`, and tick prefixes that are unique across boards and not `bom`. It prints one line per problem and exits 1, or 2 without a file. `check(data)` from the same module returns the list. The schema itself is checked with any JSON Schema validator.
+
+## GitHub Packages
+
+Each `core-v*` release is also published as `@openreloading/buildguide` on the GitHub Packages npm registry, which asks for a token with the `read:packages` scope even for public packages. In the project's `.npmrc`:
+
+```ini
+@openreloading:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+then `npm install @openreloading/buildguide`. The package holds `src/` (components, vendored libraries, `buildguide-check.mjs`, also the `buildguide-check` command) and `schema/`.
 
 ## Development
 
