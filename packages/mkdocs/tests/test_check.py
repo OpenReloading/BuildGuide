@@ -35,3 +35,11 @@ def test_a_step_note_must_be_text():
     guide = read(CORE / "example/guide.json")
     guide["boards"]["wiring"]["steps"][0]["note"] = 1
     assert [line.split(":")[0] for line in problems(guide)] == ["$.boards.wiring.steps[0].note"]
+
+
+MINIMAL = sorted((CORE / "example/minimal").glob("*.json"))
+
+
+@pytest.mark.parametrize("path", MINIMAL, ids=[p.name for p in MINIMAL])
+def test_the_minimal_examples_have_no_problems(path):
+    assert problems(read(path)) == []

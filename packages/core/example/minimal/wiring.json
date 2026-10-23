@@ -1,0 +1,27 @@
+{
+  "storage": "minimal-wiring",
+  "boards": {
+    "wiring": {
+      "title": "Wiring",
+      "size": [520, 260],
+      "colors": {
+        "RD": { "line": "#dc2626", "outline": "#7f1d1d" },
+        "BK": { "line": "#1f2937", "outline": "#000000" }
+      },
+      "parts": {
+        "PSU": { "name": "Power supply", "sub": "12 V DC", "at": [40, 40], "size": [150, 80], "ports": { "bottom": ["+", "-"] } },
+        "LAMP": { "name": "Lamp", "sub": "12 V", "at": [330, 40], "size": [150, 80], "ports": { "bottom": ["1", "2"] } }
+      },
+      "steps": [
+        {
+          "id": "A",
+          "title": "Supply",
+          "connections": [
+            { "no": "1", "a": "PSU:+", "b": "LAMP:1", "color": "RD" },
+            { "no": "2", "a": "PSU:-", "b": "LAMP:2", "color": "BK" }
+          ]
+        }
+      ]
+    }
+  }
+}

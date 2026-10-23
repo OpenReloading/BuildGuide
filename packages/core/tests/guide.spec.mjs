@@ -515,6 +515,22 @@ test('inline data in #guide-data works like data-src', async ({ page }) => {
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
 });
 
+// the small examples of the docs, one component each: they mount and show what the docs say
+const minimal = name => JSON.parse(readFileSync(new URL(`../example/minimal/${name}.json`, import.meta.url)));
+test('minimal examples: a BOM, a wiring board and a tubing board each mount from their own small guide', async ({ page }) => {
+  const bom = minimal('bom'), wiring = minimal('wiring'), tubing = minimal('tubing');
+  await inlinePage(page, 'minimal-bom/', bom, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'minimal-bom/');
+  await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(bom.bom.items.length);
+  for (const [name, data] of [['wiring', wiring], ['tubing', tubing]]) {
+    await inlinePage(page, `minimal-${name}/`, data, `<div data-buildguide="board" data-board="${name}"></div>`);
+    await page.goto(`${BASE}minimal-${name}/`); await ready(page);
+    const all = data.boards[name].steps.flatMap(s => s.connections);
+    await expect(page.locator('.ag-wire-row')).toHaveCount(all.length);
+    await expect(page.locator('.ag-steps [data-step]')).toHaveCount(data.boards[name].steps.length);
+  }
+});
+
 test('untrusted data: script URLs become #, ids with spaces and slashes reach their step, CSV formulas stay text', async ({ page }) => {
   const d = structuredClone(D), w = d.boards.wiring;
   d.bom.items[0].link = 'javascript:window.hit=1';

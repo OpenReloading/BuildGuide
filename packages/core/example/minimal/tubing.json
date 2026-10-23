@@ -1,0 +1,30 @@
+{
+  "storage": "minimal-tubing",
+  "boards": {
+    "tubing": {
+      "title": "Tubing",
+      "size": [560, 200],
+      "scope": "all",
+      "listAll": true,
+      "listColor": false,
+      "colors": { "AIR": { "line": "#7694b2", "outline": "#3f5f7f" } },
+      "parts": {
+        "AIR": { "name": "Air supply", "sub": "6 bar", "at": [30, 60], "size": [110, 70], "ports": { "right": ["out"] } },
+        "V1": { "name": "3/2 valve", "sub": "Y1", "at": [230, 60], "size": [110, 70], "ports": { "left": ["P"], "right": ["A"] } },
+        "CYL": { "name": "Cylinder", "sub": "16 x 50", "at": [430, 60], "size": [110, 70], "ports": { "left": ["cap"] } }
+      },
+      "steps": [
+        {
+          "id": "1",
+          "title": "Supply to valve",
+          "connections": [{ "no": "1", "a": "AIR:out", "b": "V1:P", "color": "AIR" }]
+        },
+        {
+          "id": "2",
+          "title": "Valve to cylinder",
+          "connections": [{ "no": "2", "a": "V1:A", "b": "CYL:cap", "color": "AIR" }]
+        }
+      ]
+    }
+  }
+}
