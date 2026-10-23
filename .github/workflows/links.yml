@@ -1,0 +1,23 @@
+name: Links
+# External links in the READMEs and docs, weekly: external sites are too flaky to gate pull requests. Internal links are checked by the docs build.
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  lychee:
+    if: github.repository == 'OpenReloading/BuildGuide'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --no-progress --scheme http --scheme https --exclude-path docs/agents README.md 'packages/*/README.md' 'docs/**/*.md'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

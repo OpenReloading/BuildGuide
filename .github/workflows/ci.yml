@@ -24,6 +24,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run test:browser
+      # one folder per host: core example, MkDocs site, Docusaurus build
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: screenshots
+          path: packages/core/test-results
+          if-no-files-found: ignore
       - run: npm run dist
       - run: node scripts/audit.mjs
   workflows:

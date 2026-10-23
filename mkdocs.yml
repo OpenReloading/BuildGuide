@@ -33,6 +33,11 @@ markdown_extensions:
   - pymdownx.snippets:
       check_paths: true
 
+validation:
+  links:
+    anchors: warn
+    unrecognized_links: warn
+
 # agent instructions in docs/agents/ are not pages
 exclude_docs: |
   agents/
