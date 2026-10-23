@@ -1,0 +1,10 @@
+#!/bin/sh
+# Opt-in: git config core.hooksPath .githooks
+# The lint step of CI (Biome, text check, ruff) in the dev container before a push. CI stays the gate.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+dc() { devcontainer exec --docker-path podman --workspace-folder . "$@"; }
+if ! dc true >/dev/null 2>&1; then
+  echo "pre-push: the dev container is not running. Start it with: devcontainer up --docker-path podman --workspace-folder ." >&2
+  exit 1
+fi
+dc npm run lint
