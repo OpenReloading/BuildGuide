@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.1.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.0.0...docusaurus-v1.1.0) (2026-10-23)
+
+
+### Features
+
+* **core,docusaurus:** publish to GitHub Packages ([#27](https://github.com/OpenReloading/BuildGuide/issues/27)) ([c210a9a](https://github.com/OpenReloading/BuildGuide/commit/c210a9a57f62b00fafb0e121d057bb022184302f))
+* **core,mkdocs,docusaurus:** combined guide component with tab navigation ([#44](https://github.com/OpenReloading/BuildGuide/issues/44)) ([776ec45](https://github.com/OpenReloading/BuildGuide/commit/776ec45deb2ffc4010d90b0dd04b8b414be20884))
+
+
+### Documentation
+
+* usage examples per host, remove migration page, trim READMEs ([#42](https://github.com/OpenReloading/BuildGuide/issues/42)) ([7cbec68](https://github.com/OpenReloading/BuildGuide/commit/7cbec688d2adddbf4961504434023f2fa186a5cc))
+
 ## 1.0.0 (2026-10-22)
 
 
