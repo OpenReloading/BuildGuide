@@ -1,4 +1,4 @@
-// <BuildGuide view="bom"/> and <BuildGuide view="board" board="wiring"/>: one guide component, any number per page.
+// <BuildGuide view="bom"/>, <BuildGuide view="board" board="wiring"/> and <BuildGuide view="guide"/>: one guide component, any number per page.
 // Data and URLs come from the plugin's #buildguide-data.
 import React, { useEffect, useRef } from 'react';
 

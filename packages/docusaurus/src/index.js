@@ -1,5 +1,5 @@
 // Docusaurus plugin: checks the guide data at build time, serves core at <baseUrl>assets/buildguide/ and
-// provides <BuildGuide view="bom"/> and <BuildGuide view="board" board="KEY"/> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
+// provides <BuildGuide view="bom"/>, <BuildGuide view="board" board="KEY"/> and <BuildGuide view="guide"/> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');

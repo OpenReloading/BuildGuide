@@ -172,6 +172,62 @@ The same structure with one colour for the tube. `scope: "all"` shows every tube
     <BuildGuide view="board" board="tubing" />
     ```
 
+## BOM and boards behind tabs
+
+One component with a tab for the BOM and one for each board, in the order of the data. Only the shown tab is mounted, so a board is drawn when you open its tab. `data-board="wiring tubing"` (Docusaurus: `board="wiring tubing"`) picks tabs and their order; `bom` names the BOM. The tab is kept in the hash (`#guide=wiring`) next to the boards' own positions. Live with the full example data: [Combined](example/guide.md).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/all.json"
+```
+
+=== "Plain HTML"
+
+    ```html title="guide.html"
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Guide</title>
+    <link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+    </head>
+    <body>
+    <h1>Guide</h1>
+    <div data-buildguide="guide" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+    <script src="assets/buildguide-<version>/buildguide.js" defer></script>
+    </body>
+    </html>
+    ```
+
+=== "MkDocs"
+
+    ```yaml title="mkdocs.yml"
+    plugins:
+      - search
+      - buildguide:
+          data: guide.json
+    ```
+
+    ```markdown title="docs/guide.md"
+    # Guide
+
+    <div data-buildguide="guide"></div>
+    ```
+
+=== "Docusaurus"
+
+    ```js title="docusaurus.config.js"
+    plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+    ```
+
+    ```mdx title="docs/guide.mdx"
+    # Guide
+
+    import BuildGuide from '@theme/BuildGuide';
+
+    <BuildGuide view="guide" />
+    ```
+
 ## Several components on one page
 
-Place them one after the other, each board once per page. The [All components](example/all.md) page shows the BOM, wiring and tubing together; its guide data holds `bom` and both boards.
+Place them one after the other, each board once per page. The [All components](example/all.md) page shows the BOM, wiring and tubing together; its guide data holds `bom` and both boards. A board is either standalone or in a tab, not both on one page.

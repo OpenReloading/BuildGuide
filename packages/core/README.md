@@ -32,8 +32,8 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    | Attribute | Meaning | Default |
    |---|---|---|
-   | `data-buildguide` | `bom` or `board` | required |
-   | `data-board` | key in `boards`, for `board` | required for `board` |
+   | `data-buildguide` | `bom`, `board`, or `guide` (the BOM and all boards behind tabs) | required |
+   | `data-board` | key in `boards`, for `board`; for `guide` a space separated list of `bom` and board keys to show, in that order | required for `board`, all for `guide` |
    | `data-src` | URL of the guide data. Components with the same URL share one request | the JSON in an element with the id `guide-data` |
    | `data-assets` | folder of BOM images, relative to the page | `assets/` (or the `data-assets` of `#guide-data`) |
 

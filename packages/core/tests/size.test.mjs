@@ -5,7 +5,7 @@ import { gzipSync } from 'node:zlib';
 
 // gzip budgets in bytes, about 10 % above the size at the time of writing; raise one only on purpose
 const BUDGET = {
-  'buildguide.js': 10300, // scan, pushState navigation, progress export and import: 9384 at the time
+  'buildguide.js': 11600, // scan, pushState navigation, progress export and import, combined tabs: 10583 at the time
   'buildguide-board.js': 7200,
   'buildguide.css': 4800,
   'vendor/joint/joint.min.js': 160000,

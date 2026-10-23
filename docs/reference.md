@@ -8,8 +8,9 @@ The surface a site may style or test against. Anything not listed here can chang
 |---|---|
 | `.ag-guide` | the root of a mounted component |
 | `.ag-*` | the component classes inside it |
-| `data-buildguide` | on the element to fill: `bom` or `board` |
-| `data-board` | the board key, for `board` |
+| `data-buildguide` | on the element to fill: `bom`, `board` or `guide` |
+| `data-board` | the board key, for `board`; for `guide` a space separated list of `bom` and board keys (so no key with a space) to show as tabs, in that order, empty for the BOM and every board |
+| `.ag-tabbed`, `.ag-tabs`, `role=tab`, `role=tabpanel` | the root of a `guide` component (it carries `.ag-guide` too), its tab list, its tabs and its one panel; the panel is a mounted BOM or board component |
 | `data-src` | URL of the guide data; components with the same URL share one request |
 | `data-assets` | folder of BOM images, relative to the page |
 | `#guide-data` | an element holding the guide data as JSON (`<script type="application/json">`, or any element with that id), used by components without `data-src`; its `data-assets` is the default for them |
@@ -27,10 +28,13 @@ The [`--ag-*` tokens](theming.md#tokens) are stable too.
 | Name | Format |
 |---|---|
 | Hash pair | `<board key>=<step>/<no>`, one per board, joined with `&`: `#wiring=B/4&tubing=3`. `<step>` and `<no>` are percent-encoded; the number is left out for a step with one connection. A fragment without `=` is an anchor and leaves every board where it is. |
+| Tab pair | `guide=<key>`, for the shown tab of a `guide` component, `bom` for the BOM: `#guide=wiring&wiring=B/4`. It sits next to the board pairs. |
 | Tick key | `<prefix>-<no>:<a>:<b>` for a connection, `bom-<id>:<part>` for a BOM item |
 | Storage key | the `storage` of the guide data: one `localStorage` key holding an object of `true` and `false` values |
 
-A board changes the hash with `history.pushState`, so it fires no `hashchange` and no `popstate` (Material's instant navigation swaps the page on a `popstate`); boards follow `popstate`. Use each board once per page. A foreign fragment stays in the hash and is scrolled to when the components mount.
+A board changes the hash with `history.pushState`, so it fires no `hashchange` and no `popstate` (Material's instant navigation swaps the page on a `popstate`); boards follow `popstate`. Use each board once per page, also across a `guide` component and standalone boards. A foreign fragment stays in the hash and is scrolled to when the components mount.
+
+A `guide` component mounts the shown tab only: a board is drawn when its tab is shown, never in a hidden box, and a tab that is left releases its drawing and search text. Ticks and each board's position (its hash pair) stay. On load the tab pair names the tab, else the first board pair in the hash opens its tab, else the first tab shows. Later, a board pair that changes in the hash opens its board's tab, a changed tab pair opens that tab, an anchor leaves the tab as it is, and a hash without tab pair, anchor or pair of the shown board shows the first tab. Printing prints the shown component, without the tabs. A board whose key is `guide` or `bom` is not usable in a `guide` component.
 
 A change to a tick key or to the storage key drops the ticks people saved.
 
@@ -38,7 +42,7 @@ A change to a tick key or to the storage key drops the ticks people saved.
 
 | Call | Meaning |
 |---|---|
-| `BuildGuide.mount(root, data, {view, board, assets})` | renders one component into `root` and returns the function that removes it again (listeners, drawing, markup). An unknown view or board shows `Unknown guide component`. |
+| `BuildGuide.mount(root, data, {view, board, assets})` | renders one component into `root` and returns the function that removes it again (listeners, drawing, markup). An unknown view, board, or key in the `board` list of a `guide` shows `Unknown guide component`. |
 | `BuildGuide.scan()` | mounts the components that are not mounted yet and unmounts those that left the document. The script runs it at load, when it is evaluated again, and on each emission of Material's `document$`. |
 
 | Event on `document` | Meaning |

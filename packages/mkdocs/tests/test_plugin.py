@@ -102,12 +102,31 @@ def test_problems_in_the_data_stop_the_build(tmp_path, caplog):
         ('<div data-buildguide="boards" data-board="wiring"></div>', "no guide component boards wiring"),
         ('<div data-buildguide></div>', "data-buildguide has no value"),
         ('<div data-buildguide=""></div>', "data-buildguide has no value"),
+        ('<div data-buildguide="guide" data-board="wiring nowhere"></div>', "no guide component guide wiring nowhere"),
+        ('<div data-buildguide="guide" data-board="bom nowhere"></div>', "no guide component guide bom nowhere"),
     ],
 )
 def test_an_unknown_component_fails_a_strict_build(tmp_path, caplog, tag, message):
     with pytest.raises(Abort):
         site(tmp_path, pages={"index.md": f"{tag}\n"}, strict=True)
     assert f"index.md: {message}" in caplog.text
+
+
+@pytest.mark.parametrize("attributes", ["", ' data-board="wiring"', ' data-board="tubing   bom wiring"', " data-board='bom'"])
+def test_the_guide_view_takes_the_bom_and_every_board_or_a_list_of_them(tmp_path, attributes):
+    out = site(tmp_path, pages={"index.md": f'<div data-buildguide="guide"{attributes}></div>\n'}, strict=True)
+    page = (out / "index.html").read_text(encoding="utf-8")
+    assert f'<div data-buildguide="guide"{attributes}><noscript>This guide needs JavaScript.</noscript></div>' in page
+    assert guide_data(page) == json.loads(EXAMPLE.read_text(encoding="utf-8"))
+
+
+def test_the_guide_view_without_bom_data_takes_the_boards_only(tmp_path, caplog):
+    guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    del guide["bom"]
+    site(tmp_path, guide=guide, pages={"index.md": '<div data-buildguide="guide"></div>\n'}, strict=True)
+    with pytest.raises(Abort):
+        site(tmp_path, guide=guide, pages={"index.md": '<div data-buildguide="guide" data-board="bom"></div>\n'}, strict=True)
+    assert "no guide component guide bom" in caplog.text
 
 
 def test_an_unknown_component_is_a_warning_without_strict(tmp_path, caplog):
