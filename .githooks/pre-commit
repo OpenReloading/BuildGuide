@@ -1,0 +1,10 @@
+#!/bin/sh
+# Opt-in: git config core.hooksPath .githooks
+# Biome on the staged files and the text check, in the dev container like CI. CI stays the gate.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+dc() { devcontainer exec --docker-path podman --workspace-folder . "$@"; }
+if ! dc true >/dev/null 2>&1; then
+  echo "pre-commit: the dev container is not running. Start it with: devcontainer up --docker-path podman --workspace-folder ." >&2
+  exit 1
+fi
+dc sh -c 'npx biome check --staged --no-errors-on-unmatched && node scripts/text-check.mjs'
