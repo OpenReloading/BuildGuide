@@ -6,9 +6,9 @@ Interactive build guide components from one JSON file: a BOM checklist, and wiri
 
 | Component | Folder | Release |
 |---|---|---|
-| core: browser components, schema, check CLI | [`packages/core/`](packages/core/) | `core-v*`: `buildguide-<version>.tar.gz`, `SHA256SUMS` |
+| core: browser components, schema, check CLI | [`packages/core/`](packages/core/) | `core-v*`: `buildguide-<version>.tar.gz`, `SHA256SUMS`, npm package `@openreloading/buildguide` on GitHub Packages |
 | mkdocs: MkDocs plugin | [`packages/mkdocs/`](packages/mkdocs/) | `mkdocs-v*`: wheel and sdist |
-| docusaurus: Docusaurus plugin | [`packages/docusaurus/`](packages/docusaurus/) | `docusaurus-v*`: `openreloading-docusaurus-plugin-buildguide-<version>.tgz` |
+| docusaurus: Docusaurus plugin | [`packages/docusaurus/`](packages/docusaurus/) | `docusaurus-v*`: `openreloading-docusaurus-plugin-buildguide-<version>.tgz`, npm package `@openreloading/docusaurus-plugin-buildguide` on GitHub Packages |
 
 Docs and the live example guide: https://openreloading.github.io/BuildGuide/. Each component has its own version, changelog and tag. Releases: [GitHub Releases](https://github.com/OpenReloading/BuildGuide/releases).
 

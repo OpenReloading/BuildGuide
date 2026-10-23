@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -46,12 +47,17 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
+          registry-url: https://npm.pkg.github.com
       - run: npm run dist -w packages/core
       - name: Attach the archive and its checksum
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.release-please.outputs.core-tag }}
         run: gh release upload "$TAG" packages/core/dist/*.tar.gz packages/core/dist/SHA256SUMS --clobber
+      - name: Publish to GitHub Packages
+        run: npm publish -w packages/core # zizmor: ignore[use-trusted-publishing] GitHub Packages has no trusted publishing
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
   mkdocs:
     needs: release-please
     if: needs.release-please.outputs.mkdocs == 'true'
@@ -79,6 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -87,6 +94,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
+          registry-url: https://npm.pkg.github.com
       # prepack copies packages/core/src into the package (#7)
       - run: npm run dist -w packages/docusaurus
       - name: Attach the package
@@ -94,3 +102,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.release-please.outputs.docusaurus-tag }}
         run: gh release upload "$TAG" packages/docusaurus/dist/*.tgz --clobber
+      - name: Publish to GitHub Packages
+        run: npm publish -w packages/docusaurus # zizmor: ignore[use-trusted-publishing] GitHub Packages has no trusted publishing
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
