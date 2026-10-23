@@ -1,5 +1,6 @@
 name: PR title
-# Pull requests are squash-merged with their title as the commit message, which release-please reads.
+# Pull requests into develop are squash-merged with their title as the commit message, which release-please reads.
+# The promotion pull request develop -> main (title `chore: promote develop to main`) is merged with a merge commit.
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
