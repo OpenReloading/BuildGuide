@@ -14,6 +14,8 @@
   const PIN_TEXT = {'-': '−'};
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
+  // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
+  const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
 
   window.BuildGuideBoard = (root, B, options) => {
@@ -89,29 +91,26 @@
       graph.addCell(new Part({
         id, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
         ports: {groups, items},
-        // the title clears terminals on top, the label terminals at the bottom
-        attrs: {body, title: {text: p.name || '', y: p.ports?.top ? -24 : -10}, sub: {text: p.sub || '', y: `calc(h+${p.ports?.bottom ? 31 : 17})`},
+        // a title or label on a side with terminals is drawn inside the part, so no connection has to cross it
+        attrs: {body, title: {text: p.name || '', y: p.ports?.top ? 24 : -10, ...(p.ports?.top && inkOn(body.fill))},
+                sub: {text: p.sub || '', y: p.ports?.bottom ? 'calc(h-14)' : 'calc(h+17)', ...(p.ports?.bottom && inkOn(body.fill))},
                 // a band on the right edge, e.g. the silver ring of a diode
                 band: k.band ? {x: 'calc(w-14)', y: 0, width: 7, height: 'calc(h)', fill: k.band === true ? '#d1d5db' : k.band} : {display: 'none'}},
       }));
     }
 
     // routing with libavoid: orthogonal connections around the parts, parallel ones nudged apart.
-    // Every part is a rectangle including its title above and label below, with its terminals as pins;
-    // terminal circles sit on the part edge, so that side is padded and no connection runs across a terminal.
+    // Every part is a rectangle with its terminals as pins. A title or label on a side without terminals lies outside the part
+    // and is part of the rectangle; terminal circles sit on the part edge, so a side with terminals is padded instead.
     const obstacles = graph.getElements().filter(el => el.get('type') !== 'buildguide.Area').map(el => {
       const b = el.getBBox(), part = parts[el.id] || {}, k = part.kind ? kindOf(part) : {};
       const pad = side => (part.ports?.[side] && !k.inset ? 14 : 0);
-      const y0 = b.y - Math.max(part.name ? (part.ports?.top ? 36 : 22) : 0, pad('top')), y1 = b.y + b.height + Math.max(part.sub ? (part.ports?.bottom ? 36 : 22) : 0, pad('bottom'));
+      const y0 = b.y - Math.max(part.name && !part.ports?.top ? 22 : 0, pad('top')), y1 = b.y + b.height + Math.max(part.sub && !part.ports?.bottom ? 22 : 0, pad('bottom'));
       const x0 = b.x - pad('left'), x1 = b.x + b.width + pad('right');
-      const pins = [];
+      const pins = [];   // at the terminals themselves: the last leg of a connection runs straight into its terminal
       for (const [side, names] of Object.entries(part.ports || {})) {
         const pos = el.getPortsPositions(side);
-        for (const pin of names) {
-          const ox = {left: 0, right: x1 - x0}[side] ?? b.x - x0 + pos[pin].x;
-          const oy = {top: 0, bottom: y1 - y0}[side] ?? b.y + pos[pin].y - y0;
-          pins.push({key: el.id + ':' + pin, ox, oy, dir: DIR[side]});
-        }
+        for (const pin of names) pins.push({key: el.id + ':' + pin, ox: b.x - x0 + pos[pin].x, oy: b.y + pos[pin].y - y0, dir: DIR[side]});
       }
       return {id: el.id, x0, y0, x1, y1, pins};
     });
@@ -119,7 +118,7 @@
     // tall fences between the glands outside keep each cable in its own gland's channel
     for (const [key, a] of Object.entries(areas)) {
       if (!a.glands) continue;
-      const [x0, y0] = a.at, x1 = x0 + a.size[0], y1 = y0 + a.size[1], t = 4, gap = 22;
+      const [x0, y0] = a.at, x1 = x0 + a.size[0], y1 = y0 + a.size[1], t = 4, gap = 36;
       const wall = (xa, ya, xb, yb) => obstacles.push({id: 'wall-' + key + obstacles.length, x0: xa, y0: ya, x1: xb, y1: yb, pins: []});
       const gx = a.glands.map(g => g[0]).sort((p, q) => p - q);
       let x = x0 - t;
@@ -128,14 +127,22 @@
       for (let i = 1; i < gx.length; i++) { const m = (gx[i - 1] + gx[i]) / 2; wall(m - 2, -5000, m + 2, y0); }
     }
 
+    // libavoid returns a straight line between the terminals when it finds no way round: such a route is not orthogonal
+    const orthogonal = pts => pts.every((p, i) => !i || Math.abs(p.x - pts[i - 1].x) < .5 || Math.abs(p.y - pts[i - 1].y) < .5);
+    // the room between parts shrinks with the buffer around them: the widest that finds a route for every connection wins
     function route(Avoid, list) {
+      let routes;
+      for (const buffer of [14, 8, 4, 0]) { routes = attempt(Avoid, list, buffer); if (routes.every((pts, i) => colorOf(list[i]).diode || orthogonal(pts))) break; }
+      return routes.map(pts => pts.slice(1, -1));   // the terminals are the connection's ends: the vertices are the bends between
+    }
+    function attempt(Avoid, list, buffer) {
       const param = n => Avoid.RoutingParameter[n], option = n => Avoid.RoutingOption[n];
       const r = new Avoid.Router(Avoid.RouterFlag.OrthogonalRouting.value);
-      r.setRoutingParameter(param('shapeBufferDistance'), 8);
-      r.setRoutingParameter(param('idealNudgingDistance'), 9);
+      r.setRoutingParameter(param('shapeBufferDistance'), buffer);
+      r.setRoutingParameter(param('idealNudgingDistance'), 14);
       r.setRoutingParameter(param('segmentPenalty'), 40);
       r.setRoutingParameter(param('crossingPenalty'), 200);
-      r.setRoutingOption(option('nudgeOrthogonalSegmentsConnectedToShapes'), true);
+      r.setRoutingOption(option('nudgeOrthogonalSegmentsConnectedToShapes'), false);   // the leg into a terminal stays on it
       r.setRoutingOption(option('nudgeSharedPathsWithCommonEndPoint'), true);
       r.setRoutingOption(option('performUnifyingNudgingPreprocessingStep'), true);
       const shapeOf = {}, pinOf = {};
@@ -170,7 +177,7 @@
       const top = part.at[1] - (k.diodeLoop === 'around' ? 34 : 45);
       if (k.diodeLoop === 'around') return [{x: part.at[0] + part.size[0] + 14, y: source.y}, {x: part.at[0] + part.size[0] + 14, y: top}, {x: part.at[0] - 14, y: top}, {x: part.at[0] - 14, y: target.y}];
       // pins facing down: the diode hangs just below the part, across its two pins
-      const y = sideOf(sourcePin) === 'bottom' ? part.at[1] + part.size[1] + (part.sub ? 52 : 36) : top;
+      const y = sideOf(sourcePin) === 'bottom' ? part.at[1] + part.size[1] + 36 : top;
       return [{x: source.x, y}, {x: target.x, y}];
     }
     function link(c, i, vertices) {
@@ -242,17 +249,11 @@
       if (disposed) return;
       if (!cachedRoutes.has(key)) cachedRoutes.set(key, route(Avoid, visible));
       const routes = cachedRoutes.get(key);
-      const placed = [];   // numbers already on the board: the next one picks a free spot along its connection
-      visible.forEach((c, i) => {
+      const views = visible.map((c, i) => {
         const l = link(c, i, routes[i]), diode = colorOf(c).diode;
         links[c.no] = l;
         graph.addCell(l);
         const view = paper.findViewByModel(l);
-        if (!diode) {
-          const r = [.5, .35, .65, .2, .8].find(r => { const p = view.getPointAtRatio(r); return placed.every(q => Math.abs(q.x - p.x) > 26 || Math.abs(q.y - p.y) > 18); }) ?? .5;
-          l.label(0, {position: r});
-          placed.push(view.getPointAtRatio(r));
-        }
         view.el.dataset.connection = c.no;
         view.el.setAttribute('role', 'button');
         view.el.setAttribute('tabindex', '0');
@@ -260,6 +261,27 @@
         view.el.addEventListener('keydown', event => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.select(c.no); }
         });
+        return view;
+      });
+      // a number goes on a straight stretch, clear of bends, parts, labels, other numbers and other connections;
+      // the longest stretches first, then a spot nearer the ends, then one beside another connection
+      const lines = views.map(v => [v.sourcePoint, ...v.route, v.targetPoint]);
+      const stretches = (line, grow) => line.slice(1).map((q, k) => ({x0: Math.min(line[k].x, q.x) - grow, y0: Math.min(line[k].y, q.y) - grow, x1: Math.max(line[k].x, q.x) + grow, y1: Math.max(line[k].y, q.y) + grow}));
+      const free = (box, others) => !others.some(o => box.x0 < o.x1 && o.x0 < box.x1 && box.y0 < o.y1 && o.y0 < box.y1);
+      const placed = [];
+      visible.forEach((c, i) => {
+        if (colorOf(c).diode) return;
+        const fixed = [...obstacles, ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
+        const spots = lines[i].slice(1).flatMap((q, k) => {
+          const p = lines[i][k], long = Math.hypot(q.x - p.x, q.y - p.y);
+          return [.5, .35, .65, .2, .8].map(t => ({x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, long, room: long * Math.min(t, 1 - t)}));
+        }).sort((u, v) => v.long - u.long);
+        // shortcut: the box of a number is a fixed 30 x 24 px, enough for two digits
+        const spot = [[20, [...fixed, ...near]], [20, fixed], [10, fixed]].reduce((found, [room, others]) =>
+          found ?? spots.find(s => s.room >= room && free({x0: s.x - 15, y0: s.y - 12, x1: s.x + 15, y1: s.y + 12}, others)), null);
+        const view = views[i], at = spot ?? view.getPointAtRatio(.5);
+        links[c.no].label(0, {position: spot ? view.getClosestPointLength(at) / view.getConnectionLength() : .5});
+        placed.push({x0: at.x - 17, y0: at.y - 14, x1: at.x + 17, y1: at.y + 14});
       });
       highlight(selected.no, true);
       root.dataset.ready = 'true';

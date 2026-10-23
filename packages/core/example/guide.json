@@ -24,7 +24,7 @@
     "wiring": {
       "title": "Wiring",
       "label": "Wiring board",
-      "size": [1000, 640],
+      "size": [1000, 720],
       "prefix": "wire",
       "single": true,
       "legend": [{ "key": "diode", "text": "Silver ring = cathode" }, "Green = selected connection"],
@@ -45,17 +45,17 @@
       },
       "rules": { "perTerminal": 2, "exempt": { "kinds": ["join"], "colors": ["DIODE"] } },
       "areas": {
-        "box": { "title": "Control box", "at": [60, 250], "size": [880, 360], "color": "#475569", "glands": [[250, "G1"], [520, "G2"], [790, "G3"]] }
+        "box": { "title": "Control box", "at": [60, 250], "size": [880, 440], "color": "#475569", "glands": [[250, "G1"], [520, "G2"], [790, "G3"]] }
       },
       "parts": {
         "PSU": { "kind": "box", "name": "Power supply", "sub": "12 V DC", "at": [180, 70], "size": [150, 80], "ports": { "bottom": ["+", "-"] } },
         "Y1": { "kind": "plug", "name": "Valve Y1", "sub": "12 V coil", "at": [460, 80], "size": [100, 60], "ports": { "bottom": ["1", "2"] } },
         "B1": { "kind": "sensor", "name": "Sensor B1", "sub": "PNP, NO", "at": [720, 70], "size": [140, 70], "ports": { "bottom": ["BN", "BU", "BK"] } },
-        "F1": { "kind": "box", "name": "Fuse F1", "sub": "2 A", "at": [140, 340], "size": [90, 50], "ports": { "left": ["1"], "right": ["2"] } },
-        "S0": { "kind": "button", "name": "STOP S0", "color": "#c62828", "at": [330, 320], "size": [56, 56], "ports": { "bottom": ["1", "2"] } },
-        "S1": { "kind": "button", "name": "START S1", "color": "#2e7d32", "at": [440, 320], "size": [56, 56], "ports": { "bottom": ["3", "4"] } },
-        "K1": { "kind": "socket", "name": "Relay K1", "sub": "12 V coil", "at": [600, 330], "size": [200, 120], "ports": { "left": ["A1", "A2"], "right": ["11", "14"] } },
-        "X1": { "kind": "join", "name": "Join X1", "sub": "0 V", "at": [300, 520], "size": [160, 36], "ports": { "top": ["1", "2", "3", "4"] } }
+        "F1": { "kind": "box", "name": "Fuse F1", "sub": "2 A", "at": [140, 420], "size": [90, 50], "ports": { "left": ["1"], "right": ["2"] } },
+        "S0": { "kind": "button", "name": "STOP S0", "color": "#c62828", "at": [330, 400], "size": [56, 56], "ports": { "bottom": ["1", "2"] } },
+        "S1": { "kind": "button", "name": "START S1", "color": "#2e7d32", "at": [440, 400], "size": [56, 56], "ports": { "bottom": ["3", "4"] } },
+        "K1": { "kind": "socket", "name": "Relay K1", "sub": "12 V coil", "at": [600, 410], "size": [200, 120], "ports": { "left": ["A1", "A2"], "right": ["11", "14"] } },
+        "X1": { "kind": "join", "name": "Join X1", "sub": "0 V", "at": [300, 600], "size": [160, 36], "ports": { "top": ["1", "2", "3", "4"] } }
       },
       "steps": [
         { "id": "A", "title": "Supply", "note": "Unplug the 12 V supply before you touch a terminal. Check that the fuse is out of its holder.", "connections": [
@@ -96,7 +96,7 @@
         "REG": { "name": "Regulator", "sub": "IN → OUT", "at": [240, 160], "size": [110, 70], "ports": { "left": ["in"], "right": ["out"] } },
         "V1": { "name": "5/2 valve", "sub": "Y1", "at": [460, 200], "size": [180, 80], "ports": { "left": ["P"], "top": ["A", "B"], "bottom": ["R", "S"] } },
         "CYL": { "name": "Cylinder", "sub": "double acting", "at": [760, 50], "size": [180, 60], "ports": { "bottom": ["cap", "rod"] } },
-        "SIL": { "name": "Silencers", "at": [500, 360], "size": [100, 30], "ports": { "top": ["R", "S"] } }
+        "SIL": { "name": "Silencers", "at": [460, 360], "size": [180, 30], "ports": { "top": ["R", "S"] } }
       },
       "steps": [
         { "id": "1", "title": "Supply to regulator", "connections": [{ "no": "1", "a": "AIR:out", "b": "REG:in", "color": "AIR", "la": "Air supply", "lb": "Regulator IN" }] },
