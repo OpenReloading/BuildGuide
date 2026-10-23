@@ -19,7 +19,7 @@
 ## Branches
 
 - `develop` is the default branch: pull requests target it.
-- `main` holds releases and changes only through a promotion pull request `develop` to `main` titled `chore: promote develop to main`, merged with a merge commit (not squashed), so release-please still reads the squash commits from `develop`.
+- `main` holds releases and changes only through a promotion pull request `develop` to `main` titled `chore: promote develop to main`, merged with a merge commit (not squashed), so release-please still reads the squash commits from `develop`. The `Promote` workflow (`.github/workflows/promote.yml`) opens and updates that pull request on every push to `develop`.
 - Merge the release pull request (it targets `main`) before merging further pull requests into `develop`: release-please stops reading history at the release commit, which can drop older commits that were promoted later (unverified).
 
 Optional: a pre-push hook runs `npm run lint` in the dev container (start it first) before each push. Enable it with `git config core.hooksPath .githooks`. CI stays the gate.
