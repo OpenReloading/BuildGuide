@@ -39,7 +39,7 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
 3. Write the guide data. `buildguide.schema.json` (JSON Schema 2020-12) describes it, and `example/guide.json` uses every part of it.
 
-   - `storage`: localStorage key for the ticks, shared by all components. A tick belongs to one exact connection (number and both ends): changing an end clears it. Each component says at its bottom whether progress is saved.
+   - `storage`: localStorage key for the ticks, shared by all components. A tick belongs to one exact connection (number and both ends): changing an end clears it. Each component says at its bottom whether progress is saved. Below that, `Export progress` downloads `<storage>.json`, `Import progress` replaces the saved progress from such a file (only an object of `true` and `false` values is accepted) and `Reset progress` removes it after a confirmation. Both change every component on the page at once through a `buildguide-progress` event on `document` (`detail: {storage, saved}`). The BOM also has a `Print` button.
    - `bom`: note, BOM items with groups, search and CSV export.
    - `boards`: one entry per board key, with a required `title` (step navigation label, list heading, accessible name). Parts with terminals on their sides (`ports`), connections in `steps` (each step has an `id`, a `title`, an optional `note` shown as plain text with the step above its connection list, and its `connections`) from `PART:terminal` to `PART:terminal`, colour codes, part kinds, areas with cable glands, and `rules` such as connections per terminal. Routes are computed (libavoid), not drawn.
 

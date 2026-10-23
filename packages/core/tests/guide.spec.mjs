@@ -368,6 +368,112 @@ test('one page with a BOM and two boards: own hash, ticks, focus, no duplicate i
   await expect(page.locator('.ag-status')).toHaveText(Array(3).fill('Progress saved in this browser.'));
 });
 
+// progress export, import and reset: the three components of the all page share one stored object
+const progressOf = page => page.evaluate(key => JSON.parse(localStorage.getItem(key) || '{}'), D.storage);
+const importFile = (scope, content) => scope.locator('[data-role=import-file]').setInputFiles({ name: 'progress.json', mimeType: 'application/json', buffer: Buffer.from(typeof content === 'string' ? content : JSON.stringify(content)) });
+const bomKey = i => `bom-${D.bom.items[i].id}:${D.bom.items[i].part}`;
+
+test('progress tools: nine buttons on the all page, three per component', async ({ page }) => {
+  await page.goto(url('all'));
+  for (const action of ['export-progress', 'import-progress', 'reset-progress']) await expect(page.locator(`[data-action=${action}]`)).toHaveCount(3);
+  await expect(page.locator('.ag-status')).toHaveText(Array(3).fill('Progress saved in this browser.'));
+});
+
+test('progress export: downloads <storage>.json with the saved object', async ({ page }) => {
+  await page.goto(url('all'));
+  await ready(boardOf(page, 'wiring'));
+  await bomOf(page).locator('tbody input[type=checkbox]').first().check();
+  await boardOf(page, 'wiring').locator('.ag-verify input').check();
+  const download = page.waitForEvent('download');
+  await boardOf(page, 'tubing').locator('[data-action=export-progress]').click();
+  const file = await download;
+  expect(file.suggestedFilename()).toBe(`${D.storage}.json`);
+  const exported = JSON.parse(readFileSync(await file.path(), 'utf8'));
+  expect(exported).toEqual(await progressOf(page));
+  expect(Object.keys(exported)).toHaveLength(2);
+  expect(Object.values(exported).every(v => v === true)).toBe(true);
+});
+
+test('progress import: a valid file replaces the progress of every component', async ({ page }) => {
+  const w = D.boards.wiring, c = w.steps[0].connections[0];
+  await page.goto(url('all'));
+  await ready(boardOf(page, 'wiring'));
+  await bomOf(page).locator('tbody input[type=checkbox]').nth(3).check();
+  const imported = { [bomKey(0)]: true, [bomKey(1)]: true, [`${w.prefix}-${c.no}:${c.a}:${c.b}`]: true, [bomKey(2)]: false };
+  await importFile(boardOf(page, 'tubing'), imported);
+  await expect(bomOf(page).locator('.ag-progress')).toHaveText(`2 / ${D.bom.items.length} checked`);
+  await expect(boardOf(page, 'wiring').locator('.ag-progress')).toHaveText(`1 / ${w.steps.flatMap(s => s.connections).length} checked`);
+  expect(await progressOf(page)).toEqual(imported);
+  await page.reload();
+  await expect(bomOf(page).locator('.ag-progress')).toHaveText(`2 / ${D.bom.items.length} checked`);
+});
+
+test('progress import: anything but an object of true and false is refused', async ({ page }) => {
+  await page.goto(url('bom'));
+  await bomOf(page).locator('tbody input[type=checkbox]').first().check();
+  const before = await progressOf(page);
+  for (const bad of ['{not json', '[true]', 'null', '"x"', { a: 'yes' }, { a: 1 }, { a: null }, { a: { b: true } }]) {
+    await importFile(page, bad);
+    await expect(page.locator('.ag-message')).toHaveText('Not imported: the file is not a progress export.');
+    expect(await progressOf(page)).toEqual(before);
+    await expect(page.locator('.ag-progress')).toHaveText(`1 / ${D.bom.items.length} checked`);
+  }
+});
+
+test('progress reset: asks first, then removes the saved progress everywhere', async ({ page }) => {
+  await page.goto(url('all'));
+  await ready(boardOf(page, 'wiring'));
+  await bomOf(page).locator('tbody input[type=checkbox]').first().check();
+  await boardOf(page, 'wiring').locator('.ag-verify input').check();
+  const asked = [];
+  page.once('dialog', d => { asked.push(d.message()); d.dismiss(); });
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect.poll(() => asked.length).toBe(1);
+  expect(Object.keys(await progressOf(page))).toHaveLength(2);
+  await expect(bomOf(page).locator('.ag-progress')).toHaveText(`1 / ${D.bom.items.length} checked`);
+  page.once('dialog', d => d.accept());
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(bomOf(page).locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
+  await expect(boardOf(page, 'wiring').locator('.ag-progress')).toHaveText(`0 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
+  expect(await page.evaluate(key => localStorage.getItem(key), D.storage)).toBeNull();
+});
+
+for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
+  test(`progress ${how}${blocked ? ' with storage blocked' : ''}: a tick in another component does not bring the old ticks back`, async ({ page }) => {
+    if (blocked) await page.addInitScript(key => {
+      const real = window.localStorage, no = () => { throw Error('blocked'); };
+      Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? no() : real.getItem(k)), setItem: (k, v) => (k === key ? no() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
+    }, D.storage);
+    await page.goto(url('all'));
+    const bom = bomOf(page), wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
+    await ready(wiring); await ready(tubing);
+    await bom.locator('tbody input[type=checkbox]').nth(0).check();
+    await bom.locator('tbody input[type=checkbox]').nth(1).check();
+    await wiring.locator('.ag-verify input').check();
+    if (how === 'reset') { page.once('dialog', d => d.accept()); await tubing.locator('[data-action=reset-progress]').click(); }
+    else await importFile(tubing, { [bomKey(5)]: true });
+    const left = how === 'reset' ? 0 : 1;
+    await expect(bom.locator('.ag-progress')).toHaveText(`${left} / ${D.bom.items.length} checked`);
+    await expect(wiring.locator('.ag-progress')).toHaveText(`0 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
+    // a tick in a second component writes its own copy: it must not bring back what was reset or replaced
+    await tubing.locator('.ag-verify input').check();
+    await expect(tubing.locator('.ag-progress')).toHaveText(`1 / ${D.boards.tubing.steps.flatMap(s => s.connections).length} checked`);
+    await expect(bom.locator('.ag-progress')).toHaveText(`${left} / ${D.bom.items.length} checked`);
+    await expect(wiring.locator('.ag-progress')).toHaveText(`0 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
+    await wiring.locator('.ag-verify input').check();
+    await expect(bom.locator('.ag-progress')).toHaveText(`${left} / ${D.bom.items.length} checked`);
+    if (!blocked) expect(Object.keys(await progressOf(page))).toHaveLength(left + 2);
+  });
+}
+
+test('print: the BOM has a Print button that calls window.print', async ({ page }) => {
+  await page.goto(url('bom'));
+  await page.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
+  await page.locator('[data-action=print]').click();
+  expect(await page.evaluate(() => window.__printed)).toBe(1);
+  await expect(page.locator('.ag-bom-actions [data-action=print]')).toHaveText('Print');
+});
+
 test('phones: no sideways scrolling, the next action stays on screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   for (const path of ['', 'bom/', 'wiring/', 'tubing/', 'all/']) {
