@@ -1,6 +1,7 @@
 // Browser checks of the example guide components. Every expectation is derived from example/guide.json.
 // The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,wiring,tubing,all}/.
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
@@ -44,6 +45,32 @@ for (const [key, b] of boards) {
     }
   });
 }
+
+// every example page: components only, so the audit covers .ag-guide and not the host's own chrome
+const PAGES = ['bom', 'wiring', 'tubing', 'all'];
+const settled = async page => { for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true'); };
+
+for (const key of PAGES) {
+  test(`${key}: no accessibility violations in the components (WCAG 2.2 AA)`, async ({ page }) => {
+    await page.goto(url(key)); await settled(page);
+    const found = [];
+    // one component at a time, scrolled to the top of the viewport: the sticky navigation of a board covers the part of the page below it
+    for (const guide of await page.locator('.ag-guide').all()) {
+      await guide.evaluate(el => { el.scrollIntoView({ block: 'start' }); el.setAttribute('data-axe', ''); });
+      const { violations } = await new AxeBuilder({ page }).include('[data-axe]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+      found.push(...violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`));
+      await guide.evaluate(el => el.removeAttribute('data-axe'));
+    }
+    expect(found).toEqual([]);
+  });
+}
+
+test('screenshots of the example pages', async ({ page }, info) => {
+  for (const key of PAGES) {
+    await page.goto(url(key)); await settled(page);
+    await page.screenshot({ path: info.outputPath(`${key}.png`), fullPage: true });
+  }
+});
 
 test('components carry no h1 and no page chrome', async ({ page }) => {
   await page.goto(url('wiring')); await ready(page);
