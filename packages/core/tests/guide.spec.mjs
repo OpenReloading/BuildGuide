@@ -785,6 +785,32 @@ test('guide: the tab comes back from the hash on load, a board pair opens its ta
   await setHash(page, 'top'); await selected(page, t.title);
 });
 
+test('guide: a tab that is already shown keeps its component, Alt+Arrow is left to the browser', async ({ page }) => {
+  await page.goto(url('guide'));
+  const search = panelOf(page).locator('[data-role=search]');
+  await search.fill('relay');
+  await tabOf(page, TABS[0]).click();
+  await expect(search).toHaveValue('relay');
+  await tabOf(page, TABS[0]).focus();
+  await page.keyboard.press('Home');
+  await expect(search).toHaveValue('relay');
+  await tabOf(page, TABS[0]).focus();
+  await page.keyboard.press('Alt+ArrowRight');
+  await selected(page, TABS[0]);
+});
+
+test('guide: a hash set from outside opens one tab, and back to a board pair without tab pair opens that board', async ({ page }) => {
+  const [w, t] = [D.boards.wiring, D.boards.tubing], wiringAt = at('wiring', w.steps[1], w.steps[1].connections[0]);
+  await page.goto(url('guide'));
+  await page.evaluate(() => { window.__drawn = new Set(); new MutationObserver(() => document.querySelectorAll('nav.ag-steps').forEach(n => { window.__drawn.add(n.getAttribute('aria-label')); })).observe(document.body, { childList: true, subtree: true }); });
+  await setHash(page, `guide=tubing&${wiringAt}`);
+  await selected(page, t.title); await ready(panelOf(page));
+  expect(await page.evaluate(() => [...window.__drawn])).toEqual([`${t.title} steps`]);
+  await page.goto(`${url('guide')}#${wiringAt}`); await selected(page, w.title); await ready(panelOf(page));
+  await tabOf(page, t.title).click(); await ready(panelOf(page));
+  await page.goBack(); await selected(page, w.title);
+});
+
 test('guide: ticks of the BOM and the boards survive switching tabs and reloading', async ({ page }) => {
   const w = D.boards.wiring, all = w.steps.flatMap(s => s.connections);
   await page.goto(url('guide'));

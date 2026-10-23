@@ -317,38 +317,42 @@
     root.classList.add('ag-guide', 'ag-tabbed');
     root.innerHTML = `<div class="ag-tabs" role="tablist" aria-label="Guide">${keys.map((k, i) => `<button type="button" role="tab" id="${id}-${i}" aria-controls="${id}">${esc(k === 'bom' ? 'Bill of materials' : own(D.boards, k).title || k)}</button>`).join('')}</div><div id="${id}" role="tabpanel"></div>`;
     const tabs = [...root.querySelectorAll('[role=tab]')], panel = root.lastElementChild;
-    let active = -1, seen = new Map();
+    let active = -1, seen = new Map(), handled = null;
     const show = i => {
       active = i;
       tabs.forEach((tab, j) => { tab.setAttribute('aria-selected', String(j === i)); tab.tabIndex = j === i ? 0 : -1; });
       panel.setAttribute('aria-labelledby', tabs[i].id);
       mount(panel, D, keys[i] === 'bom' ? {view: 'bom', assets} : {view: 'board', board: keys[i], assets});
     };
-    const select = i => { if (putPair('guide', encodeURIComponent(keys[i]))) { seen = read(); show(i); } };
+    // seen: the pairs and handled: the hash this component acted on last
+    const sync = () => { seen = read(); handled = location.hash; };
+    const select = i => { if (putPair('guide', encodeURIComponent(keys[i]))) { sync(); if (i !== active) show(i); } };
     tabs.forEach((tab, i) => { tab.onclick = () => select(i); });
     root.firstElementChild.onkeydown = e => {
       const i = {ArrowRight: active + 1, ArrowLeft: active - 1, Home: 0, End: keys.length - 1}[e.key];
-      if (i === undefined) return;
-      e.preventDefault(); select((i + keys.length) % keys.length); tabs[active].focus();
+      // Alt+Arrow is the browser's history shortcut
+      if (typeof i !== 'number' || e.altKey || e.ctrlKey || e.metaKey) return;
+      e.preventDefault(); const to = (i + keys.length) % keys.length; select(to); tabs[to].focus();
     };
     const read = () => new Map(pairs().filter(p => nameOf(p)).map(p => [nameOf(p), pairValue(p)]));
-    // A board pair that changed opens its board's tab; the guide pair names the tab. Without one, an anchor or the shown board's own pair leaves the tab as it is
-    // (a hash set from outside fires popstate and hashchange, the second finds the tab already open), anything else means the first tab.
-    // On load the guide pair comes first: a link carries it deliberately, the board pairs are only what the visitor left behind.
-    function follow(first) {
+    // Which tab the hash asks for: the one the guide pair names, else the board whose pair changed since the last look (on load: the first pair).
+    // Else an anchor or the shown board's own pair leaves the tab as it is, else the first board pair opens its tab, else the first tab shows.
+    function follow() {
+      // a hash set from outside fires popstate and hashchange: the second finds it handled
+      if (location.hash === handled) return;
       const now = read(), named = keys.indexOf(decode(now.get('guide') ?? ''));
       const moved = keys.findIndex((k, i) => i !== active && k !== 'bom' && now.has(k) && now.get(k) !== seen.get(k));
-      const target = (first ? [named, moved] : [moved, named]).find(i => i >= 0) ?? (pairs().some(p => !nameOf(p)) || now.has(keys[active]) ? Math.max(active, 0) : 0);
-      seen = now;
+      const stay = pairs().some(p => !nameOf(p)) || now.has(keys[active]);
+      const target = Math.max(named >= 0 ? named : moved >= 0 ? moved : stay ? active : keys.findIndex(k => k !== 'bom' && now.has(k)), 0);
+      sync();
       if (target !== active) show(target);
     }
     // the listeners of the shown component come after these, so a tab that changes is replaced before the old board hears the same event
-    const onhash = () => follow(false);
-    window.addEventListener('hashchange', onhash); window.addEventListener('popstate', onhash);
-    follow(true);
+    window.addEventListener('hashchange', follow); window.addEventListener('popstate', follow);
+    follow();
     const destroy = () => {
       if (mounted.get(root) !== destroy) return;
-      window.removeEventListener('hashchange', onhash); window.removeEventListener('popstate', onhash);
+      window.removeEventListener('hashchange', follow); window.removeEventListener('popstate', follow);
       mounted.get(panel)?.();
       root.replaceChildren(); root.classList.remove('ag-guide', 'ag-tabbed');
       mounted.delete(root);
