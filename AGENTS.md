@@ -2,6 +2,10 @@
 
 Monorepo of BuildGuide components, the BOM and board views for a host's own pages (core in `packages/core/`, MkDocs plugin in `packages/mkdocs/`, Docusaurus plugin in `packages/docusaurus/`), each released on its own. Docs site: `mkdocs.yml` and `docs/`, deployed to GitHub Pages by `.github/workflows/pages.yml`. License MIT (`LICENSE`).
 
+## Branches
+
+Pull requests target `develop` (default branch) and are squash-merged with the Conventional Commit title. `main` only gets `develop` through a promotion pull request titled `chore: promote develop to main`, merged with a merge commit; release-please, release, publish, Pages and Scorecard run on `main`.
+
 ## Commands
 
 - Agents run on the host; file edits and Git stay there. Start the container with `devcontainer up --docker-path podman --workspace-folder .` (runs `npm ci` and `uv sync`); run project commands with the prefix `devcontainer exec --docker-path podman --workspace-folder .`.
