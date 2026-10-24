@@ -26,7 +26,7 @@
               "part": { "type": "string" },
               "spec": { "type": "string" },
               "qty": { "type": ["integer", "string"] },
-              "image": { "type": "string", "description": "relative to the assets URL" },
+              "image": { "type": "string", "description": "relative to the assets URL; decorative: drawn with empty alt text, the part name beside it is the text alternative" },
               "link": { "type": "string" }
             },
             "additionalProperties": false

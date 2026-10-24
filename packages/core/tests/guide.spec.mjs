@@ -547,6 +547,18 @@ test('inline data in #guide-data works like data-src', async ({ page }) => {
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
 });
 
+test('BOM images are decorative: empty alt, the part name sits in the same cell', async ({ page }) => {
+  const data = structuredClone(D);
+  data.bom.items[0].image = 'part.gif';
+  await page.route(`${ORIGIN}/example/assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await inlinePage(page, 'bom-image/', data, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'bom-image/');
+  const cell = page.locator('.ag-part-cell').filter({ has: page.locator('img') });
+  await expect(cell).toHaveCount(1);
+  await expect(cell.locator('img')).toHaveAttribute('alt', '');
+  await expect(cell).toContainText(data.bom.items[0].part);
+});
+
 // the small examples of the docs, one component each: they mount and show what the docs say
 const minimal = name => JSON.parse(readFileSync(new URL(`../example/minimal/${name}.json`, import.meta.url)));
 test('minimal examples: a BOM, a wiring board and a tubing board each mount from their own small guide', async ({ page }) => {
