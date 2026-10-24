@@ -481,6 +481,23 @@ for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
   });
 }
 
+test('progress: a tick or a reset in another tab shows up here and is not written back over', async ({ page, context }) => {
+  const other = await context.newPage();
+  await page.goto(url('bom')); await other.goto(url('bom'));
+  const ticks = scope => scope.locator('tbody input[type=checkbox]');
+  const counted = n => `${n} / ${D.bom.items.length} checked`;
+  await ticks(other.locator('body')).nth(0).check();
+  await expect(page.locator('.ag-progress')).toHaveText(counted(1));
+  await ticks(page.locator('body')).nth(1).check();
+  await expect(other.locator('.ag-progress')).toHaveText(counted(2));
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(0), bomKey(1)]);
+  other.once('dialog', d => d.accept());
+  await other.locator('[data-action=reset-progress]').click();
+  await expect(page.locator('.ag-progress')).toHaveText(counted(0));
+  await ticks(page.locator('body')).nth(2).check();
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(2)]);
+});
+
 test('print: the BOM has a Print button that calls window.print', async ({ page }) => {
   await page.goto(url('bom'));
   await page.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
