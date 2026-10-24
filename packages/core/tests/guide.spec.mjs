@@ -673,6 +673,31 @@ test('unmounting removes every listener and the markup, mounting again works', a
   await expect(page.locator('.ag-guide')).toHaveCount(0);
 });
 
+test('mounting again on the same root after an unmount: one render per hash change, body class follows the live mount', async ({ page }) => {
+  await inlinePage(page, 'same-root/', D, '<div id="host"></div>');
+  await page.goto(BASE + 'same-root/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const [, second] = D.boards.wiring.steps, body = page.locator('body'), host = page.locator('#host');
+  const mount = () => page.evaluate(data => { window.__stop = window.BuildGuide.mount(document.getElementById('host'), data, { view: 'board', board: 'wiring' }); }, D);
+  await mount(); await ready(host);
+  // unmounted while expanded: the first instance takes its body class with it
+  await host.locator('[data-action=fullscreen]').click();
+  await expect(body).toHaveClass(/ag-no-scroll/);
+  await page.evaluate(() => window.__stop());
+  await expect(body).not.toHaveClass(/ag-no-scroll/);
+  await mount(); await ready(host);
+  await expect(body).not.toHaveClass(/ag-no-scroll/);
+  // a leaked first instance would render into the same root a second time
+  await page.evaluate(() => { window.__renders = []; new MutationObserver(r => window.__renders.push(...r)).observe(document.getElementById('host'), { childList: true }); });
+  await setHash(page, `wiring=${hashOf(second, second.connections[0])}`);
+  await expect(host.locator('.ag-steps [data-step="1"]')).toHaveAttribute('aria-current', 'step');
+  expect(await page.evaluate(() => window.__renders.filter(r => r.addedNodes.length).length)).toBe(1);
+  await host.locator('[data-action=fullscreen]').click();
+  await expect(body).toHaveClass(/ag-no-scroll/);
+  await page.evaluate(() => window.__stop());
+  await expect(body).not.toHaveClass(/ag-no-scroll/);
+});
+
 // the combined component: a tab for the BOM and one per board, the active tab's component in one panel
 const TABS = ['Bill of materials', ...boards.map(([, b]) => b.title)];
 const tabOf = (page, name) => page.getByRole('tab', { name, exact: true });
