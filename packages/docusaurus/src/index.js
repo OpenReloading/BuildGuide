@@ -9,7 +9,7 @@ const CORE = path.join(__dirname, '..', 'core');
 // one line per schema error: the path of the key (a surplus or missing key named at its end), then what is wrong
 const schemaProblem = (e) => {
   const key = e.params.additionalProperty ?? e.params.missingProperty;
-  return `${e.instancePath}${key === undefined ? '' : `/${key}`}: ${e.message}`;
+  return `${e.instancePath}${key === undefined ? '' : `/${String(key).replaceAll('~', '~0').replaceAll('/', '~1')}`}: ${e.message}`;
 };
 const attr = (value) => String(value).replace(/[&"<]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;' })[c]);
 

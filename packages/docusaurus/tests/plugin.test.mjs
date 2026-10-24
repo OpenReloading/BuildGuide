@@ -56,6 +56,12 @@ test('a misspelt key or a wrong type fails the build with the file and the key',
   });
 });
 
+test('a surplus key with a slash is escaped as in a JSON pointer', async () => {
+  const guide = JSON.parse(readFileSync(example, 'utf8'));
+  guide['a/b~c'] = 1;
+  await assert.rejects(site(guideFile(guide)).loadContent(), /^\/a~1b~0c: must NOT have additional properties$/m);
+});
+
 test('a missing key is named with its path', async () => {
   const guide = JSON.parse(readFileSync(example, 'utf8'));
   delete guide.storage;
