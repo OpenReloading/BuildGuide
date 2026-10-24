@@ -19,8 +19,8 @@ jobs:
         with:
           version: 0.13.4
           enable-cache: false
-      - run: npm ci
-      - run: uv sync --locked --project packages/mkdocs
+      - run: npm ci --ignore-scripts
+      - run: uv sync --locked --no-build --project packages/mkdocs
       - run: npm run lint
       - run: npm test
       - run: npm run test:browser
