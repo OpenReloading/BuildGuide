@@ -277,6 +277,21 @@ test('tubing: all connections listed, keyboard selection', async ({ page }) => {
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(all[2].no);
 });
 
+test('keyboard: focus stays on a connection path after Enter or Space selects it', async ({ page }) => {
+  for (const [key, b] of boards) {
+    const step = b.steps[0];
+    await page.goto(url(key)); await ready(page);
+    for (const [pressed, c] of [['Enter', step.connections.at(-1)], ['Space', step.connections[0]]]) {
+      const path = page.locator(`[data-connection="${c.no}"]`);
+      await path.focus();
+      await page.keyboard.press(pressed);
+      await ready(page);
+      await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+      await expect(path).toBeFocused();
+    }
+  }
+});
+
 test('boards: zoom, fullscreen and page scrolling over the canvas', async ({ page }) => {
   for (const [key] of boards) {
     await page.goto(url(key)); await ready(page);
@@ -466,6 +481,23 @@ for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
   });
 }
 
+test('progress: a tick or a reset in another tab shows up here and is not written back over', async ({ page, context }) => {
+  const other = await context.newPage();
+  await page.goto(url('bom')); await other.goto(url('bom'));
+  const ticks = scope => scope.locator('tbody input[type=checkbox]');
+  const counted = n => `${n} / ${D.bom.items.length} checked`;
+  await ticks(other.locator('body')).nth(0).check();
+  await expect(page.locator('.ag-progress')).toHaveText(counted(1));
+  await ticks(page.locator('body')).nth(1).check();
+  await expect(other.locator('.ag-progress')).toHaveText(counted(2));
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(0), bomKey(1)]);
+  other.once('dialog', d => d.accept());
+  await other.locator('[data-action=reset-progress]').click();
+  await expect(page.locator('.ag-progress')).toHaveText(counted(0));
+  await ticks(page.locator('body')).nth(2).check();
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(2)]);
+});
+
 test('print: the BOM has a Print button that calls window.print', async ({ page }) => {
   await page.goto(url('bom'));
   await page.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
@@ -513,6 +545,18 @@ test('inline data in #guide-data works like data-src', async ({ page }) => {
   await inlinePage(page, 'inline/', D, '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'inline/');
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
+});
+
+test('BOM images are decorative: empty alt, the part name sits in the same cell', async ({ page }) => {
+  const data = structuredClone(D);
+  data.bom.items[0].image = 'part.gif';
+  await page.route(`${ORIGIN}/example/assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await inlinePage(page, 'bom-image/', data, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'bom-image/');
+  const cell = page.locator('.ag-part-cell').filter({ has: page.locator('img') });
+  await expect(cell).toHaveCount(1);
+  await expect(cell.locator('img')).toHaveAttribute('alt', '');
+  await expect(cell).toContainText(data.bom.items[0].part);
 });
 
 // the small examples of the docs, one component each: they mount and show what the docs say

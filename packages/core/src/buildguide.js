@@ -99,6 +99,8 @@
     let drawing, stopSizing;
     function render() {
       const refocus = focusSelector();
+      // a connection path is drawn again once the renderer is ready: it takes the focus back then
+      const active = document.activeElement, focusConn = root.contains(active) ? active.dataset?.connection : undefined;
       stopSizing?.();
       drawing?.destroy(); drawing = null;
       root.classList.add('ag-guide');
@@ -115,6 +117,7 @@
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
           rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
+            focus: focusConn,
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(i, steps[i].connections.findIndex(c => c.no === no)); }});
         }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
         root.querySelectorAll('[data-wire]').forEach(row => {
@@ -222,6 +225,8 @@
       document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress}}));
     };
     listen(document, 'buildguide-progress', e => { if (e.detail?.storage === D.storage && isProgress(e.detail.saved)) { saved = {...e.detail.saved}; render(); } });
+    // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared)
+    listen(window, 'storage', e => { if (e.key === D.storage || e.key === null) { saved = load(); render(); } });
     function exportProgress() {
       const blob = new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'});
       const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${D.storage}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
