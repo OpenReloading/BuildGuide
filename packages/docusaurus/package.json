@@ -24,6 +24,7 @@
     "dist": "mkdir -p dist && npm pack --pack-destination dist"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "copy-webpack-plugin": "^14.0.0"
   },
   "peerDependencies": {

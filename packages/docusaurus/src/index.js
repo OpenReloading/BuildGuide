@@ -1,10 +1,16 @@
-// Docusaurus plugin: checks the guide data at build time, serves core at <baseUrl>assets/buildguide/ and
+// Docusaurus plugin: validates the guide data against the schema and checks it at build time, serves core at <baseUrl>assets/buildguide/ and
 // provides <BuildGuide view="bom"/>, <BuildGuide view="board" board="KEY"/> and <BuildGuide view="guide"/> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const Ajv = require('ajv/dist/2020');
 
 const CORE = path.join(__dirname, '..', 'core');
+// one line per schema error: the path of the key (a surplus or missing key named at its end), then what is wrong
+const schemaProblem = (e) => {
+  const key = e.params.additionalProperty ?? e.params.missingProperty;
+  return `${e.instancePath}${key === undefined ? '' : `/${String(key).replaceAll('~', '~0').replaceAll('/', '~1')}`}: ${e.message}`;
+};
 const attr = (value) => String(value).replace(/[&"<]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;' })[c]);
 
 module.exports = function buildguide(context, options = {}) {
@@ -24,7 +30,11 @@ module.exports = function buildguide(context, options = {}) {
     getClientModules: () => [path.join(__dirname, 'buildguide-docusaurus.css')],
     getPathsToWatch: () => [data],
     async loadContent() {
-      const guide = JSON.parse(readFileSync(data, 'utf8'));
+      let guide;
+      try { guide = JSON.parse(readFileSync(data, 'utf8')); } catch (error) { throw new Error(`${options.data}: ${error.message}`); }
+      const validate = new Ajv({ allErrors: true, allowUnionTypes: true }).compile(JSON.parse(readFileSync(path.join(CORE, 'buildguide.schema.json'), 'utf8')));
+      // before the check: it reads the data as the schema describes it
+      if (!validate(guide)) throw new Error(`${options.data}:\n${validate.errors.map(schemaProblem).join('\n')}`);
       const { check } = await import(pathToFileURL(path.join(CORE, 'buildguide-check.mjs')).href);
       const problems = check(guide);
       if (problems.length) throw new Error(`${options.data}:\n${problems.join('\n')}`);
