@@ -37,6 +37,47 @@ test('problems in the data stop the build, one line each', async () => {
   await assert.rejects(site(file).loadContent(), { message: `${file}:\n${fixture.problems.join('\n')}` });
 });
 
+const guideFile = (guide) => {
+  const file = join(mkdtempSync(join(tmpdir(), 'bg-')), 'guide.json');
+  writeFileSync(file, typeof guide === 'string' ? guide : JSON.stringify(guide));
+  return file;
+};
+
+test('a misspelt key or a wrong type fails the build with the file and the key', async () => {
+  const guide = JSON.parse(readFileSync(example, 'utf8'));
+  guide.bom.items[0].quantity = 1;
+  guide.boards.wiring.steps[0].note = 1;
+  const file = guideFile(guide);
+  await assert.rejects(site(file).loadContent(), (error) => {
+    assert.ok(error.message.startsWith(`${file}:\n`), error.message);
+    assert.match(error.message, /^\/bom\/items\/0\/quantity: /m);
+    assert.match(error.message, /^\/boards\/wiring\/steps\/0\/note: must be string$/m);
+    return true;
+  });
+});
+
+test('a missing key is named with its path', async () => {
+  const guide = JSON.parse(readFileSync(example, 'utf8'));
+  delete guide.storage;
+  delete guide.boards.tubing.title;
+  await assert.rejects(site(guideFile(guide)).loadContent(), (error) => {
+    assert.match(error.message, /^\/storage: must have required property 'storage'$/m);
+    assert.match(error.message, /^\/boards\/tubing\/title: must have required property 'title'$/m);
+    return true;
+  });
+});
+
+test('data of the wrong shape is a schema problem, not a TypeError', async () => {
+  const guide = JSON.parse(readFileSync(example, 'utf8'));
+  guide.boards.wiring.steps = { not: 'a list' };
+  await assert.rejects(site(guideFile(guide)).loadContent(), /^Error: .*guide\.json:\n\/boards\/wiring\/steps: must be array$/m);
+});
+
+test('a file that is not JSON fails the build with the file name', async () => {
+  const file = guideFile('{"storage": ');
+  await assert.rejects(site(file).loadContent(), (error) => error.message.startsWith(`${file}: `));
+});
+
 test('the data option is required', () => {
   assert.throws(() => site(undefined), /option data/);
 });
