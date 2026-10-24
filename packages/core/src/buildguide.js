@@ -10,6 +10,8 @@
   // guide data may come from anyone: URLs from it resolve to web or file locations only, anything else becomes '#'
   const safeURL = (value, base) => { try { const u = new URL(value, base); if (/^(https?|file):$/.test(u.protocol)) return u.href; } catch {} return '#'; };
   const decode = v => { try { return decodeURIComponent(v); } catch { return v; } };
+  // end of a fire-and-forget promise: a refused fullscreen request or an unreadable import has nothing more to report
+  const ignore = () => {};
   const button = (text, action, extra = '') => `<button type="button" data-action="${action}" ${extra}>${text}</button>`;
   const loaded = {};
   // a failed load is not cached: the next render tries again
@@ -261,7 +263,7 @@
       else { setExpanded(true); try { await root.requestFullscreen(); } catch {} }
     }
     listen(document, 'fullscreenchange', () => { if (state.expanded && document.fullscreenElement !== root) setExpanded(false); });
-    listen(document, 'keydown', e => { if (e.key === 'Escape' && state.expanded && document.fullscreenElement !== root) toggleScreen(); });
+    listen(document, 'keydown', e => { if (e.key === 'Escape' && state.expanded && document.fullscreenElement !== root) toggleScreen().catch(ignore); });
     function bindChecks(scope) {
       // a BOM row toggles its tick wherever you click it (the box, its label and links keep their own click)
       for (const box of scope.querySelectorAll('.ag-bom-table [data-check]')) box.closest('tr').onclick = e => { if (!e.target.closest('input,label,a')) box.click(); };
@@ -277,11 +279,11 @@
       for (const b of root.querySelectorAll('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); };
       bindChecks(root);
-      const file = root.querySelector('[data-role=import-file]'); file.onchange = () => { if (file.files[0]) importProgress(file.files[0]); };
+      const file = root.querySelector('[data-role=import-file]'); file.onchange = () => { if (file.files[0]) importProgress(file.files[0]).catch(ignore); };
       const search = root.querySelector('[data-role=search]'); if (search) search.oninput = () => { state.search = search.value; const results = root.querySelector('.ag-bom-results'); results.innerHTML = bomRows(); bindChecks(results); };
       for (const b of root.querySelectorAll('[data-action]')) b.onclick = () => {
         switch (b.dataset.action) {
-          case 'fullscreen': toggleScreen(); break;
+          case 'fullscreen': toggleScreen().catch(ignore); break;
           case 'zoom-in': state.zoom = Math.min(3, state.zoom + .25); drawing?.zoom(state.zoom); break;
           case 'zoom-out': state.zoom = Math.max(1, state.zoom - .25); drawing?.zoom(state.zoom); break;
           case 'zoom-fit': state.zoom = 1; drawing?.fit(); break;
@@ -303,7 +305,7 @@
       if (mounted.get(root) !== destroy) return;
       for (const stop of cleanups) stop();
       stopSizing?.(); drawing?.destroy(); drawing = null;
-      if (state.expanded) { document.body.classList.remove('ag-no-scroll'); if (document.fullscreenElement === root) document.exitFullscreen(); }
+      if (state.expanded) { document.body.classList.remove('ag-no-scroll'); if (document.fullscreenElement === root) document.exitFullscreen().catch(ignore); }
       root.replaceChildren(); root.classList.remove('ag-guide', 'ag-expanded');
       mounted.delete(root);
     };
@@ -385,7 +387,7 @@
     if (pending.length) Promise.allSettled(pending).then(() => {
       const anchor = location.hash.slice(1).split('&').find(pair => pair && !pair.includes('='));
       if (anchor) document.getElementById(decode(anchor))?.scrollIntoView();
-    });
+    }).catch(ignore);
   }
   window.BuildGuide = {mount, scan};
   scan();
