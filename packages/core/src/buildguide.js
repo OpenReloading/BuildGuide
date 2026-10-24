@@ -144,7 +144,7 @@
           const below = root.querySelectorAll(root.clientWidth >= 900 ? '.ag-board-legend' : '.ag-board-legend, .ag-board-toolbar, .ag-connection-detail, .ag-wire-navigation');
           const reserved = [...below].reduce((sum, el) => {
             const style = getComputedStyle(el);
-            return sum + el.getBoundingClientRect().height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+            return sum + el.getBoundingClientRect().height + Number.parseFloat(style.marginTop) + Number.parseFloat(style.marginBottom);
           }, 14);
           // as tall as the window leaves below the component's own top, never smaller than half the screen or the diagram's height at full width
           const top = canvas.getBoundingClientRect().top - root.getBoundingClientRect().top;
