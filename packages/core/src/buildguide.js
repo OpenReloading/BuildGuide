@@ -99,6 +99,8 @@
     let drawing, stopSizing;
     function render() {
       const refocus = focusSelector();
+      // a connection path is drawn again once the renderer is ready: it takes the focus back then
+      const active = document.activeElement, focusConn = root.contains(active) ? active.dataset?.connection : undefined;
       stopSizing?.();
       drawing?.destroy(); drawing = null;
       root.classList.add('ag-guide');
@@ -115,6 +117,7 @@
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
           rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
+            focus: focusConn,
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(i, steps[i].connections.findIndex(c => c.no === no)); }});
         }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
         root.querySelectorAll('[data-wire]').forEach(row => {

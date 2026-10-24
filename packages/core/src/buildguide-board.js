@@ -261,6 +261,7 @@
         view.el.addEventListener('keydown', event => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.select(c.no); }
         });
+        if (options.focus === c.no) view.el.focus({preventScroll: true});
         return view;
       });
       // a number goes on a straight stretch, clear of bends, parts, labels, other numbers and other connections;

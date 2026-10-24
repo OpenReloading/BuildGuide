@@ -277,6 +277,21 @@ test('tubing: all connections listed, keyboard selection', async ({ page }) => {
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(all[2].no);
 });
 
+test('keyboard: focus stays on a connection path after Enter or Space selects it', async ({ page }) => {
+  for (const [key, b] of boards) {
+    const step = b.steps[0];
+    await page.goto(url(key)); await ready(page);
+    for (const [pressed, c] of [['Enter', step.connections.at(-1)], ['Space', step.connections[0]]]) {
+      const path = page.locator(`[data-connection="${c.no}"]`);
+      await path.focus();
+      await page.keyboard.press(pressed);
+      await ready(page);
+      await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+      await expect(path).toBeFocused();
+    }
+  }
+});
+
 test('boards: zoom, fullscreen and page scrolling over the canvas', async ({ page }) => {
   for (const [key] of boards) {
     await page.goto(url(key)); await ready(page);
