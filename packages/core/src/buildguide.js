@@ -241,8 +241,9 @@
       document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress}}));
     };
     listen(document, 'buildguide-progress', e => { if (e.detail?.storage === D.storage && isProgress(e.detail.saved)) { saved = {...e.detail.saved}; render(); } });
-    // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared)
-    listen(window, 'storage', e => { if (e.key === D.storage || e.key === null) { saved = load(); render(); } });
+    // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared); sessionStorage events do not count
+    const area = () => { try { return localStorage; } catch {} };
+    listen(window, 'storage', e => { if (e.storageArea === area() && (e.key === D.storage || e.key === null)) { saved = load(); render(); } });
     function exportProgress() {
       const blob = new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'});
       const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${D.storage}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
