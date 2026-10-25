@@ -1,7 +1,8 @@
 name: Release
 # release-please keeps one release PR. Merging it tags each changed component (<component>-vX.Y.Z) and creates its
-# GitHub Release; the assets are built here. The release PR's CI runs wait for a maintainer's approval (Approve
-# workflows to run), because github-actions opens the PR.
+# GitHub Release; the assets are built here. release-please runs as the org's release GitHub App (variable
+# RELEASE_APP_CLIENT_ID, secret RELEASE_APP_PRIVATE_KEY): PRs opened with GITHUB_TOKEN wait for a maintainer to approve
+# their workflow runs, the App's PRs run them. GitHub signs the App's API commits, which main requires.
 on:
   push:
     branches: [main]
@@ -14,10 +15,7 @@ jobs:
     if: github.repository == 'OpenReloading/BuildGuide'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+    permissions: {}
     outputs:
       core: ${{ steps.release.outputs['packages/core--release_created'] }}
       core-tag: ${{ steps.release.outputs['packages/core--tag_name'] }}
@@ -26,11 +24,18 @@ jobs:
       docusaurus: ${{ steps.release.outputs['packages/docusaurus--release_created'] }}
       docusaurus-tag: ${{ steps.release.outputs['packages/docusaurus--tag_name'] }}
     steps:
+      - uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
-          # GITHUB_TOKEN, so GitHub signs the release commits (main requires signed commits; a personal token's
-          # API commits are unsigned)
+          token: ${{ steps.app-token.outputs.token }}
           # the default branch is develop; releases are cut from main
           target-branch: main
           config-file: release-please-config.json
