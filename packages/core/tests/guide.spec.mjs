@@ -597,6 +597,71 @@ test('phones: no sideways scrolling, the next action stays on screen', async ({ 
   }
 });
 
+// the font size of every drawn text as the reader sees it: font size x drawing scale
+const labelSizes = page => page.evaluate(() => [...document.querySelectorAll('.ag-board-canvas svg text')].filter(t => t.textContent.trim())
+  .map(t => Number.parseFloat(getComputedStyle(t).fontSize) * t.getScreenCTM().a));
+
+for (const [key] of boards) {
+  test(`${key}: phones keep every label at 10 px, Fit shows the whole board`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(url(key)); await ready(page);
+    expect(Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(10 - 0.01);
+    const canvas = page.locator('.ag-board-canvas'), paper = canvas.locator('.joint-paper');
+    expect((await paper.boundingBox()).width).toBeGreaterThan((await canvas.boundingBox()).width);
+    // the selected connection is in view, not the empty corner of the drawing
+    const selected = (await page.locator('[data-connection] [joint-selector=line]').first().boundingBox()), view = await canvas.boundingBox();
+    expect(selected.x + selected.width).toBeGreaterThan(view.x);
+    expect(selected.x).toBeLessThan(view.x + view.width);
+    // zoom works from the phone size: + enlarges it, - and + again return to it
+    const width = async () => Math.round((await paper.boundingBox()).width);
+    const start = await width();
+    await page.locator('[data-action=zoom-in]').click();
+    const larger = await width();
+    expect(larger).toBeGreaterThan(start);
+    await page.locator('[data-action=zoom-out]').click();
+    expect(await width()).toBe(start);
+    await page.locator('[data-action=zoom-out]').click();
+    expect(await width()).toBeLessThan(start);
+    await page.locator('[data-action=zoom-fit]').click();
+    expect((await paper.boundingBox()).width).toBeLessThanOrEqual((await canvas.boundingBox()).width + 1);
+    await page.locator('[data-action=zoom-in]').click();
+    expect((await paper.boundingBox()).width).toBeGreaterThan((await canvas.boundingBox()).width);
+  });
+
+  test(`${key}: the board ratio is on the component`, async ({ page }) => {
+    await page.goto(url(key)); await ready(page);
+    const [w, h] = D.boards[key].size;
+    expect(await boardOf(page, key).evaluate(el => getComputedStyle(el).getPropertyValue('--ag-board-ratio').trim())).toBe(`${w} / ${h}`);
+    // the documented use: a host sets the canvas height from the ratio
+    await page.addStyleTag({ content: '.ag-guide .ag-board-canvas{height:auto;aspect-ratio:var(--ag-board-ratio)}' });
+    const canvas = await page.locator('.ag-board-canvas').boundingBox();
+    expect(canvas.height).toBeCloseTo(canvas.width * h / w, 0);
+  });
+
+  test(`${key}: fullscreen on a phone gives the board half the screen`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(url(key)); await ready(page);
+    await page.locator('[data-action=fullscreen]').click();
+    await expect(page.locator('.ag-guide')).toHaveClass(/ag-expanded/); await ready(page);
+    const canvas = await page.locator('.ag-board-canvas').boundingBox();
+    expect(canvas.height).toBeGreaterThanOrEqual(844 / 2);
+    // the way out stays on screen
+    const exit = await page.locator('[data-action=fullscreen]').boundingBox();
+    expect(exit.y + exit.height).toBeLessThanOrEqual(844);
+  });
+}
+
+test('a board mounted in a hidden box keeps its scale and takes its size when shown', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await inlinePage(page, 'hidden/', D, '<div id="box" style="display:none"><div data-buildguide="board" data-board="wiring"></div></div>');
+  await page.goto(BASE + 'hidden/');
+  await ready(page);
+  // no size to fit to: the drawing keeps its own scale instead of collapsing to a point or turning to NaN
+  expect(await page.locator('.joint-layers').evaluate(g => new DOMMatrix(g.getAttribute('transform') ?? '').a)).toBeGreaterThan(0.01);
+  await page.evaluate(() => { document.getElementById('box').style.display = ''; });
+  await expect.poll(async () => Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(10 - 0.01);
+});
+
 test('storage blocked: ticks last for the visit, each component says so', async ({ page }) => {
   // the guide's key is blocked; a host's own use of localStorage (Material's palette) keeps working
   await page.addInitScript(key => {
