@@ -651,6 +651,17 @@ for (const [key] of boards) {
   });
 }
 
+test('a board mounted in a hidden box keeps its scale and takes its size when shown', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await inlinePage(page, 'hidden/', D, '<div id="box" style="display:none"><div data-buildguide="board" data-board="wiring"></div></div>');
+  await page.goto(BASE + 'hidden/');
+  await ready(page);
+  // no size to fit to: the drawing keeps its own scale instead of collapsing to a point or turning to NaN
+  expect(await page.locator('.joint-layers').evaluate(g => new DOMMatrix(g.getAttribute('transform') ?? '').a)).toBeGreaterThan(0.01);
+  await page.evaluate(() => { document.getElementById('box').style.display = ''; });
+  await expect.poll(async () => Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(10 - 0.01);
+});
+
 test('storage blocked: ticks last for the visit, each component says so', async ({ page }) => {
   // the guide's key is blocked; a host's own use of localStorage (Material's palette) keeps working
   await page.addInitScript(key => {

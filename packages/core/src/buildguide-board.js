@@ -304,6 +304,7 @@
     function fit() {
       if (disposed) return;
       const whole = Math.min(root.clientWidth / W, root.clientHeight / H);
+      if (!(whole > 0)) return;   // hidden: the resize on showing draws it
       readable = root.clientWidth < PHONE ? Math.max(1, MIN_LABEL / SMALLEST / whole) : 1;
       shown = zoomFactor || readable;
       const scale = whole * shown;
