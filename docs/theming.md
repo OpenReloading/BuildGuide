@@ -38,6 +38,16 @@ With `forced-colors: active` the browser replaces the component's colours with t
 
 Outside that media query nothing changes. The tokens do not apply in forced colours.
 
+## Board size
+
+A board component sets `--ag-board-ratio` on its `.ag-guide` to the size of the board in the guide data, written `<width> / <height>`, for example `1360 / 860`. A host that wants the canvas as tall as the drawing needs no copy of the numbers:
+
+```css
+.ag-guide .ag-board-canvas{height:auto;aspect-ratio:var(--ag-board-ratio)}
+```
+
+On a canvas narrower than 560 px (phones) the drawing is drawn at 1.18 times its natural size, so the smallest label shows at 10 px or more, and the canvas pans; it opens on the selected connection. Fit shows the whole board, and zoom out stops there. In fullscreen below a component width of 900 px the canvas takes at least half the screen height (`50dvh`) and the rest of the step scrolls.
+
 ## Light and dark
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:

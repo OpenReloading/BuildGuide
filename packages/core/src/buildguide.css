@@ -158,6 +158,9 @@ body.ag-no-scroll{overflow:hidden}
 @media(max-width:760px){
  .ag-guide.ag-expanded{padding:8px}
 }
+@container (max-width:899px){
+ .ag-guide.ag-expanded .ag-board-canvas{min-height:50dvh}   /* fullscreen on a phone: the board takes half the screen, the rest scrolls */
+}
 @container (max-width:760px){
  .ag-guide h2{font-size:18px}
  .ag-guide .ag-head{gap:12px}

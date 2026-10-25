@@ -66,7 +66,7 @@
     // a tick belongs to one exact connection: change either end and it is unchecked again
     const connKey = c => `${prefix}-${c.no}:${c.a}:${c.b}`, bomKey = p => `bom-${p.id}:${p.part}`;
     const count = (items, key) => items.filter(x => checked(key(x))).length;
-    const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 1, expanded: false, search: '', message: ''};
+    const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
     const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
     const color = c => own(board.colors, c.color) || {};
@@ -106,6 +106,7 @@
       stopSizing?.();
       drawing?.destroy(); drawing = null;
       root.classList.add('ag-guide');
+      if (board) root.style.setProperty('--ag-board-ratio', board.size.join(' / '));
       root.classList.toggle('ag-expanded', state.expanded);
       const message = state.message; state.message = '';
       root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
@@ -115,7 +116,7 @@
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
-        drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoom(v) { this.inner?.zoom(v); }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
+        drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoomBy(d) { return this.inner?.zoomBy(d) ?? state.zoom; }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
           rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
@@ -284,8 +285,8 @@
       for (const b of root.querySelectorAll('[data-action]')) b.onclick = () => {
         switch (b.dataset.action) {
           case 'fullscreen': toggleScreen().catch(ignore); break;
-          case 'zoom-in': state.zoom = Math.min(3, state.zoom + .25); drawing?.zoom(state.zoom); break;
-          case 'zoom-out': state.zoom = Math.max(1, state.zoom - .25); drawing?.zoom(state.zoom); break;
+          case 'zoom-in': state.zoom = drawing?.zoomBy(.25) ?? state.zoom; break;
+          case 'zoom-out': state.zoom = drawing?.zoomBy(-.25) ?? state.zoom; break;
           case 'zoom-fit': state.zoom = 1; drawing?.fit(); break;
           case 'next-wire': moveWire(1); break;
           case 'prev-wire': moveWire(-1); break;
@@ -306,7 +307,7 @@
       for (const stop of cleanups) stop();
       stopSizing?.(); drawing?.destroy(); drawing = null;
       if (state.expanded) { document.body.classList.remove('ag-no-scroll'); if (document.fullscreenElement === root) document.exitFullscreen().catch(ignore); }
-      root.replaceChildren(); root.classList.remove('ag-guide', 'ag-expanded');
+      root.replaceChildren(); root.classList.remove('ag-guide', 'ag-expanded'); root.style.removeProperty('--ag-board-ratio');
       mounted.delete(root);
     };
     mounted.set(root, destroy);

@@ -13,13 +13,14 @@
   const FONT = 'system-ui, Segoe UI, Helvetica, Arial, sans-serif';
   const PIN_TEXT = {'-': '−'};
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
+  const MIN_LABEL = 10, SMALLEST = 8.5, PHONE = 560;   // px: smallest rendered text, smallest font size drawn below, canvas width of a phone
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
   const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
 
   window.BuildGuideBoard = (root, B, options) => {
-    if (!window.joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoom() {}, fit() {}, highlight() {}}; }
+    if (!window.joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
     let disposed = false;
     const {dia, shapes} = joint;
     const [W, H] = B.size;
@@ -285,6 +286,9 @@
         placed.push({x0: at.x - 17, y0: at.y - 14, x1: at.x + 17, y1: at.y + 14});
       });
       highlight(selected.no, true);
+      // a drawing wider than the canvas opens on the selected connection
+      const {sourcePoint: from, targetPoint: to} = views[visible.indexOf(selected)], {sx} = paper.scale();
+      root.scrollLeft = (from.x + to.x) / 2 * sx - root.clientWidth / 2; root.scrollTop = (from.y + to.y) / 2 * sx - root.clientHeight / 2;
       root.dataset.ready = 'true';
     }).catch(() => {
       if (disposed) return;
@@ -295,10 +299,13 @@
     paper.on('link:mouseenter', view => highlight(view.model.id.slice(1), true));
     paper.on('link:mouseleave', view => highlight(view.model.id.slice(1), view.model.id === 'c' + selected.no));
     paper.on('link:pointerclick', view => options.select(view.model.id.slice(1)));
-    let zoomFactor = options.zoom || 1;
+    // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at MIN_LABEL px and pans, else it fits
+    let zoomFactor = options.zoom, shown = 1;
     function fit() {
       if (disposed) return;
-      const scale = Math.min(root.clientWidth / W, root.clientHeight / H) * zoomFactor;
+      const whole = Math.min(root.clientWidth / W, root.clientHeight / H);
+      shown = zoomFactor || (root.clientWidth < PHONE ? Math.max(1, MIN_LABEL / SMALLEST / whole) : 1);
+      const scale = whole * shown;
       paper.setDimensions(W * scale, H * scale);
       paper.scale(scale);
     }
@@ -321,7 +328,7 @@
     root.addEventListener('pointercancel', () => { drag = null; });
     return {
       destroy() { disposed = true; observer.disconnect(); removeEventListener('beforeprint', beforePrint); removeEventListener('afterprint', fit); paper.remove(); graph.clear(); },
-      zoom(value) { zoomFactor = value; fit(); },
+      zoomBy(step) { zoomFactor = Math.min(Math.max(3, shown), Math.max(1, shown + step)); fit(); return zoomFactor; },
       fit() { zoomFactor = 1; fit(); root.scrollTo(0, 0); },
       highlight,
     };

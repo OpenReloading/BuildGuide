@@ -597,6 +597,46 @@ test('phones: no sideways scrolling, the next action stays on screen', async ({ 
   }
 });
 
+// the font size of every drawn text as the reader sees it: font size x drawing scale
+const labelSizes = page => page.evaluate(() => [...document.querySelectorAll('.ag-board-canvas svg text')].filter(t => t.textContent.trim())
+  .map(t => Number.parseFloat(getComputedStyle(t).fontSize) * t.getScreenCTM().a));
+
+for (const [key] of boards) {
+  test(`${key}: phones keep every label at 10 px, Fit shows the whole board`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(url(key)); await ready(page);
+    expect(Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(10 - 0.01);
+    const canvas = page.locator('.ag-board-canvas'), paper = canvas.locator('.joint-paper');
+    expect((await paper.boundingBox()).width).toBeGreaterThan((await canvas.boundingBox()).width);
+    // the selected connection is in view, not the empty corner of the drawing
+    const selected = (await page.locator('[data-connection] [joint-selector=line]').first().boundingBox()), view = await canvas.boundingBox();
+    expect(selected.x + selected.width).toBeGreaterThan(view.x);
+    expect(selected.x).toBeLessThan(view.x + view.width);
+    await page.locator('[data-action=zoom-fit]').click();
+    expect((await paper.boundingBox()).width).toBeLessThanOrEqual((await canvas.boundingBox()).width + 1);
+    await page.locator('[data-action=zoom-in]').click();
+    expect((await paper.boundingBox()).width).toBeGreaterThan((await canvas.boundingBox()).width);
+  });
+
+  test(`${key}: the board ratio is on the component`, async ({ page }) => {
+    await page.goto(url(key)); await ready(page);
+    const [w, h] = D.boards[key].size;
+    expect(await boardOf(page, key).evaluate(el => getComputedStyle(el).getPropertyValue('--ag-board-ratio').trim())).toBe(`${w} / ${h}`);
+  });
+
+  test(`${key}: fullscreen on a phone gives the board half the screen`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(url(key)); await ready(page);
+    await page.locator('[data-action=fullscreen]').click();
+    await expect(page.locator('.ag-guide')).toHaveClass(/ag-expanded/); await ready(page);
+    const canvas = await page.locator('.ag-board-canvas').boundingBox();
+    expect(canvas.height).toBeGreaterThanOrEqual(844 / 2);
+    // the way out stays on screen
+    const exit = await page.locator('[data-action=fullscreen]').boundingBox();
+    expect(exit.y + exit.height).toBeLessThanOrEqual(844);
+  });
+}
+
 test('storage blocked: ticks last for the visit, each component says so', async ({ page }) => {
   // the guide's key is blocked; a host's own use of localStorage (Material's palette) keeps working
   await page.addInitScript(key => {
