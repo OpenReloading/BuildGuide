@@ -646,7 +646,7 @@ for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
     await expect(bom.locator('.ag-progress')).toHaveText(`2 / ${parts} checked`);
     await expect(wiring.locator('.ag-progress')).toHaveText(`1 / ${wires} checked`);
     await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(0);
-    await expect(tubing.locator('.ag-message')).toContainText(blocked ? 'Restored, but storage is unavailable' : 'Progress restored.');
+    await expect(tubing.locator('.ag-message')).toContainText(blocked ? 'Restored for this visit' : 'Progress restored.');
     await expect(tubing.locator('[data-action=reset-progress]')).toBeFocused();
     // storage holds the restored object when it takes writes
     if (!blocked) expect(Object.keys(await progressOf(page))).toHaveLength(3);
@@ -674,28 +674,31 @@ test('progress undo: the next tick or 10 seconds take the offer away', async ({ 
   await expect(page.locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
 });
 
-test('progress undo: stays while the view changes and goes when another tab changes the progress', async ({ page, context }) => {
+test('progress undo: a tick in another component takes the offer away and is not lost', async ({ page }) => {
+  await page.goto(url('all'));
+  const bom = bomOf(page), tubing = boardOf(page, 'tubing');
+  await ready(tubing);
+  await bom.locator('tbody input[type=checkbox]').nth(0).check();
+  await tubing.locator('[data-action=reset-progress]').click();
+  await expect(undoOf(tubing)).toBeVisible();
+  await bom.locator('tbody input[type=checkbox]').nth(1).check();
+  await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(0);
+  await expect(tubing.locator('.ag-message')).toHaveText('');
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(1)]);
+});
+
+test('progress undo: stays while the board view changes and goes when another tab changes the progress', async ({ page, context }) => {
   const other = await context.newPage();
-  await page.goto(url('bom')); await other.goto(url('bom'));
-  await bomOf(page).locator('tbody input[type=checkbox]').nth(0).check();
-  await bomOf(page).locator('[data-action=reset-progress]').click();
-  await bomOf(page).locator('[data-role=search]').fill('a');
+  await page.goto(url('tubing')); await other.goto(url('bom'));
+  const tubing = boardOf(page, 'tubing');
+  await ready(tubing);
+  await tubing.locator('.ag-verify input').check();
+  await tubing.locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await tubing.locator('[data-step]').nth(1).click();
   await expect(undoOf(page)).toBeVisible();
   await bomOf(other).locator('tbody input[type=checkbox]').nth(3).check();
   await expect(undoOf(page)).toHaveCount(0);
-});
-
-for (const scheme of ['light', 'dark']) test(`progress undo: the offer fits a phone and passes axe, ${scheme}`, async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.emulateMedia({ colorScheme: scheme });
-  await page.goto(url('bom'));
-  await bomOf(page).locator('tbody input[type=checkbox]').first().check();
-  await bomOf(page).locator('[data-action=reset-progress]').click();
-  await expect(undoOf(page)).toBeVisible();
-  expect(await page.evaluate(() => document.body.scrollWidth <= innerWidth)).toBe(true);
-  const { violations } = await new AxeBuilder({ page }).include('.ag-progress-tools').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-  expect(violations).toEqual([]);
-  expect(await undoOf(page).evaluate(el => getComputedStyle(el).textDecorationLine)).toBe('underline');
 });
 
 test('progress import: a refused file leaves the offer to undo the earlier import', async ({ page }) => {

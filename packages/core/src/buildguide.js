@@ -24,6 +24,9 @@
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
 
   const mounted = new WeakMap();
+  // Undo of a reset or import, one per page: until the next tick, a change from elsewhere or 10 s
+  let undo;
+  const dropUndo = () => { clearTimeout(undo?.timer); undo?.root.querySelector('.ag-message')?.replaceChildren(); undo = null; };
   // data keys come from anyone: only own properties count, never Object.prototype's
   const own = (object, key) => Object.hasOwn(object ?? {}, key) ? object[key] : undefined;
   // the page-wide hash holds one key=value pair per board, so boards on one page keep their own position
@@ -68,7 +71,7 @@
     const count = (items, key) => items.filter(x => checked(key(x))).length;
     const tally = () => { const list = board ? steps.flatMap(s => s.connections) : items; return [count(list, board ? connKey : bomKey), list.length]; };
     const what = board ? 'connections' : 'parts';
-    let wasDone, undo;
+    let wasDone;
     const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
     const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
@@ -76,10 +79,8 @@
     const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
     const cleanups = [];
     const listen = (target, type, handler) => { target.addEventListener(type, handler); cleanups.push(() => target.removeEventListener(type, handler)); };
-    // Undo of a reset or import: lasts until the next tick, a change from elsewhere or 10 s
-    const dropUndo = () => { clearTimeout(undo?.timer); undo = null; };
-    cleanups.push(dropUndo);
-    const line = m => m + (undo ? ' ' + button('Undo', 'undo-progress') : '');
+    cleanups.push(() => undo?.root === root && dropUndo());
+    const line = m => m + (undo?.root === root ? ' ' + button('Undo', 'undo-progress') : '');
 
     function navigate(index = 0, wire = 0) {
       if (putPair(boardKey, hashOf(steps[index], steps[index].connections[wire]))) { readHash(); render(); }
@@ -243,11 +244,11 @@
     const shareProgress = (progress, message, before) => {
       dropUndo();
       state.message = message;
-      if (before) undo = {before, timer: setTimeout(() => { undo = null; root.querySelector('.ag-message')?.replaceChildren(); }, 1e4)};
+      if (before) undo = {before, root, timer: setTimeout(dropUndo, 1e4)};
       document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress, before: before || {}}}));
     };
     const store = progress => { try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; } };
-    listen(document, 'buildguide-progress', e => { if (e.detail?.storage === D.storage && isProgress(e.detail.saved)) { const d = e.detail; if (d.before !== undo?.before) dropUndo(); Object.assign(d.before || {}, {...saved, ...d.before}); saved = {...d.saved}; render(); } });
+    listen(document, 'buildguide-progress', ({detail: d}) => { if (d?.storage === D.storage && isProgress(d.saved)) { if (d.before !== undo?.before) dropUndo(); Object.assign(d.before || {}, {...saved, ...d.before}); saved = {...d.saved}; render(); } });
     // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared)
     listen(window, 'storage', e => { if (e.key === D.storage || e.key === null) { dropUndo(); saved = load(); render(); } });
     function exportProgress() {
@@ -271,9 +272,8 @@
     function undoProgress() {
       const {before} = undo;
       store(before);
-      // the Undo button is gone after the render
       root.querySelector('[data-action=reset-progress]').focus();
-      shareProgress(before, persistent ? 'Progress restored.' : 'Restored, but storage is unavailable: progress is not saved.');
+      shareProgress(before, persistent ? 'Progress restored.' : 'Restored for this visit: storage is unavailable.');
     }
     function moveWire(dir) {
       let i = state.step, j = state.wire + dir;
