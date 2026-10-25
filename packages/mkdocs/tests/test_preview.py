@@ -26,4 +26,4 @@ def test_released_site_has_neither(tmp_path, monkeypatch):
     monkeypatch.delenv("BUILDGUIDE_PREVIEW", raising=False)
     for page in build_docs(tmp_path):
         text = page.read_text(encoding="utf-8")
-        assert "noindex" not in text and 'class="md-banner"' not in text, page
+        assert 'name="robots" content="noindex' not in text and 'class="md-banner"' not in text, page

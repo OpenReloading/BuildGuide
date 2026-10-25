@@ -52,15 +52,18 @@ jobs:
         env:
           PREVIEW: ${{ steps.preview.outcome }}
         run: |
+          # the released site carries no preview marker, whatever the preview did
+          if grep -rlE --include='*.html' 'name="robots" content="noindex|class="md-banner"' main/site; then echo "::error::the released site carries preview markers"; exit 1; fi
           cp -a main/site pages
+          # every preview page must carry noindex and the banner, else it stays out
           if [ "$PREVIEW" = success ]; then
-            # every preview page must carry noindex and the banner, the released site neither
-            missing=$(grep -rL --include='*.html' 'name="robots" content="noindex' develop/site; grep -rL --include='*.html' 'md-banner' develop/site)
-            test -z "$missing" || { echo "::error::preview pages without noindex or banner: $missing"; exit 1; }
-            if grep -rlE --include='*.html' 'noindex|md-banner' main/site; then echo "::error::the released site carries preview markers"; exit 1; fi
+            missing=$(grep -rL --include='*.html' 'name="robots" content="noindex' develop/site; grep -rL --include='*.html' 'class="md-banner"' develop/site)
+            if [ -n "$missing" ]; then PREVIEW=markers; echo "preview pages without noindex or banner: $missing"; fi
+          fi
+          if [ "$PREVIEW" = success ]; then
             cp -a develop/site pages/develop
           else
-            echo "::warning title=Preview skipped::the develop build did not succeed, the released site deploys without /develop/"
+            echo "::warning title=Preview skipped::the develop build did not succeed ($PREVIEW), the released site deploys without /develop/"
           fi
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
