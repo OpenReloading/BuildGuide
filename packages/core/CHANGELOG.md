@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.2](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.1...core-v0.2.2) (2026-10-25)
+
+
+### Features
+
+* **core:** done state that keeps text readable ([#93](https://github.com/OpenReloading/BuildGuide/issues/93)) ([3375de4](https://github.com/OpenReloading/BuildGuide/commit/3375de47f49f877a7bc97bece207736b2dce3598))
+* **docusaurus:** validate the guide data against the schema at build time ([#59](https://github.com/OpenReloading/BuildGuide/issues/59)) ([50dfd3e](https://github.com/OpenReloading/BuildGuide/commit/50dfd3ede07c46a5dc31f0d37c1877cfaee894b8))
+
+
+### Bug fixes
+
+* **core:** cross-tab ticks and keyboard focus on board connections ([#58](https://github.com/OpenReloading/BuildGuide/issues/58)) ([3d2548f](https://github.com/OpenReloading/BuildGuide/commit/3d2548f9a79fa2c050b4e9828a29414395bfd519))
+* **core:** forced-colors markers for selected, done and current ([#94](https://github.com/OpenReloading/BuildGuide/issues/94)) ([7285df3](https://github.com/OpenReloading/BuildGuide/commit/7285df3d30901bf031312139e5e9a4a02927d3a4))
+* **core:** readable board labels on phones, fullscreen height, board ratio ([#98](https://github.com/OpenReloading/BuildGuide/issues/98)) ([d1feaeb](https://github.com/OpenReloading/BuildGuide/commit/d1feaebba703fc01a6c3727b087d6d44cdf47835))
+* resolve open SonarCloud issues ([#63](https://github.com/OpenReloading/BuildGuide/issues/63)) ([5f1ea64](https://github.com/OpenReloading/BuildGuide/commit/5f1ea645de9a66a2efed53095a167aba71f0f6c1))
+
 ## [0.2.1](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.0...core-v0.2.1) (2026-10-23)
 
 
