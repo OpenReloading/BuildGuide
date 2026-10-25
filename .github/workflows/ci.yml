@@ -37,10 +37,10 @@ jobs:
           path: ${{ runner.temp }}/npm
           key: npm-${{ hashFiles('package-lock.json') }}
           restore-keys: npm-
-      - run: npm ci
+      - run: npm ci --ignore-scripts
         env:
           npm_config_cache: ${{ runner.temp }}/npm
-      - run: uv sync --locked --project packages/mkdocs
+      - run: uv sync --locked --no-build --project packages/mkdocs
       - run: npm run lint
       - run: npm test
       - run: npm run test:browser

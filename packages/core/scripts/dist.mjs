@@ -10,7 +10,7 @@ mkdirSync(out, { recursive: true });
 cpSync('src', out, { recursive: true });
 cpSync('schema/buildguide.schema.json', `${out}/buildguide.schema.json`);
 cpSync('LICENSE', `${out}/LICENSE`);
-execFileSync('tar', ['-cf', `${name}.tar.gz`, '-I', 'gzip -n', '--sort=name', '--owner=0', '--group=0', '--numeric-owner', '--mode=go-w,u+rw,a+rX', '--mtime=@0', name], { cwd: 'dist' });
+execFileSync('/usr/bin/tar', ['-cf', `${name}.tar.gz`, '-I', 'gzip -n', '--sort=name', '--owner=0', '--group=0', '--numeric-owner', '--mode=go-w,u+rw,a+rX', '--mtime=@0', name], { cwd: 'dist' });
 const sum = createHash('sha256').update(readFileSync(`dist/${name}.tar.gz`)).digest('hex');
 writeFileSync('dist/SHA256SUMS', `${sum}  ${name}.tar.gz\n`);
 console.log(`${sum}  ${name}.tar.gz`);
