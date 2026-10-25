@@ -129,7 +129,7 @@
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
           rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
-            focus: focusConn,
+            focus: focusConn, done: no => checked(connKey(steps.flatMap(s => s.connections).find(c => c.no === no))),
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(i, steps[i].connections.findIndex(c => c.no === no)); }});
         }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
         root.querySelectorAll('[data-wire]').forEach(row => {

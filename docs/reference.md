@@ -14,7 +14,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `data-src` | URL of the guide data; components with the same URL share one request |
 | `data-assets` | folder of BOM images, relative to the page |
 | `#guide-data` | an element holding the guide data as JSON (`<script type="application/json">`, or any element with that id), used by components without `data-src`; its `data-assets` is the default for them |
-| `data-step`, `data-wire`, `data-conn`, `data-connection` | step buttons, connection rows and board connections |
+| `data-step`, `data-wire`, `data-conn`, `data-connection` | step buttons, connection rows and board connections; a ticked connection's drawing shows `✓ <number>` in a tinted pill (a diode has no pill: its name label carries the check mark) and its accessible name ends with `; checked` |
 | `data-role` | `scope`, `search`, `import-file` |
 | `data-complete` | set by the component on its `.ag-guide` root while every item of the BOM or board is ticked: the head then reads `All parts checked` or `All connections checked` and the status line announces it once. The head's `<progress>` (inside `.ag-progress`, named `parts checked` or `connections checked`) is filled with `--ag-done` |
 | `data-ag-scheme` | `light` opts a component out of the browser's dark preference |

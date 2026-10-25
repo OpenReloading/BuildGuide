@@ -10,7 +10,7 @@ Every colour is a `light-dark(light, dark)` pair, so one value serves both schem
 
 ## Done state
 
-A ticked BOM row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed.
+A ticked BOM row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed. In a board drawing the number pill of a ticked connection reads `✓ <number>` on a green tint (a diode has no pill, its name label gets the check mark); the check mark is text, so it survives dark mode, forced colours and printing without background graphics, and the connection's accessible name ends with `; checked`.
 
 Two plain properties on `.ag-guide` restore dimming or strike-through. Both default to the plain look:
 
