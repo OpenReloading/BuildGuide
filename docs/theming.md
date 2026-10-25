@@ -8,6 +8,30 @@ Every colour is a `light-dark(light, dark)` pair, so one value serves both schem
 
 <!-- generated: tokens -->
 
+## Font and size
+
+Two plain properties on `.ag-guide`, next to the colours:
+
+| Property | Default | Meaning |
+|---|---|---|
+| `--ag-font` | `-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif` | font family of the component: its text, its controls and the text in the board drawing |
+| `--ag-text-small` | `11px` | font size of the smallest text: step counts, toolbar and legend, wire navigation, table headers, source links, counts, status and progress buttons, and on a phone the buttons of the wire rows and the primary button. The board canvas uses it as the smallest size a drawn label shows at on a phone (below) |
+
+No text of the component is smaller than `--ag-text-small`. Set it to a length that resolves in the component (`12px`, `0.75rem`).
+
+```css
+/* the font of the host: give --ag-font the host's own family */
+.ag-guide{--ag-font:var(--md-text-font-family)}      /* MkDocs Material */
+.ag-guide{--ag-font:var(--ifm-font-family-base)}     /* Docusaurus */
+.ag-guide{--ag-font:Georgia,serif}                   /* any stack */
+/* larger small text */
+.ag-guide{--ag-text-small:12px}
+```
+
+Set both in the stylesheet: the board reads `--ag-text-small` when it draws and when its canvas is resized, not when the property changes later. The names `--md-text-font-family` and `--ifm-font-family-base` are the ones the Material and Infima (Docusaurus) stylesheets declare; check them against the version of your theme.
+
+Every checkbox (BOM rows, wire rows, the detail's Mark checked box) is 24 x 24 px, the minimum target size of WCAG 2.2 ([2.5.8](https://www.w3.org/TR/WCAG22/#target-size-minimum)).
+
 ## Done state
 
 A ticked BOM row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed. In a board drawing the number pill of a ticked connection reads `✓ <number>` on a green tint (a diode has no pill, its name label gets the check mark); the check mark is text, so it survives dark mode, forced colours and printing without background graphics, and the connection's accessible name ends with `; checked`.
@@ -46,7 +70,7 @@ A board component sets `--ag-board-ratio` on its `.ag-guide` to the size of the 
 .ag-guide .ag-board-canvas{height:auto;aspect-ratio:var(--ag-board-ratio)}
 ```
 
-On a canvas narrower than 560 px (phones) the drawing is drawn at 1.18 times its natural size, so the smallest label shows at 10 px or more, and the canvas pans; it opens on the selected connection. Fit shows the whole board, and zoom out stops there. In fullscreen below a component width of 900 px the canvas takes at least half the screen height (`50dvh`) and the rest of the step scrolls.
+On a canvas narrower than 560 px (phones) the drawing is drawn large enough for its smallest label to show at `--ag-text-small` (11 px by default, 1.29 times its natural size) or more, and the canvas pans; it opens on the selected connection. Fit shows the whole board, and zoom out stops there. In fullscreen below a component width of 900 px the canvas takes at least half the screen height (`50dvh`) and the rest of the step scrolls.
 
 ## Light and dark
 

@@ -684,15 +684,53 @@ test('phones: no sideways scrolling, the next action stays on screen', async ({ 
   }
 });
 
+// a host token set before the component mounts: .ag-guide.ag-guide outranks the stylesheet wherever it sits in the page
+const withTokens = (page, rule) => page.addInitScript(r => document.addEventListener('DOMContentLoaded', () => document.head.insertAdjacentHTML('beforeend', `<style>.ag-guide.ag-guide{${r}}</style>`)), rule);
+
+test('tick boxes are at least 24 x 24 px at 390 px, without sideways scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const key of ['bom', ...Object.keys(D.boards)]) {
+    await page.goto(url(key)); if (key !== 'bom') await ready(page);
+    await page.locator('.ag-guide input[type=checkbox]').first().waitFor();
+    const sizes = await page.locator('.ag-guide input[type=checkbox]').evaluateAll(boxes => boxes.map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; }));
+    expect(sizes.length, key).toBeGreaterThan(0);
+    for (const [width, height] of sizes) { expect(width, key).toBeGreaterThanOrEqual(24); expect(height, key).toBeGreaterThanOrEqual(24); }
+    expect(await page.evaluate(() => document.body.scrollWidth <= innerWidth), key).toBe(true);
+  }
+});
+
+test('--ag-font sets the font of the text, the controls and the drawing', async ({ page }) => {
+  await withTokens(page, '--ag-font:Georgia,serif');
+  await page.goto(url('wiring')); await ready(page);
+  const families = await page.evaluate(() => ['.ag-guide', '.ag-steps button', '.ag-board-toolbar select', '.ag-guide .joint-paper text'].map(sel => getComputedStyle(document.querySelector(sel)).fontFamily));
+  for (const family of families) expect(family).toContain('Georgia');
+});
+
+test('--ag-text-small is the smallest text: 11 px by default, no HTML or drawn text below it', async ({ page }) => {
+  expect(css).not.toContain('.ag-part-cell small');
+  for (const [width, token] of [[1280, 11], [390, 11], [390, 12]]) {
+    await page.setViewportSize({ width, height: 900 });
+    if (token !== 11) await withTokens(page, `--ag-text-small:${token}px`);
+    const smallest = async key => {
+      await page.goto(url(key)); if (key !== 'bom') await ready(page);
+      await page.locator('.ag-guide .ag-status').first().waitFor();
+      return page.evaluate(() => Math.min(...[...document.querySelectorAll('.ag-guide *')].filter(el => el.closest('svg') ? false : [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()))
+        .map(el => Number.parseFloat(getComputedStyle(el).fontSize))));
+    };
+    for (const key of ['bom', ...Object.keys(D.boards)]) expect(await smallest(key), `${key} at ${width} px, token ${token}`).toBeGreaterThanOrEqual(token);
+    if (width === 390) for (const key of Object.keys(D.boards)) { await page.goto(url(key)); await ready(page); expect(Math.min(...await labelSizes(page)), key).toBeGreaterThanOrEqual(token - 0.01); }
+  }
+});
+
 // the font size of every drawn text as the reader sees it: font size x drawing scale
 const labelSizes = page => page.evaluate(() => [...document.querySelectorAll('.ag-board-canvas svg text')].filter(t => t.textContent.trim())
   .map(t => Number.parseFloat(getComputedStyle(t).fontSize) * t.getScreenCTM().a));
 
 for (const [key] of boards) {
-  test(`${key}: phones keep every label at 10 px, Fit shows the whole board`, async ({ page }) => {
+  test(`${key}: phones keep every label at 11 px, Fit shows the whole board`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(url(key)); await ready(page);
-    expect(Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(10 - 0.01);
+    expect(Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(11 - 0.01);
     const canvas = page.locator('.ag-board-canvas'), paper = canvas.locator('.joint-paper');
     expect((await paper.boundingBox()).width).toBeGreaterThan((await canvas.boundingBox()).width);
     // the selected connection is in view, not the empty corner of the drawing
