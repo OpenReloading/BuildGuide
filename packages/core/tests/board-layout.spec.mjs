@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
-const ORIGIN = 'http://127.0.0.1:8080';
+const ORIGIN = 'http://127.0.0.1:8080' + (process.env.BUILDGUIDE_PREFIX ?? '');
 const OUTLINE = 3;   // the outline of a connection is this much wider than its line (renderer)
 const SLACK = 1.5;   // drawing tolerance in pixels: rounded corners, part borders
 

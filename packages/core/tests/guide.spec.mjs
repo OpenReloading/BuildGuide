@@ -5,9 +5,11 @@ import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
-const ORIGIN = 'http://127.0.0.1:8080', BASE = ORIGIN + '/example/';
+// BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /develop for the Pages preview
+const PREFIX = process.env.BUILDGUIDE_PREFIX ?? '';
+const ORIGIN = 'http://127.0.0.1:8080', BASE = `${ORIGIN}${PREFIX}/example/`;
 // the core files: src/ here, assets/buildguide/ in a site built with a plugin
-const CORE = process.env.BUILDGUIDE_SITE ? '/assets/buildguide/' : '/src/';
+const CORE = process.env.BUILDGUIDE_SITE ? `${PREFIX}/assets/buildguide/` : '/src/';
 const boards = Object.entries(D.boards);
 const label = (b, c, side) => c['l' + side] ?? `${b.parts[c[side].split(':')[0]].name} · ${c[side].slice(c[side].indexOf(':') + 1)}`;
 const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
@@ -627,7 +629,7 @@ test('inline data in #guide-data works like data-src', async ({ page }) => {
 test('BOM images are decorative: empty alt, the part name sits in the same cell', async ({ page }) => {
   const data = structuredClone(D);
   data.bom.items[0].image = 'part.gif';
-  await page.route(`${ORIGIN}/example/assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
   await inlinePage(page, 'bom-image/', data, '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'bom-image/');
   const cell = page.locator('.ag-part-cell').filter({ has: page.locator('img') });

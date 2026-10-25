@@ -4,7 +4,7 @@ Monorepo of BuildGuide components, the BOM and board views for a host's own page
 
 ## Branches
 
-Pull requests target `develop` (default branch) and are squash-merged with the Conventional Commit title. `main` only gets `develop` through a promotion pull request titled `chore: promote develop to main`, merged with a merge commit; release-please, release, publish, Pages and Scorecard run on `main`.
+Pull requests target `develop` (default branch) and are squash-merged with the Conventional Commit title. `main` only gets `develop` through a promotion pull request titled `chore: promote develop to main`, merged with a merge commit; release-please, release, publish and Scorecard run on `main`; Pages runs on both branches and publishes `develop` as a preview (Commands).
 
 CI (`ci.yml`) runs on pull requests and on pushes to `develop`, not on `main`. The promotion pull request skips its jobs (the push to develop already ran them on the same commit), so `main` requires only checks that also run on that push.
 
@@ -17,6 +17,7 @@ CI (`ci.yml`) runs on pull requests and on pushes to `develop`, not on `main`. T
 - Docusaurus example site: `npm run build -w packages/docusaurus` (`packages/docusaurus/example/build/`), dev server `npm run start -w packages/docusaurus` (port 8080)
 - Dependency audit (CI): `node scripts/audit.mjs`. An advisory without a fix goes into its `ALLOWED` list and into `allow-ghsas` in `ci.yml`, with the user's approval.
 - Docs site into `site/`: `npm run docs`. Serve: `uv run --project packages/mkdocs mkdocs serve -a 0.0.0.0:8080`
+- Pages (`pages.yml`): one deployment holds `main` at the root (https://openreloading.github.io/BuildGuide/) and `develop` as a preview under `/develop/`; it runs on pushes to both and on manual dispatch. Each ref is built from its own checkout with `mkdocs build --strict`; the preview build sets `BUILDGUIDE_PREVIEW=true` (`noindex` meta tag and banner from `overrides/main.html`) and `SITE_URL=<root>/develop/`. The preview keeps its own `sitemap.xml` because Material's instant navigation needs it; the root sitemap never lists it. A failing preview build only drops `/develop/` with a warning, a failing `main` build fails the run. Test a combined output with `BUILDGUIDE_SITE=<folder> BUILDGUIDE_PREFIX=/develop npm run test:browser -w packages/core`.
 - Release archives (core tarball, MkDocs wheel and sdist): `npm run dist`
 - Serve the core example: `npm run serve -w packages/core` (http://127.0.0.1:8080/example/)
 - Workflow changes: `podman run --rm -v "$PWD:/repo:Z" -w /repo docker.io/rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667` and `podman run --rm -v "$PWD:/repo:Z" -w /repo ghcr.io/zizmorcore/zizmor:1.31.1 --offline .github/workflows` (CI runs both).
