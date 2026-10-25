@@ -50,18 +50,52 @@ for (const [key, b] of boards) {
 const PAGES = ['bom', 'wiring', 'tubing', 'all', 'guide'];
 const settled = async page => { for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true'); };
 
+// every box ticked, one at a time: a tick re-renders the component
+const tickAll = guide => guide.evaluate(el => { for (let i = 0; i < 200; i++) { const box = el.querySelector('[data-check]:not(:checked)'); if (!box) break; box.click(); } });
+
 for (const key of PAGES) {
-  test(`${key}: no accessibility violations in the components (WCAG 2.2 AA)`, async ({ page }) => {
-    await page.goto(url(key)); await settled(page);
-    const found = [];
-    // one component at a time, scrolled to the top of the viewport: the sticky navigation of a board covers the part of the page below it
-    for (const guide of await page.locator('.ag-guide').all()) {
-      await guide.evaluate(el => { el.scrollIntoView({ block: 'start' }); el.setAttribute('data-axe', ''); });
-      const { violations } = await new AxeBuilder({ page }).include('[data-axe]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-      found.push(...violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`));
-      await guide.evaluate(el => el.removeAttribute('data-axe'));
-    }
-    expect(found).toEqual([]);
+  for (const scheme of ['light', 'dark']) for (const ticked of [false, true]) {
+    test(`${key}: no accessibility violations in the components (WCAG 2.2 AA), ${scheme}${ticked ? ', items ticked' : ''}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto(url(key)); await settled(page);
+      const found = [];
+      // one component at a time, scrolled to the top of the viewport: the sticky navigation of a board covers the part of the page below it
+      for (const guide of await page.locator('.ag-guide').all()) {
+        if (ticked) await tickAll(guide);
+        await guide.evaluate(el => { el.scrollIntoView({ block: 'start' }); el.setAttribute('data-axe', ''); });
+        const { violations } = await new AxeBuilder({ page }).include('[data-axe]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+        found.push(...violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`));
+        await guide.evaluate(el => el.removeAttribute('data-axe'));
+      }
+      expect(found).toEqual([]);
+    });
+  }
+}
+
+// computed colours of a done row, measured: text 4.5:1 on the row (3:1 for the check mark), nothing translucent. In forced colours the system picks the colours.
+const luminance = rgb => rgb.match(/[\d.]+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { colorScheme: 'dark' }], ['forced colours', { forcedColors: 'active' }]]) {
+  test(`a done row stays legible: BOM and wire rows, ${name}`, async ({ page }) => {
+    await page.emulateMedia(media);
+    const measure = (row, text) => row.evaluate((tr, sel) => {
+      const behind = el => { for (; el; el = el.parentElement) { const bg = getComputedStyle(el).backgroundColor; if (!/rgba?\(.*, 0\)$/.test(bg) && bg !== 'transparent') return bg; } return 'rgb(255, 255, 255)'; };
+      const el = tr.querySelector(sel), mark = getComputedStyle(el, '::before');
+      return { color: getComputedStyle(el).color, bg: behind(el), opacity: getComputedStyle(el.closest('td,button')).opacity, mark: mark.content, markColor: mark.color };
+    }, text);
+    const check = async (row, text) => {
+      const m = await measure(row, text);
+      expect(m.opacity).toBe('1');
+      expect(m.mark).not.toBe('none');
+      expect(contrast(m.color, m.bg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(m.markColor, m.bg)).toBeGreaterThanOrEqual(3);
+    };
+    await page.goto(url('bom')); await settled(page);
+    await page.locator('tbody input[type=checkbox]').first().check();
+    await check(page.locator('tbody tr.is-done').first(), 'strong');
+    await page.goto(url('wiring')); await settled(page);
+    await page.locator('.ag-verify input').check();
+    await check(page.locator('.ag-wire-row.is-done').first(), '.ag-wire-number');
   });
 }
 
