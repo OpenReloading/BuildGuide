@@ -612,6 +612,16 @@ for (const [key] of boards) {
     const selected = (await page.locator('[data-connection] [joint-selector=line]').first().boundingBox()), view = await canvas.boundingBox();
     expect(selected.x + selected.width).toBeGreaterThan(view.x);
     expect(selected.x).toBeLessThan(view.x + view.width);
+    // zoom works from the phone size: + enlarges it, - and + again return to it
+    const width = async () => Math.round((await paper.boundingBox()).width);
+    const start = await width();
+    await page.locator('[data-action=zoom-in]').click();
+    const larger = await width();
+    expect(larger).toBeGreaterThan(start);
+    await page.locator('[data-action=zoom-out]').click();
+    expect(await width()).toBe(start);
+    await page.locator('[data-action=zoom-out]').click();
+    expect(await width()).toBeLessThan(start);
     await page.locator('[data-action=zoom-fit]').click();
     expect((await paper.boundingBox()).width).toBeLessThanOrEqual((await canvas.boundingBox()).width + 1);
     await page.locator('[data-action=zoom-in]').click();
@@ -622,6 +632,10 @@ for (const [key] of boards) {
     await page.goto(url(key)); await ready(page);
     const [w, h] = D.boards[key].size;
     expect(await boardOf(page, key).evaluate(el => getComputedStyle(el).getPropertyValue('--ag-board-ratio').trim())).toBe(`${w} / ${h}`);
+    // the documented use: a host sets the canvas height from the ratio
+    await page.addStyleTag({ content: '.ag-guide .ag-board-canvas{height:auto;aspect-ratio:var(--ag-board-ratio)}' });
+    const canvas = await page.locator('.ag-board-canvas').boundingBox();
+    expect(canvas.height).toBeCloseTo(canvas.width * h / w, 0);
   });
 
   test(`${key}: fullscreen on a phone gives the board half the screen`, async ({ page }) => {

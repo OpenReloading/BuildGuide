@@ -300,11 +300,12 @@
     paper.on('link:mouseleave', view => highlight(view.model.id.slice(1), view.model.id === 'c' + selected.no));
     paper.on('link:pointerclick', view => options.select(view.model.id.slice(1)));
     // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at MIN_LABEL px and pans, else it fits
-    let zoomFactor = options.zoom, shown = 1;
+    let zoomFactor = options.zoom, shown = 1, readable = 1;
     function fit() {
       if (disposed) return;
       const whole = Math.min(root.clientWidth / W, root.clientHeight / H);
-      shown = zoomFactor || (root.clientWidth < PHONE ? Math.max(1, MIN_LABEL / SMALLEST / whole) : 1);
+      readable = root.clientWidth < PHONE ? Math.max(1, MIN_LABEL / SMALLEST / whole) : 1;
+      shown = zoomFactor || readable;
       const scale = whole * shown;
       paper.setDimensions(W * scale, H * scale);
       paper.scale(scale);
@@ -328,7 +329,7 @@
     root.addEventListener('pointercancel', () => { drag = null; });
     return {
       destroy() { disposed = true; observer.disconnect(); removeEventListener('beforeprint', beforePrint); removeEventListener('afterprint', fit); paper.remove(); graph.clear(); },
-      zoomBy(step) { zoomFactor = Math.min(Math.max(3, shown), Math.max(1, shown + step)); fit(); return zoomFactor; },
+      zoomBy(step) { zoomFactor = Math.min(Math.max(3, readable * 1.5), Math.max(1, shown + step)); fit(); return zoomFactor; },
       fit() { zoomFactor = 1; fit(); root.scrollTo(0, 0); },
       highlight,
     };
