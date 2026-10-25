@@ -51,7 +51,7 @@ async function drawn(page) {
       connections[g.dataset.connection] = polyline(g.querySelector('[joint-selector=line]').getAttribute('d'));
     }
     for (const g of document.querySelectorAll('.ag-board-canvas .joint-labels-layer g.label')) {
-      badges.push({ no: g.parentNode.getAttribute('model-id').slice(1), pill: !!g.querySelector('[joint-selector=pill]'), ...box(g, g) });
+      badges.push({ no: g.parentNode.getAttribute('model-id').slice(1), text: g.textContent.trim(), pill: !!g.querySelector('[joint-selector=pill]'), ...box(g, g) });
     }
     return { parts, captions, connections, badges };
   });
@@ -108,17 +108,47 @@ function problems(b, g, shown) {
   return found;
 }
 
+// the tick keys of a board's connections, stored as the component stores them
+const ticks = (key, b, list) => Object.fromEntries(list.map(c => [`${b.prefix || key}-${c.no}:${c.a}:${c.b}`, true]));
+const tick = (page, key, b, list) => page.addInitScript(([storage, saved]) => localStorage.setItem(storage, JSON.stringify(saved)), [D.storage, ticks(key, b, list)]);
+
 for (const [key, b] of Object.entries(D.boards)) {
   const all = b.steps.flatMap(s => s.connections);
   const views = [{ name: 'all connections', shown: all, go: async page => { await page.goto(`${ORIGIN}/example/${key}/`); if ((b.scope || 'step') !== 'all') await page.locator('[data-role=scope]').selectOption('all'); } },
     ...b.steps.map(s => ({ name: `step ${s.id}`, shown: s.connections, go: async page => { await page.goto(`${ORIGIN}/example/${key}/#${encodeURIComponent(key)}=${encodeURIComponent(s.id)}`); } }))];
-  for (const v of (b.scope === 'all' ? views.slice(0, 1) : views)) {
-    test(`${key}, ${v.name}: wires are orthogonal, apart, clear of parts, labels and each other's numbers`, async ({ page }) => {
+  for (const ticked of [false, true]) for (const v of (b.scope === 'all' ? views.slice(0, 1) : views)) {
+    test(`${key}, ${v.name}${ticked ? ', all ticked' : ''}: wires are orthogonal, apart, clear of parts, labels and each other's numbers`, async ({ page }) => {
+      if (ticked) await tick(page, key, b, all);
       await v.go(page);
       await expect(page.locator('.ag-board-canvas')).toHaveAttribute('data-ready', 'true');
       await expect(page.locator('[data-connection]')).toHaveCount(v.shown.length);
       const g = await drawn(page);
       expect(problems(key, g, v.shown)).toEqual([]);
+      // the wider label of a ticked connection is a check mark before the number
+      expect(g.badges.map(x => x.text)).toEqual(expect.arrayContaining(v.shown.map(c => (ticked ? '\u2713 ' : '') + c.no)));
     });
   }
+
+  test(`${key}: a ticked connection shows a check mark and a tinted pill in the drawing, an unticked one does not`, async ({ page }) => {
+    const [first, ...rest] = all;
+    await tick(page, key, b, [first]);
+    await page.goto(`${ORIGIN}/example/${key}/`);
+    if ((b.scope || 'step') !== 'all') await page.locator('[data-role=scope]').selectOption('all');
+    await expect(page.locator('.ag-board-canvas')).toHaveAttribute('data-ready', 'true');
+    const mark = no => page.locator(`.ag-board-canvas .joint-labels-layer [model-id="c${no}"]`);
+    const conn = no => page.locator(`.ag-board-canvas [data-connection="${no}"]`);
+    await expect(conn(first.no)).toHaveAttribute('aria-label', /; checked$/);
+    await expect(mark(first.no)).toContainText('\u2713');
+    await expect(mark(first.no).locator('[joint-selector=pill]')).not.toHaveAttribute('fill', '#ffffff');
+    for (const c of rest) {
+      await expect(conn(c.no)).not.toHaveAttribute('aria-label', /checked/);
+      await expect(mark(c.no)).not.toContainText('\u2713');
+    }
+    // a tick made in the list shows up in the drawing, and unticking takes it away again
+    const next = rest[0];
+    await page.locator(`[data-check="${b.prefix || key}-${next.no}:${next.a}:${next.b}"]`).check();
+    await expect(mark(next.no)).toContainText('\u2713');
+    await page.locator(`[data-check="${b.prefix || key}-${next.no}:${next.a}:${next.b}"]`).uncheck();
+    await expect(mark(next.no)).not.toContainText('\u2713');
+  });
 }
