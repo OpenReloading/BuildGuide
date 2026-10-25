@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 
 const SKIP = /^(\.agents|\.claude)\/|\/vendor\/|\.(png|jpg|wasm|ico|woff2?)$|package-lock\.json$/;
 const BAD = /\u2014|\p{Emoji_Presentation}|\uFE0F/u;
-const files = execFileSync('git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter((f) => f && !SKIP.test(f));
+const files = execFileSync('/usr/bin/git', ['ls-files'], { encoding: 'utf8' }).split('\n').filter((f) => f && !SKIP.test(f));
 let failed = false;
 for (const file of files) {
   readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
