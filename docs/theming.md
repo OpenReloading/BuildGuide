@@ -26,6 +26,18 @@ Two plain properties on `.ag-guide` restore dimming or strike-through. Both defa
 .ag-guide{--ag-done-decoration:line-through}
 ```
 
+## Forced colours
+
+With `forced-colors: active` the browser replaces the component's colours with the user's system colours, and shadows and tints disappear. The stylesheet then marks state with shapes, in system colours only, so each marker stays visible:
+
+| State | Marker in forced colours | Otherwise |
+|---|---|---|
+| Selected wire row | 3px `Highlight` outline | tint and a bar from `--ag-row-selected` and `--ag-row-selected-bar` |
+| Done wire row or BOM row | 6px `CanvasText` start border, next to the check mark and the checked box | tint from `--ag-done-bg` |
+| Current step | 3px border instead of 1px | tint and border from `--ag-step-current-bg` and `--ag-step-current-line` |
+
+Outside that media query nothing changes. The tokens do not apply in forced colours.
+
 ## Light and dark
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:
@@ -54,4 +66,4 @@ Older browsers drop the colour declarations and show the browser's defaults. Sou
 
 ## Contrast
 
-The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts), done rows included; `tests/contrast.test.mjs` checks them against these tokens and `tests/guide.spec.mjs` measures a ticked row in light, dark and forced colours. A host that sets `--ag-done-opacity` below 1 lowers the contrast of the text and the checkbox and checks it itself. A token you override is yours to check.
+The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts), done rows included; `tests/contrast.test.mjs` checks them against these tokens and `tests/guide.spec.mjs` measures a ticked row in light, dark and forced colours, and the selected, done and current markers in forced colours (width above zero, 3:1 against the row). A host that sets `--ag-done-opacity` below 1 lowers the contrast of the text and the checkbox and checks it itself. A token you override is yours to check.
