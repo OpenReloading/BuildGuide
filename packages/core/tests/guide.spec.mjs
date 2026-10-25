@@ -99,6 +99,49 @@ for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { col
   });
 }
 
+// forced colours: the markers of the selected row, the done row and the current step are borders and outlines, measured on the computed styles:
+// non-zero width, 3:1 against what is behind them (WCAG 1.4.11), text 4.5:1. Without forced colours the same elements keep their look.
+test('selected, done and current are visible in forced colours', async ({ page }) => {
+  const measure = (el, props) => el.evaluate((node, names) => {
+    const behind = e => { for (; e; e = e.parentElement) { const bg = getComputedStyle(e).backgroundColor; if (!/rgba?\(.*, 0\)$/.test(bg) && bg !== 'transparent') return bg; } return 'rgb(255, 255, 255)'; };
+    const style = getComputedStyle(node);
+    return { bg: behind(node), color: style.color, ...Object.fromEntries(names.map(n => [n, style[n]])) };
+  }, props);
+  const MARKERS = ['outlineStyle', 'outlineWidth', 'outlineColor', 'borderInlineStartWidth', 'borderInlineStartColor', 'borderTopWidth', 'borderTopColor', 'boxShadow'];
+  const markers = async () => {
+    await page.goto(url('wiring')); await settled(page);
+    await page.locator('.ag-verify input').check();
+    const guide = page.locator('.ag-guide');
+    return {
+      selected: await measure(guide.locator('.ag-wire-row.selected').first(), MARKERS),
+      done: await measure(guide.locator('.ag-wire-row.is-done').first(), MARKERS),
+      current: await measure(guide.locator('.ag-steps button[aria-current]').first(), MARKERS),
+      other: await measure(guide.locator('.ag-steps button:not([aria-current])').first(), MARKERS),
+    };
+  };
+  await page.emulateMedia({ forcedColors: 'active' });
+  const forced = await markers();
+  expect(parseFloat(forced.selected.outlineWidth)).toBeGreaterThan(0);
+  expect(forced.selected.outlineStyle).not.toBe('none');
+  expect(contrast(forced.selected.outlineColor, forced.selected.bg)).toBeGreaterThanOrEqual(3);
+  expect(parseFloat(forced.done.borderInlineStartWidth)).toBeGreaterThan(0);
+  expect(contrast(forced.done.borderInlineStartColor, forced.done.bg)).toBeGreaterThanOrEqual(3);
+  expect(parseFloat(forced.current.borderTopWidth)).toBeGreaterThan(parseFloat(forced.other.borderTopWidth));
+  expect(contrast(forced.current.borderTopColor, forced.current.bg)).toBeGreaterThanOrEqual(3);
+  for (const m of Object.values(forced)) expect(contrast(m.color, m.bg)).toBeGreaterThanOrEqual(4.5);
+  // the border of a done BOM row shifts nothing: the content of its first cell starts where an open row's does
+  await page.goto(url('bom')); await settled(page);
+  await page.locator('tbody input[type=checkbox]').first().check();
+  const offsets = await page.locator('tbody tr:not(.ag-group)').evaluateAll(rows => rows.slice(0, 2).map(tr => tr.firstElementChild.firstElementChild.getBoundingClientRect().left));
+  expect(offsets[0]).toBe(offsets[1]);
+  await page.emulateMedia({ forcedColors: 'none' });
+  const plain = await markers();
+  expect(plain.selected.outlineStyle).toBe('none');
+  expect(plain.selected.boxShadow).not.toBe('none');
+  expect(plain.done.borderInlineStartWidth).toBe('0px');
+  expect(plain.current.borderTopWidth).toBe(plain.other.borderTopWidth);
+});
+
 test('screenshots of the example pages', async ({ page }, info) => {
   for (const key of PAGES) {
     await page.goto(url(key)); await settled(page);

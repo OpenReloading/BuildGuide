@@ -228,3 +228,12 @@ body.ag-no-scroll{overflow:hidden}
 @media print{
  .ag-guide{color-scheme:light}
 }
+/* Forced colours drop box-shadow and background tints: the selected wire row gets an outline, a done row a start border,
+   the current step a thicker border (padding makes up the width, so nothing shifts). CanvasText is the one colour a forced-colours
+   palette guarantees to read on Canvas; the shapes tell the markers apart. */
+@media(forced-colors:active){
+ .ag-guide .ag-steps button[aria-current]{border-width:3px;padding:6px}
+ .ag-guide .ag-wire-row.selected{outline:3px solid CanvasText;outline-offset:-3px}
+ .ag-guide .ag-wire-row.is-done{border-inline-start:6px solid CanvasText;padding-inline-start:8px}
+ .ag-guide .ag-bom-table tr.is-done td:first-child{border-inline-start:6px solid CanvasText;padding-inline-start:14px}
+}
