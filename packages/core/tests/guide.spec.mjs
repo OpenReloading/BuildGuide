@@ -603,37 +603,124 @@ test('progress import: anything but an object of true and false is refused', asy
   }
 });
 
-test('progress reset: asks first, then removes the saved progress everywhere', async ({ page }) => {
+test('progress reset: acts at once, without a dialog, and removes the saved progress everywhere', async ({ page }) => {
   await page.goto(url('all'));
   await ready(boardOf(page, 'wiring'));
   await bomOf(page).locator('tbody input[type=checkbox]').first().check();
   await boardOf(page, 'wiring').locator('.ag-verify input').check();
-  const asked = [];
-  page.once('dialog', d => { asked.push(d.message()); d.dismiss(); });
-  await bomOf(page).locator('[data-action=reset-progress]').click();
-  await expect.poll(() => asked.length).toBe(1);
-  expect(Object.keys(await progressOf(page))).toHaveLength(2);
-  await expect(bomOf(page).locator('.ag-progress')).toHaveText(`1 / ${D.bom.items.length} checked`);
-  page.once('dialog', d => d.accept());
+  const dialogs = [];
+  page.on('dialog', d => { dialogs.push(d.message()); d.dismiss(); });
   await bomOf(page).locator('[data-action=reset-progress]').click();
   await expect(bomOf(page).locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
   await expect(boardOf(page, 'wiring').locator('.ag-progress')).toHaveText(`0 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
   expect(await page.evaluate(key => localStorage.getItem(key), D.storage)).toBeNull();
+  expect(dialogs).toEqual([]);
+});
+
+// undo after reset and import: the status line offers it until the next tick or 10 s
+const blockStorage = page => page.addInitScript(key => {
+  const real = window.localStorage, no = () => { throw Error('blocked'); };
+  Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? no() : real.getItem(k)), setItem: (k, v) => (k === key ? no() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
+}, D.storage);
+const undoOf = scope => scope.locator('.ag-message [data-action=undo-progress]');
+
+for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
+  test(`progress ${how}${blocked ? ' with storage blocked' : ''}: Undo brings back the previous ticks in every component`, async ({ page }) => {
+    if (blocked) await blockStorage(page);
+    await page.goto(url('all'));
+    const bom = bomOf(page), wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
+    await ready(wiring); await ready(tubing);
+    const wires = D.boards.wiring.steps.flatMap(s => s.connections).length, parts = D.bom.items.length;
+    await bom.locator('tbody input[type=checkbox]').nth(0).check();
+    await bom.locator('tbody input[type=checkbox]').nth(1).check();
+    await wiring.locator('.ag-verify input').check();
+    if (how === 'reset') await tubing.locator('[data-action=reset-progress]').click();
+    else await importFile(tubing, { [bomKey(5)]: true });
+    // the status line carries the message and Undo; the other components offer nothing
+    await expect(undoOf(tubing)).toBeVisible();
+    await expect(tubing.locator('.ag-message')).toContainText(how === 'reset' ? (blocked ? 'Reset for this visit' : 'Progress reset.') : (blocked ? 'Imported, but' : 'Progress imported.'));
+    await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(1);
+    await expect(tubing.locator('.ag-message')).toHaveAttribute('role', 'status');
+    await expect(wiring.locator('.ag-progress')).toHaveText(`0 / ${wires} checked`);
+    await undoOf(tubing).click();
+    await expect(bom.locator('.ag-progress')).toHaveText(`2 / ${parts} checked`);
+    await expect(wiring.locator('.ag-progress')).toHaveText(`1 / ${wires} checked`);
+    await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(0);
+    await expect(tubing.locator('.ag-message')).toContainText(blocked ? 'Restored for this visit' : 'Progress restored.');
+    await expect(tubing.locator('[data-action=reset-progress]')).toBeFocused();
+    // storage holds the restored object when it takes writes
+    if (!blocked) expect(Object.keys(await progressOf(page))).toHaveLength(3);
+    // a tick after the undo is kept: the restored object is the base
+    await bom.locator('tbody input[type=checkbox]').nth(2).check();
+    await expect(bom.locator('.ag-progress')).toHaveText(`3 / ${parts} checked`);
+  });
+}
+
+test('progress undo: the next tick or 10 seconds take the offer away', async ({ page }) => {
+  await page.clock.install();
+  await page.goto(url('bom'));
+  const ticks = bomOf(page).locator('tbody input[type=checkbox]');
+  await ticks.nth(0).check();
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await ticks.nth(1).check();
+  await expect(undoOf(page)).toHaveCount(0);
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await page.clock.runFor(9000);
+  await expect(undoOf(page)).toBeVisible();
+  await page.clock.runFor(1500);
+  await expect(undoOf(page)).toHaveCount(0);
+  await expect(page.locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
+});
+
+test('progress undo: a tick in another component takes the offer away and is not lost', async ({ page }) => {
+  await page.goto(url('all'));
+  const bom = bomOf(page), tubing = boardOf(page, 'tubing');
+  await ready(tubing);
+  await bom.locator('tbody input[type=checkbox]').nth(0).check();
+  await tubing.locator('[data-action=reset-progress]').click();
+  await expect(undoOf(tubing)).toBeVisible();
+  await bom.locator('tbody input[type=checkbox]').nth(1).check();
+  await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(0);
+  await expect(tubing.locator('.ag-message')).toHaveText('');
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(1)]);
+});
+
+test('progress undo: stays while the board view changes and goes when another tab changes the progress', async ({ page, context }) => {
+  const other = await context.newPage();
+  await page.goto(url('tubing')); await other.goto(url('bom'));
+  const tubing = boardOf(page, 'tubing');
+  await ready(tubing);
+  await tubing.locator('.ag-verify input').check();
+  await tubing.locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await tubing.locator('[data-step]').nth(1).click();
+  await expect(undoOf(page)).toBeVisible();
+  await bomOf(other).locator('tbody input[type=checkbox]').nth(3).check();
+  await expect(undoOf(page)).toHaveCount(0);
+});
+
+test('progress import: a refused file leaves the offer to undo the earlier import', async ({ page }) => {
+  await page.goto(url('bom'));
+  await bomOf(page).locator('tbody input[type=checkbox]').nth(0).check();
+  await importFile(page, { [bomKey(4)]: true });
+  await importFile(page, '{not json');
+  await expect(page.locator('.ag-message')).toContainText('Not imported: the file is not a progress export.');
+  await undoOf(page).click();
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(0)]);
 });
 
 for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
   test(`progress ${how}${blocked ? ' with storage blocked' : ''}: a tick in another component does not bring the old ticks back`, async ({ page }) => {
-    if (blocked) await page.addInitScript(key => {
-      const real = window.localStorage, no = () => { throw Error('blocked'); };
-      Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? no() : real.getItem(k)), setItem: (k, v) => (k === key ? no() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
-    }, D.storage);
+    if (blocked) await blockStorage(page);
     await page.goto(url('all'));
     const bom = bomOf(page), wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
     await ready(wiring); await ready(tubing);
     await bom.locator('tbody input[type=checkbox]').nth(0).check();
     await bom.locator('tbody input[type=checkbox]').nth(1).check();
     await wiring.locator('.ag-verify input').check();
-    if (how === 'reset') { page.once('dialog', d => d.accept()); await tubing.locator('[data-action=reset-progress]').click(); }
+    if (how === 'reset') await tubing.locator('[data-action=reset-progress]').click();
     else await importFile(tubing, { [bomKey(5)]: true });
     const left = how === 'reset' ? 0 : 1;
     await expect(bom.locator('.ag-progress')).toHaveText(`${left} / ${D.bom.items.length} checked`);
@@ -659,7 +746,6 @@ test('progress: a tick or a reset in another tab shows up here and is not writte
   await ticks(page.locator('body')).nth(1).check();
   await expect(other.locator('.ag-progress')).toHaveText(counted(2));
   expect(Object.keys(await progressOf(page))).toEqual([bomKey(0), bomKey(1)]);
-  other.once('dialog', d => d.accept());
   await other.locator('[data-action=reset-progress]').click();
   await expect(page.locator('.ag-progress')).toHaveText(counted(0));
   await ticks(page.locator('body')).nth(2).check();
