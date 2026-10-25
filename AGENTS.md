@@ -6,6 +6,8 @@ Monorepo of BuildGuide components, the BOM and board views for a host's own page
 
 Pull requests target `develop` (default branch) and are squash-merged with the Conventional Commit title. `main` only gets `develop` through a promotion pull request titled `chore: promote develop to main`, merged with a merge commit; release-please, release, publish, Pages and Scorecard run on `main`.
 
+CI (`ci.yml`) runs on pull requests and on pushes to `develop`, not on `main`. The promotion pull request skips its jobs (the push to develop already ran them on the same commit), so `main` requires only checks that also run on that push.
+
 ## Commands
 
 - Agents run on the host; file edits and Git stay there. Start the container with `devcontainer up --docker-path podman --workspace-folder .` (runs `npm ci` and `uv sync`); run project commands with the prefix `devcontainer exec --docker-path podman --workspace-folder .`.
