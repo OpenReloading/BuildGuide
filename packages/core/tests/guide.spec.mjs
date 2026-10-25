@@ -389,6 +389,17 @@ for (const key of Object.keys(tickKeys)) {
     await componentOf(page, key).locator(`[data-check="${last}"]`).first().check();
     await expect(componentOf(page, key).locator('.ag-message')).toHaveText(`All ${what} checked`);
   });
+
+  test(`${key}: an item unticked within the announcement delay leaves no stale all-done text`, async ({ page }) => {
+    const keys = tickKeys[key], last = keys.at(-1);
+    await page.addInitScript(([storage, ticked]) => { if (localStorage.getItem(storage) === null) localStorage.setItem(storage, JSON.stringify(Object.fromEntries(ticked.map(k => [k, true])))); }, [D.storage, keys.slice(0, -1)]);
+    await openLast(page, key);
+    // both clicks run before the delayed announcement; each render replaces the box, so it is found again
+    await componentOf(page, key).evaluate((root, k) => { const box = () => root.querySelector(`[data-check="${CSS.escape(k)}"]`); box().click(); box().click(); }, last);
+    await page.waitForTimeout(200);
+    await expect(componentOf(page, key)).not.toHaveAttribute('data-complete');
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+  });
 }
 
 // the engines paint the fill through their own pseudo-elements, which getComputedStyle does not report: the stylesheet is read
