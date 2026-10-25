@@ -62,13 +62,13 @@
     const checked = key => saved[key] === true;
     // other components on the page store into the same object: merge what is stored into the copy in memory before each write,
     // so ticks survive in memory when the storage is blocked or full
-    const save = (key, value) => { saved = {...saved, ...load()}; saved[key] = value; try { localStorage.setItem(D.storage, JSON.stringify(saved)); } catch { persistent = false; } };
+    const save = (key, value) => { dropUndo(); saved = {...saved, ...load()}; saved[key] = value; try { localStorage.setItem(D.storage, JSON.stringify(saved)); } catch { persistent = false; } };
     // a tick belongs to one exact connection: change either end and it is unchecked again
     const connKey = c => `${prefix}-${c.no}:${c.a}:${c.b}`, bomKey = p => `bom-${p.id}:${p.part}`;
     const count = (items, key) => items.filter(x => checked(key(x))).length;
     const tally = () => { const list = board ? steps.flatMap(s => s.connections) : items; return [count(list, board ? connKey : bomKey), list.length]; };
     const what = board ? 'connections' : 'parts';
-    let wasDone;
+    let wasDone, undo;
     const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
     const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
@@ -76,6 +76,10 @@
     const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
     const cleanups = [];
     const listen = (target, type, handler) => { target.addEventListener(type, handler); cleanups.push(() => target.removeEventListener(type, handler)); };
+    // Undo of a reset or import: lasts until the next tick, a change from elsewhere or 10 s
+    const dropUndo = () => { clearTimeout(undo?.timer); undo = null; };
+    cleanups.push(dropUndo);
+    const line = m => m + (undo ? ' ' + button('Undo', 'undo-progress') : '');
 
     function navigate(index = 0, wire = 0) {
       if (putPair(boardKey, hashOf(steps[index], steps[index].connections[wire]))) { readHash(); render(); }
@@ -119,9 +123,9 @@
       wasDone = done;
       root.toggleAttribute('data-complete', done);
       root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
-        <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status"></span></div>`;
+        <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status">${message ? '' : line('')}</span></div>`;
       // a live region announces text added to an element that already exists, not text that arrives with it
-      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) live.textContent = message; }, 50);
+      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
@@ -236,13 +240,16 @@
     // progress files hold one object of true/false values, the shape this script stores
     const isProgress = v => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'boolean');
     // every mounted component on the page takes the new object, so a later tick does not write the old ticks back
-    const shareProgress = (progress, message = '') => {
+    const shareProgress = (progress, message, before) => {
+      dropUndo();
       state.message = message;
-      document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress}}));
+      if (before) undo = {before, timer: setTimeout(() => { undo = null; root.querySelector('.ag-message')?.replaceChildren(); }, 1e4)};
+      document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress, before: before || {}}}));
     };
-    listen(document, 'buildguide-progress', e => { if (e.detail?.storage === D.storage && isProgress(e.detail.saved)) { saved = {...e.detail.saved}; render(); } });
+    const store = progress => { try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; } };
+    listen(document, 'buildguide-progress', e => { if (e.detail?.storage === D.storage && isProgress(e.detail.saved)) { const d = e.detail; if (d.before !== undo?.before) dropUndo(); Object.assign(d.before || {}, {...saved, ...d.before}); saved = {...d.saved}; render(); } });
     // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared)
-    listen(window, 'storage', e => { if (e.key === D.storage || e.key === null) { saved = load(); render(); } });
+    listen(window, 'storage', e => { if (e.key === D.storage || e.key === null) { dropUndo(); saved = load(); render(); } });
     function exportProgress() {
       const blob = new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'});
       const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${D.storage}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -252,13 +259,21 @@
       try { progress = file.size < 1e6 && JSON.parse(await file.text()); } catch {}
       if (mounted.get(root) !== destroy) return;
       if (!isProgress(progress)) { state.message = file.size < 1e6 ? 'Not imported: the file is not a progress export.' : 'Not imported: the file is larger than 1 MB.'; render(); return; }
-      try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; }
-      shareProgress(progress, persistent ? 'Progress imported.' : 'Imported, but storage is unavailable: progress is not saved.');
+      const before = {...saved, ...load()};
+      store(progress);
+      shareProgress(progress, persistent ? 'Progress imported.' : 'Imported, but storage is unavailable: progress is not saved.', before);
     }
     function resetProgress() {
-      if (!confirm('Reset all saved progress of this guide, in every component on the page?')) return;
+      const before = {...saved, ...load()};
       try { localStorage.removeItem(D.storage); } catch { persistent = false; }
-      shareProgress({}, persistent ? 'Progress reset.' : 'Reset for this visit: storage is unavailable.');
+      shareProgress({}, persistent ? 'Progress reset.' : 'Reset for this visit: storage is unavailable.', before);
+    }
+    function undoProgress() {
+      const {before} = undo;
+      store(before);
+      // the Undo button is gone after the render
+      root.querySelector('[data-action=reset-progress]').focus();
+      shareProgress(before, persistent ? 'Progress restored.' : 'Restored, but storage is unavailable: progress is not saved.');
     }
     function moveWire(dir) {
       let i = state.step, j = state.wire + dir;
@@ -308,6 +323,7 @@
           case 'export-progress': exportProgress(); break;
           case 'import-progress': root.querySelector('[data-role=import-file]').click(); break;
           case 'reset-progress': resetProgress(); break;
+          case 'undo-progress': undoProgress(); break;
         }
       };
     }
