@@ -5,7 +5,7 @@ on:
   pull_request:
 permissions: {}
 concurrency:
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   # Dependabot does not track these two: bump them with .devcontainer/Dockerfile (uv) and the Playwright image below
