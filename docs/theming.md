@@ -28,11 +28,11 @@ Two plain properties on `.ag-guide` restore dimming or strike-through. Both defa
 
 ## Forced colours
 
-With `forced-colors: active` the browser replaces the component's colours with the user's system colours, and shadows and tints disappear. The stylesheet then marks state with shapes, in system colours only, so each marker stays visible:
+With `forced-colors: active` the browser replaces the component's colours with the user's system colours, and shadows and tints disappear. The stylesheet then marks state with shapes, in system colours only, so each marker stays visible (`CanvasText` is the colour a forced-colours palette guarantees to read on the background):
 
 | State | Marker in forced colours | Otherwise |
 |---|---|---|
-| Selected wire row | 3px `Highlight` outline | tint and a bar from `--ag-row-selected` and `--ag-row-selected-bar` |
+| Selected wire row | 3px `CanvasText` outline | tint and a bar from `--ag-row-selected` and `--ag-row-selected-bar` |
 | Done wire row or BOM row | 6px `CanvasText` start border, next to the check mark and the checked box | tint from `--ag-done-bg` |
 | Current step | 3px border instead of 1px | tint and border from `--ag-step-current-bg` and `--ag-step-current-line` |
 

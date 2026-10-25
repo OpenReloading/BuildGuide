@@ -107,8 +107,6 @@ test('selected, done and current are visible in forced colours', async ({ page }
     const style = getComputedStyle(node);
     return { bg: behind(node), color: style.color, ...Object.fromEntries(names.map(n => [n, style[n]])) };
   }, props);
-  // the outline colour is translucent in Chromium's forced-colours palette: composite it on what is behind before measuring
-  const over = (fg, bg) => { const [r, g, b, a = 1] = fg.match(/[\d.]+/g).map(Number), under = bg.match(/[\d.]+/g).map(Number); return `rgb(${[r, g, b].map((v, i) => v * a + under[i] * (1 - a)).join(', ')})`; };
   const MARKERS = ['outlineStyle', 'outlineWidth', 'outlineColor', 'borderInlineStartWidth', 'borderInlineStartColor', 'borderTopWidth', 'borderTopColor', 'boxShadow'];
   const markers = async () => {
     await page.goto(url('wiring')); await settled(page);
@@ -125,12 +123,17 @@ test('selected, done and current are visible in forced colours', async ({ page }
   const forced = await markers();
   expect(parseFloat(forced.selected.outlineWidth)).toBeGreaterThan(0);
   expect(forced.selected.outlineStyle).not.toBe('none');
-  expect(contrast(over(forced.selected.outlineColor, forced.selected.bg), forced.selected.bg)).toBeGreaterThanOrEqual(3);
+  expect(contrast(forced.selected.outlineColor, forced.selected.bg)).toBeGreaterThanOrEqual(3);
   expect(parseFloat(forced.done.borderInlineStartWidth)).toBeGreaterThan(0);
   expect(contrast(forced.done.borderInlineStartColor, forced.done.bg)).toBeGreaterThanOrEqual(3);
   expect(parseFloat(forced.current.borderTopWidth)).toBeGreaterThan(parseFloat(forced.other.borderTopWidth));
   expect(contrast(forced.current.borderTopColor, forced.current.bg)).toBeGreaterThanOrEqual(3);
   for (const m of Object.values(forced)) expect(contrast(m.color, m.bg)).toBeGreaterThanOrEqual(4.5);
+  // the border of a done BOM row shifts nothing: the content of its first cell starts where an open row's does
+  await page.goto(url('bom')); await settled(page);
+  await page.locator('tbody input[type=checkbox]').first().check();
+  const offsets = await page.locator('tbody tr:not(.ag-group)').evaluateAll(rows => rows.slice(0, 2).map(tr => tr.firstElementChild.firstElementChild.getBoundingClientRect().left));
+  expect(offsets[0]).toBe(offsets[1]);
   await page.emulateMedia({ forcedColors: 'none' });
   const plain = await markers();
   expect(plain.selected.outlineStyle).toBe('none');
