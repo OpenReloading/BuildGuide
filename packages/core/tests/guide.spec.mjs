@@ -883,6 +883,24 @@ test('a component without any data source says so', async ({ page }) => {
   await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
 });
 
+test('a pending all-done announcement does not reach a later mount on the same element', async ({ page }) => {
+  await inlinePage(page, 'pending/', D, '');
+  await page.goto(BASE + 'pending/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const text = await page.evaluate(async data => {
+    const keys = data.bom.items.map(i => `bom-${i.id}:${i.part}`);
+    localStorage.setItem(data.storage, JSON.stringify(Object.fromEntries(keys.slice(0, -1).map(k => [k, true]))));
+    const el = document.createElement('div'); document.body.append(el);
+    const stop = window.BuildGuide.mount(el, data, { view: 'bom' });
+    el.querySelector(`[data-check="${CSS.escape(keys.at(-1))}"]`).click();
+    stop();
+    window.BuildGuide.mount(el, data, { view: 'bom' });
+    await new Promise(r => setTimeout(r, 200));
+    return el.querySelector('.ag-message').textContent;
+  }, D);
+  expect(text).toBe('');
+});
+
 test('a stale or repeated unmount leaves the current mount alone', async ({ page }) => {
   await inlinePage(page, 'stale/', D, '');
   await page.goto(BASE + 'stale/');

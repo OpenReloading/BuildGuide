@@ -121,7 +121,7 @@
       root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
         <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status"></span></div>`;
       // a live region announces text added to an element that already exists, not text that arrives with it
-      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && (!last || root.hasAttribute('data-complete'))) live.textContent = message; }, 50);
+      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) live.textContent = message; }, 50);
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
