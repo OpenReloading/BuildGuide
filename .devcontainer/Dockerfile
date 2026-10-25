@@ -4,3 +4,5 @@ FROM mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d6
 COPY --from=ghcr.io/astral-sh/uv:0.13.4@sha256:9f130421e930bfbdc563c00740466603f8723158e90297d07957c2294640262b /uv /uvx /usr/local/bin/
 # the cache and the workspace are on different file systems
 ENV UV_LINK_MODE=copy
+
+USER ubuntu

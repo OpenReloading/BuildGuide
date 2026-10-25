@@ -15,7 +15,7 @@
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
-  const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
+  const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
 
   window.BuildGuideBoard = (root, B, options) => {
@@ -261,6 +261,7 @@
         view.el.addEventListener('keydown', event => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.select(c.no); }
         });
+        if (options.focus === c.no) view.el.focus({preventScroll: true});
         return view;
       });
       // a number goes on a straight stretch, clear of bends, parts, labels, other numbers and other connections;

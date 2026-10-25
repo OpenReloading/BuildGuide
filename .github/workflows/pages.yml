@@ -12,6 +12,7 @@ jobs:
   build:
     if: github.repository == 'OpenReloading/BuildGuide'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
@@ -23,7 +24,7 @@ jobs:
           version: 0.13.4
           enable-cache: false
       # the header's repository facts come from the GitHub API at build time
-      - run: uv run --locked --project packages/mkdocs mkdocs build --strict
+      - run: uv run --locked --no-build --project packages/mkdocs mkdocs build --strict
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
@@ -32,6 +33,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       pages: write
       id-token: write

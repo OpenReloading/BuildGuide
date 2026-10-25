@@ -1,6 +1,6 @@
 {
   "name": "@openreloading/docusaurus-plugin-buildguide",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Docusaurus plugin for BuildGuide: interactive build guides (BOM checklist, wiring and tubing boards) from one JSON file",
   "license": "MIT",
   "repository": {
@@ -24,6 +24,7 @@
     "dist": "mkdir -p dist && npm pack --pack-destination dist"
   },
   "dependencies": {
+    "ajv": "^8.20.0",
     "copy-webpack-plugin": "^14.0.0"
   },
   "peerDependencies": {

@@ -14,6 +14,7 @@ jobs:
   release-please:
     if: github.repository == 'OpenReloading/BuildGuide'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions: {}
     outputs:
       core: ${{ steps.release.outputs['packages/core--release_created'] }}
@@ -43,6 +44,7 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.core == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       packages: write
@@ -69,6 +71,7 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.mkdocs == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
@@ -90,6 +93,7 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.docusaurus == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
       packages: write
