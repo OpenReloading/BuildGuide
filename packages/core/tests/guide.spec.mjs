@@ -344,6 +344,93 @@ test('colour scheme: a host sets a token itself in both schemes', async ({ page 
   expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 8, 7)');
 });
 
+// the tick keys of every item of a component, in order
+const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`) };
+for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));
+const componentOf = (page, key) => key === 'bom' ? bomOf(page) : boardOf(page, key);
+// the page of a component, opened on its last item
+const openLast = async (page, key) => {
+  const b = D.boards[key], s = b?.steps.at(-1);
+  await page.goto(key === 'bom' ? url('bom') : `${url(key)}#${at(key, s, s.connections.at(-1))}`);
+  if (b) await ready(page);
+};
+
+for (const key of Object.keys(tickKeys)) {
+  test(`${key}: a progress bar, and the all-done state is announced once`, async ({ page }) => {
+    const keys = tickKeys[key], last = keys.at(-1), what = key === 'bom' ? 'parts' : 'connections', n = keys.length;
+    // everything but the last item is stored as ticked
+    await page.addInitScript(([storage, ticked]) => { if (localStorage.getItem(storage) === null) localStorage.setItem(storage, JSON.stringify(Object.fromEntries(ticked.map(k => [k, true])))); }, [D.storage, keys.slice(0, -1)]);
+    await openLast(page, key);
+    const component = componentOf(page, key), bar = component.locator('progress'), message = component.locator('.ag-message');
+    await expect(bar).toHaveAttribute('value', String(n - 1));
+    await expect(bar).toHaveAttribute('max', String(n));
+    await expect(bar).toHaveAccessibleName(`${what} checked`);
+    await expect(component.locator('.ag-progress')).toHaveText(`${n - 1} / ${n} checked`);
+    await expect(component).not.toHaveAttribute('data-complete');
+    await component.locator(`[data-check="${last}"]`).first().check();
+    await expect(component).toHaveAttribute('data-complete', '');
+    await expect(component.locator('.ag-progress')).toHaveText(`All ${what} checked`);
+    await expect(bar).toHaveAttribute('value', String(n));
+    await expect(message).toHaveText(`All ${what} checked`);
+    // a later render of the same state, and a reload of a finished guide, stay silent
+    await page.evaluate(storage => dispatchEvent(new StorageEvent('storage', { key: storage })), D.storage);
+    await page.waitForTimeout(200);
+    await expect(message).toHaveText('');
+    await expect(component).toHaveAttribute('data-complete', '');
+    await page.reload();
+    await page.waitForTimeout(200);
+    await expect(componentOf(page, key)).toHaveAttribute('data-complete', '');
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+    // one unticked item ends the state; ticking it again announces again
+    await componentOf(page, key).locator(`[data-check="${last}"]`).first().uncheck();
+    await expect(componentOf(page, key)).not.toHaveAttribute('data-complete');
+    await expect(componentOf(page, key).locator('.ag-progress')).toHaveText(`${n - 1} / ${n} checked`);
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+    await componentOf(page, key).locator(`[data-check="${last}"]`).first().check();
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText(`All ${what} checked`);
+  });
+
+  test(`${key}: an item unticked within the announcement delay leaves no stale all-done text`, async ({ page }) => {
+    const keys = tickKeys[key], last = keys.at(-1);
+    await page.addInitScript(([storage, ticked]) => { if (localStorage.getItem(storage) === null) localStorage.setItem(storage, JSON.stringify(Object.fromEntries(ticked.map(k => [k, true])))); }, [D.storage, keys.slice(0, -1)]);
+    await openLast(page, key);
+    // both clicks run before the delayed announcement; each render replaces the box, so it is found again
+    await componentOf(page, key).evaluate((root, k) => { const box = () => root.querySelector(`[data-check="${CSS.escape(k)}"]`); box().click(); box().click(); }, last);
+    await page.waitForTimeout(200);
+    await expect(componentOf(page, key)).not.toHaveAttribute('data-complete');
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+  });
+}
+
+// the engines paint the fill through their own pseudo-elements, which getComputedStyle does not report: the stylesheet is read
+test('the progress fill uses --ag-done in every engine and system colours in forced colours', () => {
+  expect(css).toContain('progress::-webkit-progress-value{background:var(--ag-done)}');
+  expect(css).toContain('progress::-moz-progress-bar{background:var(--ag-done)}');
+  expect(css).toMatch(/forced-colors:active\)\{[\s\S]*progress::-webkit-progress-value\{background:CanvasText\}[\s\S]*progress::-moz-progress-bar\{background:CanvasText\}/);
+});
+
+// the bar sits in the head on a phone and stays visible in forced colours
+for (const [name, media, scheme] of [['light', { colorScheme: 'light' }, 'light'], ['dark', { colorScheme: 'dark' }, 'dark'], ['forced colours', { forcedColors: 'active' }]]) {
+  test(`the progress bar fits the head of a phone, ${name}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia(media);
+    for (const key of Object.keys(tickKeys)) {
+      await openLast(page, key);
+      if (scheme) await signal(page, scheme);
+      const m = await componentOf(page, key).locator('progress').evaluate(bar => {
+        const r = bar.getBoundingClientRect(), host = bar.closest('.ag-guide').getBoundingClientRect(), style = getComputedStyle(bar);
+        return { inside: r.left >= host.left && r.right <= host.right, width: r.width, height: r.height, border: style.borderTopColor, borderWidth: style.borderTopWidth, track: style.backgroundColor, sideways: document.body.scrollWidth > innerWidth };
+      });
+      expect(m.inside, key).toBe(true);
+      expect(m.sideways, key).toBe(false);
+      expect(m.width, key).toBeGreaterThan(0);
+      expect(m.height, key).toBeGreaterThan(0);
+      if (scheme) expect(m.track, key).toBe(token('line', scheme));
+      else { expect(parseFloat(m.borderWidth), key).toBeGreaterThan(0); expect(m.border, key).not.toBe(m.track); }
+    }
+  });
+}
+
 test('tubing: all connections listed, keyboard selection', async ({ page }) => {
   const b = D.boards.tubing, all = b.steps.flatMap(s => s.connections);
   await page.goto(url('tubing')); await ready(page);
@@ -794,6 +881,24 @@ test('a component without any data source says so', async ({ page }) => {
     `<!doctype html><meta charset="utf-8"><div data-buildguide="bom"></div><script src="${CORE}buildguide.js" defer></script>` }));
   await page.goto(BASE + 'nodata/');
   await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
+});
+
+test('a pending all-done announcement does not reach a later mount on the same element', async ({ page }) => {
+  await inlinePage(page, 'pending/', D, '');
+  await page.goto(BASE + 'pending/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const text = await page.evaluate(async data => {
+    const keys = data.bom.items.map(i => `bom-${i.id}:${i.part}`);
+    localStorage.setItem(data.storage, JSON.stringify(Object.fromEntries(keys.slice(0, -1).map(k => [k, true]))));
+    const el = document.createElement('div'); document.body.append(el);
+    const stop = window.BuildGuide.mount(el, data, { view: 'bom' });
+    el.querySelector(`[data-check="${CSS.escape(keys.at(-1))}"]`).click();
+    stop();
+    window.BuildGuide.mount(el, data, { view: 'bom' });
+    await new Promise(r => setTimeout(r, 200));
+    return el.querySelector('.ag-message').textContent;
+  }, D);
+  expect(text).toBe('');
 });
 
 test('a stale or repeated unmount leaves the current mount alone', async ({ page }) => {

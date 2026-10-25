@@ -54,7 +54,11 @@
 .ag-guide .ag-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:14px}
 .ag-guide .ag-head>:only-child{margin-left:auto}
 .ag-guide .ag-head p{color:var(--ag-muted);font-size:12px}
-.ag-guide .ag-progress{font-size:12px;color:var(--ag-muted);white-space:nowrap}
+.ag-guide .ag-progress{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--ag-muted);white-space:nowrap}
+.ag-guide .ag-progress progress{appearance:none;width:80px;height:8px;border:0;border-radius:4px;background:var(--ag-line);overflow:hidden}
+.ag-guide .ag-progress progress::-webkit-progress-bar{background:var(--ag-line)}
+.ag-guide .ag-progress progress::-webkit-progress-value{background:var(--ag-done)}
+.ag-guide .ag-progress progress::-moz-progress-bar{background:var(--ag-done)}
 .ag-guide .ag-primary{display:inline-block;background:var(--ag-primary);color:var(--ag-surface);border:1px solid var(--ag-primary);border-radius:6px;padding:10px 15px;font-size:12px;font-weight:550;text-decoration:none;white-space:nowrap}
 .ag-guide .ag-primary:hover{background:var(--ag-primary-hover);text-decoration:none}
 .ag-guide .ag-quiet{font-size:12px;padding:10px 0;color:var(--ag-muted)}
@@ -164,6 +168,7 @@ body.ag-no-scroll{overflow:hidden}
 @container (max-width:760px){
  .ag-guide h2{font-size:18px}
  .ag-guide .ag-head{gap:12px}
+ .ag-guide .ag-bom-actions{flex-wrap:wrap}
  .ag-guide .ag-steps button{min-width:150px}
  .ag-guide .ag-board-toolbar{flex-wrap:wrap;gap:9px}
  .ag-guide .ag-board-controls button{padding:7px 8px}
@@ -235,6 +240,10 @@ body.ag-no-scroll{overflow:hidden}
    the current step a thicker border (padding makes up the width, so nothing shifts). CanvasText is the one colour a forced-colours
    palette guarantees to read on Canvas; the shapes tell the markers apart. */
 @media(forced-colors:active){
+ .ag-guide .ag-progress progress{forced-color-adjust:none;border:1px solid CanvasText;background:Canvas}
+ .ag-guide .ag-progress progress::-webkit-progress-bar{background:Canvas}
+ .ag-guide .ag-progress progress::-webkit-progress-value{background:CanvasText}
+ .ag-guide .ag-progress progress::-moz-progress-bar{background:CanvasText}
  .ag-guide .ag-steps button[aria-current]{border-width:3px;padding:6px}
  .ag-guide .ag-wire-row.selected{outline:3px solid CanvasText;outline-offset:-3px}
  .ag-guide .ag-wire-row.is-done{border-inline-start:6px solid CanvasText;padding-inline-start:8px}

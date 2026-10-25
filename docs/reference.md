@@ -16,6 +16,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `#guide-data` | an element holding the guide data as JSON (`<script type="application/json">`, or any element with that id), used by components without `data-src`; its `data-assets` is the default for them |
 | `data-step`, `data-wire`, `data-conn`, `data-connection` | step buttons, connection rows and board connections |
 | `data-role` | `scope`, `search`, `import-file` |
+| `data-complete` | set by the component on its `.ag-guide` root while every item of the BOM or board is ticked: the head then reads `All parts checked` or `All connections checked` and the status line announces it once. The head's `<progress>` (inside `.ag-progress`, named `parts checked` or `connections checked`) is filled with `--ag-done` |
 | `data-ag-scheme` | `light` opts a component out of the browser's dark preference |
 | `--ag-board-filter` | filter applied to the board drawing |
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |

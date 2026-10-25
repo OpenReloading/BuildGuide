@@ -66,6 +66,9 @@
     // a tick belongs to one exact connection: change either end and it is unchecked again
     const connKey = c => `${prefix}-${c.no}:${c.a}:${c.b}`, bomKey = p => `bom-${p.id}:${p.part}`;
     const count = (items, key) => items.filter(x => checked(key(x))).length;
+    const tally = () => { const list = board ? steps.flatMap(s => s.connections) : items; return [count(list, board ? connKey : bomKey), list.length]; };
+    const what = board ? 'connections' : 'parts';
+    let wasDone;
     const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
     const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
@@ -108,11 +111,17 @@
       root.classList.add('ag-guide');
       if (board) root.style.setProperty('--ag-board-ratio', board.size.join(' / '));
       root.classList.toggle('ag-expanded', state.expanded);
-      const message = state.message; state.message = '';
+      let message = state.message; state.message = '';
+      const [n, m] = tally(), done = m > 0 && n === m;
+      // announced once, when the last tick arrives: not at mount and not on later renders
+      const last = done && wasDone === false && !message;
+      if (last) message = `All ${what} checked`;
+      wasDone = done;
+      root.toggleAttribute('data-complete', done);
       root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
         <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status"></span></div>`;
       // a live region announces text added to an element that already exists, not text that arrives with it
-      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live) live.textContent = message; }, 50);
+      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) live.textContent = message; }, 50);
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
@@ -176,13 +185,17 @@
       return `<div class="ag-connection-detail"><div><small>FROM${diode ? ' · RING END' : ''}</small><strong>${esc(label(c, 'a'))}</strong></div><span class="ag-detail-arrow">→</span><div><small>TO${diode ? ' · PLAIN END' : ''}</small><strong>${esc(label(c, 'b'))}</strong></div>${cable ? `<div class="ag-cable"><small>CABLE</small><strong>${esc(cable)}</strong></div>` : ''}<label class="ag-verify"><input type="checkbox" data-check="${esc(key)}" ${checked(key) ? 'checked' : ''}>${checked(key) ? 'Checked' : 'Mark checked'}</label></div>`;
     }
     const legendItem = l => typeof l === 'string' ? `<span>${esc(l)}</span>` : `<span>${l.key === 'diode' ? '<i class="ag-diode-key"></i>' : ''}${esc(l.text)}</span>`;
+    function progress() {
+      const [n, m] = tally();
+      return `<span class="ag-progress">${m > 0 && n === m ? `All ${what} checked` : `${n} / ${m} checked`}<progress value="${n}" max="${m}" aria-label="${what} checked"></progress></span>`;
+    }
     function renderBoard() {
       const s = steps[state.step], c = s.connections[state.wire], all = steps.flatMap(x => x.connections);
       const atEnd = state.step === steps.length - 1 && state.wire === s.connections.length - 1;
       const first = state.step === 0 && state.wire === 0;
       const next = state.wire === s.connections.length - 1 ? 'Next step →' : 'Next connection →';
       const listed = board.listAll ? all : s.connections;
-      return `<section class="ag-workspace"><div class="ag-head"><span class="ag-progress">${count(all, connKey)} / ${all.length} checked</span></div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
+      return `<section class="ag-workspace"><div class="ag-head">${progress()}</div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
       <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(board.label || title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(board.legend || []).map(legendItem).join('')}</div></div>
       ${toolbar()}
       ${connectionSummary(c)}
@@ -199,7 +212,7 @@
     const bom = D.bom || {}, items = bom.items || [];
     const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()));
     function renderBOM() {
-      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions"><span class="ag-progress">${count(items, bomKey)} / ${items.length} checked</span>${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label></div><div class="ag-bom-results">${bomRows()}</div></section>`;
     }
     function bomRows() {
       const parts = filteredParts();
@@ -307,7 +320,7 @@
       for (const stop of cleanups) stop();
       stopSizing?.(); drawing?.destroy(); drawing = null;
       if (state.expanded) { document.body.classList.remove('ag-no-scroll'); if (document.fullscreenElement === root) document.exitFullscreen().catch(ignore); }
-      root.replaceChildren(); root.classList.remove('ag-guide', 'ag-expanded'); root.style.removeProperty('--ag-board-ratio');
+      root.replaceChildren(); root.classList.remove('ag-guide', 'ag-expanded'); root.removeAttribute('data-complete'); root.style.removeProperty('--ag-board-ratio');
       mounted.delete(root);
     };
     mounted.set(root, destroy);
