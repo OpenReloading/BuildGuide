@@ -8,6 +8,36 @@ Every colour is a `light-dark(light, dark)` pair, so one value serves both schem
 
 <!-- generated: tokens -->
 
+## Done state
+
+A ticked BOM row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed.
+
+Two plain properties on `.ag-guide` restore dimming or strike-through. Both default to the plain look:
+
+| Property | Default | Meaning |
+|---|---|---|
+| `--ag-done-opacity` | `1` | opacity of a done BOM cell or wire button and its contents, the checkbox in the BOM cell included |
+| `--ag-done-decoration` | `none` | `text-decoration` of a done row's text |
+
+```css
+/* dim done rows (opacity lowers the contrast of the text and of the checkbox in it: check your colours) */
+.ag-guide{--ag-done-opacity:.7}
+/* strike done rows through */
+.ag-guide{--ag-done-decoration:line-through}
+```
+
+## Forced colours
+
+With `forced-colors: active` the browser replaces the component's colours with the user's system colours, and shadows and tints disappear. The stylesheet then marks state with shapes, in system colours only, so each marker stays visible (`CanvasText` is the colour a forced-colours palette guarantees to read on the background):
+
+| State | Marker in forced colours | Otherwise |
+|---|---|---|
+| Selected wire row | 3px `CanvasText` outline | tint and a bar from `--ag-row-selected` and `--ag-row-selected-bar` |
+| Done wire row or BOM row | 6px `CanvasText` start border, next to the check mark and the checked box | tint from `--ag-done-bg` |
+| Current step | 3px border instead of 1px | tint and border from `--ag-step-current-bg` and `--ag-step-current-line` |
+
+Outside that media query nothing changes. The tokens do not apply in forced colours.
+
 ## Light and dark
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:
@@ -36,4 +66,4 @@ Older browsers drop the colour declarations and show the browser's defaults. Sou
 
 ## Contrast
 
-The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts); `tests/contrast.test.mjs` checks them against these tokens. A token you override is yours to check.
+The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts), done rows included; `tests/contrast.test.mjs` checks them against these tokens and `tests/guide.spec.mjs` measures a ticked row in light, dark and forced colours, and the selected, done and current markers in forced colours (width above zero, 3:1 against the row). A host that sets `--ag-done-opacity` below 1 lowers the contrast of the text and the checkbox and checks it itself. A token you override is yours to check.

@@ -6,7 +6,7 @@
    ```sh
    devcontainer up --docker-path podman --workspace-folder .
    devcontainer exec --docker-path podman --workspace-folder . npm run lint           # Biome, ruff, no em dash or emoji
-   devcontainer exec --docker-path podman --workspace-folder . npm test               # unit tests of every component
+   devcontainer exec --docker-path podman --workspace-folder . npm test               # unit tests of every component, with coverage floors (core: packages/core/package.json, MkDocs: packages/mkdocs/pyproject.toml)
    devcontainer exec --docker-path podman --workspace-folder . npm run test:browser   # browser tests: core example, docs site, Docusaurus example
    devcontainer exec --docker-path podman --workspace-folder . npm run docs           # docs site into site/
    devcontainer exec --docker-path podman --workspace-folder . npm run dist           # release archives

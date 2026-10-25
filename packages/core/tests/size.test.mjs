@@ -7,7 +7,7 @@ import { gzipSync } from 'node:zlib';
 const BUDGET = {
   'buildguide.js': 11600, // scan, pushState navigation, progress export and import, combined tabs: 10583 at the time
   'buildguide-board.js': 8200, // routing retries, number placement: 7441 at the time (6516 before)
-  'buildguide.css': 4800,
+  'buildguide.css': 5200, // done-row style, check mark and two properties: 4784 at the time (4592 before)
   'vendor/joint/joint.min.js': 160000,
   'vendor/libavoid/index.js': 19200,
   'vendor/libavoid/libavoid.wasm': 202000,

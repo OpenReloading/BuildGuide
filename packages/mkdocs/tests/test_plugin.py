@@ -207,3 +207,13 @@ def test_a_data_board_inside_another_value_is_not_the_board_key(tmp_path, caplog
 def test_a_whitespace_only_component_gets_the_note(tmp_path, inside):
     index = (site(tmp_path, pages={"index.md": f'<div data-buildguide="bom">{inside}</div>\n'}) / "index.html").read_text(encoding="utf-8")
     assert "<noscript>This guide needs JavaScript.</noscript>" in index
+
+
+@pytest.mark.parametrize(("text", "message"), [("a: [unclosed\n", "not valid JSON or YAML"), ("- 1\n- 2\n", "not a guide object")])
+def test_data_that_is_not_a_guide_stops_the_build(tmp_path, caplog, text, message):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "guide.yml").write_text(text, encoding="utf-8")
+    (tmp_path / "mkdocs.yml").write_text("site_name: Test\nplugins:\n  - buildguide:\n      data: guide.yml\n", encoding="utf-8")
+    with pytest.raises(Abort):
+        build(load_config(str(tmp_path / "mkdocs.yml")))
+    assert message in caplog.text

@@ -5,9 +5,11 @@ import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
-const ORIGIN = 'http://127.0.0.1:8080', BASE = ORIGIN + '/example/';
+// BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /develop for the Pages preview
+const PREFIX = process.env.BUILDGUIDE_PREFIX ?? '';
+const ORIGIN = 'http://127.0.0.1:8080', BASE = `${ORIGIN}${PREFIX}/example/`;
 // the core files: src/ here, assets/buildguide/ in a site built with a plugin
-const CORE = process.env.BUILDGUIDE_SITE ? '/assets/buildguide/' : '/src/';
+const CORE = process.env.BUILDGUIDE_SITE ? `${PREFIX}/assets/buildguide/` : '/src/';
 const boards = Object.entries(D.boards);
 const label = (b, c, side) => c['l' + side] ?? `${b.parts[c[side].split(':')[0]].name} · ${c[side].slice(c[side].indexOf(':') + 1)}`;
 const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
@@ -50,20 +52,97 @@ for (const [key, b] of boards) {
 const PAGES = ['bom', 'wiring', 'tubing', 'all', 'guide'];
 const settled = async page => { for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true'); };
 
+// every box ticked, one at a time: a tick re-renders the component
+const tickAll = guide => guide.evaluate(el => { for (let i = 0; i < 200; i++) { const box = el.querySelector('[data-check]:not(:checked)'); if (!box) break; box.click(); } });
+
 for (const key of PAGES) {
-  test(`${key}: no accessibility violations in the components (WCAG 2.2 AA)`, async ({ page }) => {
-    await page.goto(url(key)); await settled(page);
-    const found = [];
-    // one component at a time, scrolled to the top of the viewport: the sticky navigation of a board covers the part of the page below it
-    for (const guide of await page.locator('.ag-guide').all()) {
-      await guide.evaluate(el => { el.scrollIntoView({ block: 'start' }); el.setAttribute('data-axe', ''); });
-      const { violations } = await new AxeBuilder({ page }).include('[data-axe]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-      found.push(...violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`));
-      await guide.evaluate(el => el.removeAttribute('data-axe'));
-    }
-    expect(found).toEqual([]);
+  for (const scheme of ['light', 'dark']) for (const ticked of [false, true]) {
+    test(`${key}: no accessibility violations in the components (WCAG 2.2 AA), ${scheme}${ticked ? ', items ticked' : ''}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await page.goto(url(key)); await settled(page);
+      const found = [];
+      // one component at a time, scrolled to the top of the viewport: the sticky navigation of a board covers the part of the page below it
+      for (const guide of await page.locator('.ag-guide').all()) {
+        if (ticked) await tickAll(guide);
+        await guide.evaluate(el => { el.scrollIntoView({ block: 'start' }); el.setAttribute('data-axe', ''); });
+        const { violations } = await new AxeBuilder({ page }).include('[data-axe]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+        found.push(...violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`));
+        await guide.evaluate(el => el.removeAttribute('data-axe'));
+      }
+      expect(found).toEqual([]);
+    });
+  }
+}
+
+// computed colours of a done row, measured: text 4.5:1 on the row (3:1 for the check mark), nothing translucent. In forced colours the system picks the colours.
+const luminance = rgb => rgb.match(/[\d.]+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
+for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { colorScheme: 'dark' }], ['forced colours', { forcedColors: 'active' }]]) {
+  test(`a done row stays legible: BOM and wire rows, ${name}`, async ({ page }) => {
+    await page.emulateMedia(media);
+    const measure = (row, text) => row.evaluate((tr, sel) => {
+      const behind = el => { for (; el; el = el.parentElement) { const bg = getComputedStyle(el).backgroundColor; if (!/rgba?\(.*, 0\)$/.test(bg) && bg !== 'transparent') return bg; } return 'rgb(255, 255, 255)'; };
+      const el = tr.querySelector(sel), mark = getComputedStyle(el, '::before');
+      return { color: getComputedStyle(el).color, bg: behind(el), opacity: getComputedStyle(el.closest('td,button')).opacity, mark: mark.content, markColor: mark.color };
+    }, text);
+    const check = async (row, text) => {
+      const m = await measure(row, text);
+      expect(m.opacity).toBe('1');
+      expect(m.mark).not.toBe('none');
+      expect(contrast(m.color, m.bg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(m.markColor, m.bg)).toBeGreaterThanOrEqual(3);
+    };
+    await page.goto(url('bom')); await settled(page);
+    await page.locator('tbody input[type=checkbox]').first().check();
+    await check(page.locator('tbody tr.is-done').first(), 'strong');
+    await page.goto(url('wiring')); await settled(page);
+    await page.locator('.ag-verify input').check();
+    await check(page.locator('.ag-wire-row.is-done').first(), '.ag-wire-number');
   });
 }
+
+// forced colours: the markers of the selected row, the done row and the current step are borders and outlines, measured on the computed styles:
+// non-zero width, 3:1 against what is behind them (WCAG 1.4.11), text 4.5:1. Without forced colours the same elements keep their look.
+test('selected, done and current are visible in forced colours', async ({ page }) => {
+  const measure = (el, props) => el.evaluate((node, names) => {
+    const behind = e => { for (; e; e = e.parentElement) { const bg = getComputedStyle(e).backgroundColor; if (!/rgba?\(.*, 0\)$/.test(bg) && bg !== 'transparent') return bg; } return 'rgb(255, 255, 255)'; };
+    const style = getComputedStyle(node);
+    return { bg: behind(node), color: style.color, ...Object.fromEntries(names.map(n => [n, style[n]])) };
+  }, props);
+  const MARKERS = ['outlineStyle', 'outlineWidth', 'outlineColor', 'borderInlineStartWidth', 'borderInlineStartColor', 'borderTopWidth', 'borderTopColor', 'boxShadow'];
+  const markers = async () => {
+    await page.goto(url('wiring')); await settled(page);
+    await page.locator('.ag-verify input').check();
+    const guide = page.locator('.ag-guide');
+    return {
+      selected: await measure(guide.locator('.ag-wire-row.selected').first(), MARKERS),
+      done: await measure(guide.locator('.ag-wire-row.is-done').first(), MARKERS),
+      current: await measure(guide.locator('.ag-steps button[aria-current]').first(), MARKERS),
+      other: await measure(guide.locator('.ag-steps button:not([aria-current])').first(), MARKERS),
+    };
+  };
+  await page.emulateMedia({ forcedColors: 'active' });
+  const forced = await markers();
+  expect(parseFloat(forced.selected.outlineWidth)).toBeGreaterThan(0);
+  expect(forced.selected.outlineStyle).not.toBe('none');
+  expect(contrast(forced.selected.outlineColor, forced.selected.bg)).toBeGreaterThanOrEqual(3);
+  expect(parseFloat(forced.done.borderInlineStartWidth)).toBeGreaterThan(0);
+  expect(contrast(forced.done.borderInlineStartColor, forced.done.bg)).toBeGreaterThanOrEqual(3);
+  expect(parseFloat(forced.current.borderTopWidth)).toBeGreaterThan(parseFloat(forced.other.borderTopWidth));
+  expect(contrast(forced.current.borderTopColor, forced.current.bg)).toBeGreaterThanOrEqual(3);
+  for (const m of Object.values(forced)) expect(contrast(m.color, m.bg)).toBeGreaterThanOrEqual(4.5);
+  // the border of a done BOM row shifts nothing: the content of its first cell starts where an open row's does
+  await page.goto(url('bom')); await settled(page);
+  await page.locator('tbody input[type=checkbox]').first().check();
+  const offsets = await page.locator('tbody tr:not(.ag-group)').evaluateAll(rows => rows.slice(0, 2).map(tr => tr.firstElementChild.firstElementChild.getBoundingClientRect().left));
+  expect(offsets[0]).toBe(offsets[1]);
+  await page.emulateMedia({ forcedColors: 'none' });
+  const plain = await markers();
+  expect(plain.selected.outlineStyle).toBe('none');
+  expect(plain.selected.boxShadow).not.toBe('none');
+  expect(plain.done.borderInlineStartWidth).toBe('0px');
+  expect(plain.current.borderTopWidth).toBe(plain.other.borderTopWidth);
+});
 
 test('screenshots of the example pages', async ({ page }, info) => {
   for (const key of PAGES) {
@@ -550,7 +629,7 @@ test('inline data in #guide-data works like data-src', async ({ page }) => {
 test('BOM images are decorative: empty alt, the part name sits in the same cell', async ({ page }) => {
   const data = structuredClone(D);
   data.bom.items[0].image = 'part.gif';
-  await page.route(`${ORIGIN}/example/assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
   await inlinePage(page, 'bom-image/', data, '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'bom-image/');
   const cell = page.locator('.ag-part-cell').filter({ has: page.locator('img') });

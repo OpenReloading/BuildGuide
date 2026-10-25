@@ -1,0 +1,4 @@
+{#- one line per block: without the preview the pages must stay byte-identical to the stock template -#}
+{% extends "base.html" %}
+{% block extrahead %}{{ super() }}{% if config.extra.preview %}<meta name="robots" content="noindex, nofollow">{% endif %}{% endblock %}
+{% block announce %}{% if config.extra.preview %}Development preview of the develop branch, not the released site.{% endif %}{% endblock %}

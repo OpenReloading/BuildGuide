@@ -15,7 +15,7 @@ Source = "https://github.com/OpenReloading/BuildGuide"
 buildguide = "mkdocs_buildguide.plugin:BuildGuidePlugin"
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "ruff==0.17.1", "mkdocs-material==9.7.7"]
+dev = ["pytest==9.1.1", "ruff==0.17.1", "mkdocs-material==9.7.7", "pytest-cov==7.1.0"]
 
 [build-system]
 requires = ["hatchling==1.32.4"]
@@ -39,3 +39,12 @@ line-length = 140
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+# floors a little below the measured values (lines and branches together); raise them when coverage rises
+[tool.coverage.run]
+source = ["mkdocs_buildguide"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 95
+show_missing = true
