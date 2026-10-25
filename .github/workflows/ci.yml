@@ -83,5 +83,3 @@ jobs:
         with:
           fail-on-severity: high
           fail-on-scopes: runtime, development, unknown
-          # same list as ALLOWED in scripts/audit.mjs
-          allow-ghsas: GHSA-vfj7-8cjw-p6xm
