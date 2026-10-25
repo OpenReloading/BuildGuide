@@ -8,6 +8,24 @@ Every colour is a `light-dark(light, dark)` pair, so one value serves both schem
 
 <!-- generated: tokens -->
 
+## Done state
+
+A ticked BOM row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed.
+
+Two plain properties on `.ag-guide` restore dimming or strike-through. Both default to the plain look:
+
+| Property | Default | Meaning |
+|---|---|---|
+| `--ag-done-opacity` | `1` | opacity of a done row's text |
+| `--ag-done-decoration` | `none` | `text-decoration` of a done row's text |
+
+```css
+/* dim done rows (check the contrast of your colours: opacity lowers it) */
+.ag-guide{--ag-done-opacity:.7}
+/* strike done rows through */
+.ag-guide{--ag-done-decoration:line-through}
+```
+
 ## Light and dark
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:
@@ -36,4 +54,4 @@ Older browsers drop the colour declarations and show the browser's defaults. Sou
 
 ## Contrast
 
-The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts); `tests/contrast.test.mjs` checks them against these tokens. A token you override is yours to check.
+The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts), done rows included; `tests/contrast.test.mjs` checks them against these tokens and `tests/guide.spec.mjs` measures a ticked row in light, dark and forced colours. A host that sets `--ag-done-opacity` below 1 lowers this contrast and checks it itself. A token you override is yours to check.

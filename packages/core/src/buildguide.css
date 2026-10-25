@@ -33,10 +33,12 @@
  --ag-row-selected-bar:light-dark(#5c8a57, #5fae80);
  --ag-row-hover:light-dark(#f3f7ee, #2b362f);
  --ag-bom-hover:light-dark(#fafcf7, #29322c);
+ --ag-done-bg:light-dark(#e6efe1, #2a3b31);
  --ag-error-bg:light-dark(#fff0d5, #4a3b17);
  --ag-diode-body:light-dark(#202d28, #cfd6d1);
  --ag-diode-band:light-dark(#c4cdd0, #4a554e);
 }
+.ag-guide{--ag-done-opacity:1;--ag-done-decoration:none}
 .ag-guide{container-type:inline-size;padding:12px;background:var(--ag-page);color:var(--ag-ink);font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
 .ag-guide *{box-sizing:border-box}
 .ag-guide h2,.ag-guide h3,.ag-guide p{margin:0;color:inherit}
@@ -92,6 +94,7 @@
 .ag-guide .ag-list-heading{margin:14px 0 10px}
 .ag-guide .ag-wire-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--ag-line);border-radius:8px;overflow:hidden;background:var(--ag-surface)}
 .ag-guide .ag-wire-row{display:flex;align-items:center;gap:13px;padding:0 14px;border-bottom:1px solid var(--ag-line);border-right:1px solid var(--ag-line)}
+.ag-guide .ag-wire-row.is-done,.ag-guide .ag-bom-table tr.is-done{background:var(--ag-done-bg)}
 .ag-guide .ag-wire-row.selected{background:var(--ag-row-selected);box-shadow:inset 3px 0 var(--ag-row-selected-bar)}
 .ag-guide .ag-wire-row:hover{background:var(--ag-row-hover)}
 .ag-guide .ag-wire-row button{display:grid;grid-template-columns:32px minmax(0,1fr) 16px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;padding:12px 0;text-align:left;font-size:12px}
@@ -118,7 +121,11 @@
 .ag-guide .ag-qty{white-space:nowrap;font-weight:650}
 .ag-guide .ag-bom-table tr.ag-group th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ag-muted);padding:18px 10px 6px;border-bottom:1px solid var(--ag-line);background:transparent}
 .ag-guide .ag-have{display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:normal}
-.ag-guide .ag-bom-table tr.is-done td{opacity:.55}
+.ag-guide .is-done td,.ag-guide .is-done button{color:var(--ag-muted);opacity:var(--ag-done-opacity);text-decoration:var(--ag-done-decoration)}
+.ag-guide .is-done strong{color:inherit}
+/* the check mark has no alternative text where supported: the checked box already says it */
+.ag-guide .is-done strong::before,.ag-guide .is-done .ag-wire-number::before{content:"\2713";display:inline-block;margin-right:4px;color:var(--ag-done);text-decoration:none}
+@supports(content:'a' / ''){.ag-guide .is-done strong::before,.ag-guide .is-done .ag-wire-number::before{content:'\2713' / ''}}
 .ag-guide .ag-bom-table tbody tr:not(.ag-group){cursor:pointer}
 .ag-guide .ag-bom-actions{display:flex;align-items:center;gap:14px}
 .ag-guide .ag-source-link{display:block;font-size:10px;margin-top:3px}
@@ -210,6 +217,7 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-part-cell{min-width:0}
  .ag-guide .ag-bom-table th,.ag-guide .ag-bom-table td{padding:8px}
  .ag-guide .ag-panel,.ag-guide tr{break-inside:avoid}
+ .ag-guide .is-done td,.ag-guide .is-done button{opacity:1}
 }
 /* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,
    wire and part colours keep their hue). A host that signals dark sets color-scheme:dark and the filter on .ag-guide;

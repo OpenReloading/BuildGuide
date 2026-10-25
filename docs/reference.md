@@ -18,6 +18,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `data-role` | `scope`, `search`, `import-file` |
 | `data-ag-scheme` | `light` opts a component out of the browser's dark preference |
 | `--ag-board-filter` | filter applied to the board drawing |
+| `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`) and `text-decoration` (default `none`) of a ticked BOM or wire row's text, see [Done state](theming.md#done-state) |
 
 `data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV), `print`, `export-progress`, `import-progress`, `reset-progress`.
 
