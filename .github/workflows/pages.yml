@@ -57,7 +57,9 @@ jobs:
           cp -a main/site pages
           # every preview page must carry noindex and the banner, else it stays out
           if [ "$PREVIEW" = success ]; then
-            missing=$(grep -rL --include='*.html' 'name="robots" content="noindex' develop/site; grep -rL --include='*.html' 'class="md-banner"' develop/site)
+            # grep -L exits 1 when it lists no file or when it lists one, depending on the version: only 2 is an error
+            absent() { grep -rL --include='*.html' "$1" develop/site || [ $? -eq 1 ]; }
+            missing=$(absent 'name="robots" content="noindex'; absent 'class="md-banner"')
             if [ -n "$missing" ]; then PREVIEW=markers; echo "preview pages without noindex or banner: $missing"; fi
           fi
           if [ "$PREVIEW" = success ]; then
