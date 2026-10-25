@@ -10,3 +10,4 @@ packages/mkdocs/src/mkdocs_buildguide/core/
 .docusaurus/
 /packages/docusaurus/example/build/
 packages/docusaurus/core/
+.coverage

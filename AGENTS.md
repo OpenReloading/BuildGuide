@@ -12,7 +12,7 @@ CI (`ci.yml`) runs on pull requests and on pushes to `develop`, not on `main`. T
 
 - Agents run on the host; file edits and Git stay there. Start the container with `devcontainer up --docker-path podman --workspace-folder .` (runs `npm ci` and `uv sync`); run project commands with the prefix `devcontainer exec --docker-path podman --workspace-folder .`.
 - Lint (Biome, ruff, no em dash or emoji): `npm run lint`
-- Unit tests (node, pytest): `npm test`
+- Unit tests (node, pytest): `npm test`. Both print a coverage summary and fail below a floor: core in the `test` script of `packages/core/package.json` (`--test-coverage-*`), MkDocs in `[tool.coverage.report]` of `packages/mkdocs/pyproject.toml`. Raise a floor when coverage rises, keep it a little below the measured value. Not measured: the browser code (`buildguide.js`, `buildguide-board.js`, covered by the browser tests), the bundled third-party code in `packages/core/src` and the Docusaurus package.
 - Browser tests (core example pages, the built docs site, the Docusaurus example build; each hosts /example/{bom,wiring,tubing,all}/): `npm run test:browser`
 - Docusaurus example site: `npm run build -w packages/docusaurus` (`packages/docusaurus/example/build/`), dev server `npm run start -w packages/docusaurus` (port 8080)
 - Dependency audit (CI): `node scripts/audit.mjs`. An advisory without a fix goes into its `ALLOWED` list and into `allow-ghsas` in `ci.yml`, with the user's approval.
