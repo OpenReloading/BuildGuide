@@ -10,10 +10,10 @@
     }).catch(error => { library = null; throw error; });
     return library;
   }
-  const FONT = 'system-ui, Segoe UI, Helvetica, Arial, sans-serif';
+  const FONT = 'inherit';   // the drawing's text follows --ag-font through the canvas
   const PIN_TEXT = {'-': '−'};
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
-  const MIN_LABEL = 10, SMALLEST = 8.5, PHONE = 560;   // px: smallest rendered text, smallest font size drawn below, canvas width of a phone
+  const SMALLEST = 8.5, PHONE = 560;   // px: smallest font size drawn below, canvas width of a phone
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
   const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
@@ -299,13 +299,13 @@
     paper.on('link:mouseenter', view => highlight(view.model.id.slice(1), true));
     paper.on('link:mouseleave', view => highlight(view.model.id.slice(1), view.model.id === 'c' + selected.no));
     paper.on('link:pointerclick', view => options.select(view.model.id.slice(1)));
-    // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at MIN_LABEL px and pans, else it fits
+    // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at the canvas font size (--ag-text-small) and pans, else it fits
     let zoomFactor = options.zoom, shown = 1, readable = 1;
     function fit() {
       if (disposed) return;
       const whole = Math.min(root.clientWidth / W, root.clientHeight / H);
       if (!(whole > 0)) return;   // hidden: the resize on showing draws it
-      readable = root.clientWidth < PHONE ? Math.max(1, MIN_LABEL / SMALLEST / whole) : 1;
+      readable = root.clientWidth < PHONE ? Math.max(1, Number.parseFloat(getComputedStyle(root).fontSize) / SMALLEST / whole) : 1;
       shown = zoomFactor || readable;
       const scale = whole * shown;
       paper.setDimensions(W * scale, H * scale);

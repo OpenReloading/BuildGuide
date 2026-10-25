@@ -18,6 +18,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `data-role` | `scope`, `search`, `import-file` |
 | `data-complete` | set by the component on its `.ag-guide` root while every item of the BOM or board is ticked: the head then reads `All parts checked` or `All connections checked` and the status line announces it once. The head's `<progress>` (inside `.ag-progress`, named `parts checked` or `connections checked`) is filled with `--ag-done` |
 | `data-ag-scheme` | `light` opts a component out of the browser's dark preference |
+| `--ag-font`, `--ag-text-small` | font family (default the system sans-serif stack) and the smallest font size (default `11px`) of the component, the board drawing included, see [Font and size](theming.md#font-and-size) |
 | `--ag-board-filter` | filter applied to the board drawing |
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |
 | `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM or wire row's text, see [Done state](theming.md#done-state) |
