@@ -17,7 +17,7 @@ Two plain properties on `.ag-guide`, next to the colours:
 | `--ag-font` | `-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif` | font family of the component: its text, its controls and the text in the board drawing |
 | `--ag-text-small` | `11px` | font size of the smallest text: step counts, toolbar and legend, wire navigation, table headers, source links, counts, status and progress buttons, and on a phone the buttons of the wire rows and the primary button. The board canvas uses it as the smallest size a drawn label shows at on a phone (below) |
 
-No text of the component is smaller than `--ag-text-small`. Set it to a length that resolves in the component (`12px`, `0.75rem`).
+By default no text of the component is smaller than `--ag-text-small`. All other text is 12 px or larger and stays fixed, so a value above `12px` makes the small text larger than some text around it: check the result. Set it to a length that resolves in the component (`12px`, `0.75rem`).
 
 ```css
 /* the font of the host: give --ag-font the host's own family */

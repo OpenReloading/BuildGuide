@@ -296,6 +296,8 @@ test('host styles do not restyle the components', async ({ page }) => {
   expect([await opacity('.ag-steps small'), await opacity('.ag-connection-detail small')]).toEqual(['1', '1']);
   await page.goto(url('bom'));
   expect(await size('.ag-bom-table th')).toBe('11px');
+  // the part name keeps its own rule (a doubled .ag-guide in the selector once dropped it in a standalone BOM)
+  expect(await page.locator('.ag-part-cell strong').first().evaluate(el => [getComputedStyle(el).fontSize, getComputedStyle(el).fontWeight])).toEqual(['13px', '600']);
   expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
 });
 
