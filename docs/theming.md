@@ -16,11 +16,11 @@ Two plain properties on `.ag-guide` restore dimming or strike-through. Both defa
 
 | Property | Default | Meaning |
 |---|---|---|
-| `--ag-done-opacity` | `1` | opacity of a done row's text |
+| `--ag-done-opacity` | `1` | opacity of a done BOM cell or wire button and its contents, the checkbox in the BOM cell included |
 | `--ag-done-decoration` | `none` | `text-decoration` of a done row's text |
 
 ```css
-/* dim done rows (check the contrast of your colours: opacity lowers it) */
+/* dim done rows (opacity lowers the contrast of the text and of the checkbox in it: check your colours) */
 .ag-guide{--ag-done-opacity:.7}
 /* strike done rows through */
 .ag-guide{--ag-done-decoration:line-through}
@@ -54,4 +54,4 @@ Older browsers drop the colour declarations and show the browser's defaults. Sou
 
 ## Contrast
 
-The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts), done rows included; `tests/contrast.test.mjs` checks them against these tokens and `tests/guide.spec.mjs` measures a ticked row in light, dark and forced colours. A host that sets `--ag-done-opacity` below 1 lowers this contrast and checks it itself. A token you override is yours to check.
+The pairs the stylesheet puts on each other meet WCAG 2.2 AA in both schemes (4.5:1 for text, 3:1 for controls, focus rings and drawn parts), done rows included; `tests/contrast.test.mjs` checks them against these tokens and `tests/guide.spec.mjs` measures a ticked row in light, dark and forced colours. A host that sets `--ag-done-opacity` below 1 lowers the contrast of the text and the checkbox and checks it itself. A token you override is yours to check.
