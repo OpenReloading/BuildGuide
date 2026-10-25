@@ -59,7 +59,9 @@ jobs:
           if [ "$PREVIEW" = success ]; then
             # grep -L exits 1 when it lists no file or when it lists one, depending on the version: only 2 is an error
             absent() { grep -rL --include='*.html' "$1" develop/site || [ $? -eq 1 ]; }
-            missing=$(absent 'name="robots" content="noindex'; absent 'class="md-banner"')
+            if ! missing=$(absent 'name="robots" content="noindex' && absent 'class="md-banner"'); then
+              PREVIEW=markers; echo "preview pages could not be checked for noindex and banner"
+            fi
             if [ -n "$missing" ]; then PREVIEW=markers; echo "preview pages without noindex or banner: $missing"; fi
           fi
           if [ "$PREVIEW" = success ]; then
