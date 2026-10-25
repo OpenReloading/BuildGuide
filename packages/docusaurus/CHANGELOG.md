@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.1.0...docusaurus-v1.2.0) (2026-10-25)
+
+
+### Features
+
+* **docusaurus:** validate the guide data against the schema at build time ([#59](https://github.com/OpenReloading/BuildGuide/issues/59)) ([50dfd3e](https://github.com/OpenReloading/BuildGuide/commit/50dfd3ede07c46a5dc31f0d37c1877cfaee894b8))
+
 ## [1.1.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.0.0...docusaurus-v1.1.0) (2026-10-23)
 
 
