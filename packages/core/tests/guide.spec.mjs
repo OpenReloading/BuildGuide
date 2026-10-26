@@ -339,6 +339,45 @@ test('colour scheme: a component prints light on a dark host', async ({ page }) 
   expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
 });
 
+// data-ag-scheme belongs to the core stylesheet; the plugins' own rules decide on their hosts
+const hostless = page => page.evaluate(() => !document.body.hasAttribute('data-md-color-scheme') && !document.documentElement.hasAttribute('data-theme'));
+const scheme = page => page.locator('.ag-guide').evaluate(el => ({ background: getComputedStyle(el).backgroundColor, scheme: getComputedStyle(el).colorScheme,
+  filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter }));
+
+for (const os of ['light', 'dark']) for (const [value, where, expected] of [
+  ['dark', 'html', 'dark'], ['dark', 'component', 'dark'], ['auto', 'html', os], ['auto', 'component', os],
+  ['light', 'component', 'light'], ['light', 'html', 'light']]) {
+  test(`colour scheme: data-ag-scheme="${value}" on the ${where} in a browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    test.skip(!await hostless(page), 'the plugin of the host decides');
+    await page.evaluate(([v, w]) => (w === 'html' ? document.documentElement : document.querySelector('.ag-guide')).setAttribute('data-ag-scheme', v), [value, where]);
+    const style = await scheme(page);
+    expect(style.background).toBe(token('page', expected));
+    expect(style.scheme === 'dark').toBe(expected === 'dark');
+    expect(style.filter).toBe(expected === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
+  });
+}
+
+test('colour scheme: the attribute of the component beats one of an ancestor', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto(url('wiring')); await ready(page);
+  test.skip(!await hostless(page), 'the plugin of the host decides');
+  await page.evaluate(() => { document.documentElement.setAttribute('data-ag-scheme', 'dark'); document.querySelector('.ag-guide').setAttribute('data-ag-scheme', 'light'); });
+  expect((await scheme(page)).background).toBe(token('page', 'light'));
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.evaluate(() => { document.documentElement.setAttribute('data-ag-scheme', 'light'); document.querySelector('.ag-guide').setAttribute('data-ag-scheme', 'dark'); });
+  expect((await scheme(page)).background).toBe(token('page', 'dark'));
+});
+
+test('colour scheme: data-ag-scheme="dark" prints light', async ({ page }) => {
+  await page.goto(url('wiring')); await ready(page);
+  test.skip(!await hostless(page), 'the plugin of the host decides');
+  await page.evaluate(() => document.documentElement.setAttribute('data-ag-scheme', 'dark'));
+  await page.emulateMedia({ media: 'print' });
+  expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
+});
+
 test('colour scheme: a host sets a token itself in both schemes', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(url('bom'));

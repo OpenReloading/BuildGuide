@@ -228,9 +228,14 @@ body.ag-no-scroll{overflow:hidden}
 }
 /* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,
    wire and part colours keep their hue). A host that signals dark sets color-scheme:dark and the filter on .ag-guide;
-   without a host signal the browser preference decides. Opt out with data-ag-scheme="light" on the component or an ancestor. */
+   without a host signal the browser preference decides. data-ag-scheme on the component or an ancestor forces a side on screen:
+   "light" opts out of the preference, "dark" opts in, "auto" (or none) leaves the preference. The attribute of the component itself
+   beats one of an ancestor. */
 @media screen and (prefers-color-scheme: dark){
  .ag-guide:not([data-ag-scheme=light], [data-ag-scheme=light] *){color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}
+}
+@media screen{
+ .ag-guide:is([data-ag-scheme=dark], :not([data-ag-scheme]):where([data-ag-scheme=dark] *)){color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}
 }
 @media print{
  .ag-guide{color-scheme:light}

@@ -76,9 +76,9 @@ On a canvas narrower than 560 px (phones) the drawing is drawn large enough for 
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:
 
-- **Without a host signal** the browser preference decides (`prefers-color-scheme`). `data-ag-scheme="light"` on the component or on an ancestor opts out and keeps the component light.
+- **Without a host signal** the browser preference decides (`prefers-color-scheme`). `data-ag-scheme` on the component or on an ancestor sets the side on screen: `light` keeps the component light, `dark` makes it dark (`color-scheme: dark` and the board filter below, so a host needs no declarations of its own), `auto` is the same as no attribute. When both name a value, the one on the component wins. The attribute is part of `buildguide.css`: with a plugin, the rule of its theme (table below) decides.
 - **With a host signal** the host sets `color-scheme: dark` on `.ag-guide`. It also sets `--ag-board-filter: invert(.9) hue-rotate(180deg)`, which darkens the board drawing: its colours come from the data, so the filter turns white paper to near black and keeps the hue of wires and parts. Set `--ag-board-filter: none` for a light host.
-- **Print** is always light, whatever the screen shows. The step navigation, toolbar, search, wire navigation, Export CSV, Print and the progress buttons are hidden.
+- **Print** is always light, whatever the screen shows, `data-ag-scheme="dark"` included. The step navigation, toolbar, search, wire navigation, Export CSV, Print and the progress buttons are hidden.
 
 The plugins send the signal of their theme, whatever the browser prefers:
 
