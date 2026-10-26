@@ -75,6 +75,19 @@ def test_stylesheets_come_before_a_differently_written_extra_css_link(tmp_path, 
     assert page.index("buildguide-mkdocs.css") < page.lower().index("css/site.css")
 
 
+def test_extra_css_link_is_matched_case_sensitively(tmp_path):
+    # an earlier link that differs from the extra_css entry only in case is another file
+    (tmp_path / "theme").mkdir()
+    (tmp_path / "theme/main.html").write_text(
+        "<html><head><link href='{{ \"css/Site.css\"|url }}' rel='stylesheet'><link href='{{ \"css/site.css\"|url }}' rel='stylesheet'></head><body>{{ page.content }}</body></html>",
+        encoding="utf-8",
+    )
+    (tmp_path / "docs/css").mkdir(parents=True)
+    (tmp_path / "docs/css/site.css").write_text(".ag-guide{--ag-font:serif}", encoding="utf-8")
+    page = (site(tmp_path, theme="null\n  custom_dir: theme", extra_css=["css/site.css"]) / "all/index.html").read_text(encoding="utf-8")
+    assert page.index("css/Site.css") < page.index("buildguide-mkdocs.css") < page.index("css/site.css")
+
+
 def test_stylesheets_go_to_the_end_of_the_head_without_extra_css(tmp_path):
     page = (site(tmp_path) / "all/index.html").read_text(encoding="utf-8")
     assert 'buildguide-mkdocs.css"></head>' in page

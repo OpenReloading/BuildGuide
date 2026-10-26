@@ -120,9 +120,9 @@ class BuildGuidePlugin(BasePlugin):
         )
         output = self.add_note(output)
         # before the site's extra_css links, so a plain `.ag-guide{...}` rule of the site wins at equal specificity; without any, at the end of the head
-        # a custom theme may write the attribute in upper case, with spaces around the = and with either quote or none
+        # a custom theme may write the tag and attribute in upper case, with spaces around the = and with either quote or none; the URL is case-sensitive
         hrefs = (re.escape(html.escape(normalize_url(path, page))) for path in config.extra_css)
-        links = (re.search(rf"<link\b[^>]*\shref\s*=\s*(?:\"{h}\"|'{h}'|{h}(?=[\s>]))", output, re.IGNORECASE) for h in hrefs)
+        links = (re.search(rf"(?i:<link\b[^>]*\shref\s*=\s*)(?:\"{h}\"|'{h}'|{h}(?=[\s>]))", output) for h in hrefs)
         at = min((m.start() for m in links if m), default=None)
         output = output[:at] + styles + output[at:] if at is not None else output.replace("</head>", styles + "</head>", 1)
         # inside the page's article with Material: Material's instant navigation swaps the article and runs its scripts, but drops the rest of the body
