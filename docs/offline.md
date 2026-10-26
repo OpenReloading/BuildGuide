@@ -1,6 +1,6 @@
 # Offline use
 
-A guide works without a network once the browser holds the files below, for example on a workshop tablet. The components fetch only these files and make no other request. A service worker that caches them, the page that holds the component and the guide data keeps every component working offline. Ticks need no network: they live in `localStorage`.
+A guide works without a network once the browser holds the files below, for example on a workshop tablet. The components fetch only these files, the guide data and the BOM images. Cache these files, the page that holds the component and the guide data, and every component works offline. Ticks need no network: they live in `localStorage`.
 
 ## Files
 
@@ -19,7 +19,7 @@ The URLs are the ones the page requests, built from the URL of `buildguide.js` (
 BOM images are fetched from the folder of `data-assets` (the `assets` option of the plugins) under the file name in each item's `image`. The license files shipped with the libraries are not fetched. To see the exact list for a page, open it and run this in the browser console:
 
 ```js
-performance.getEntriesByType('resource').map((entry) => entry.name)
+[location.href, ...performance.getEntriesByType('resource').map((entry) => entry.name)]
 ```
 
 ## A service worker

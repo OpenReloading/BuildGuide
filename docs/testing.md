@@ -27,7 +27,7 @@ This test uses [Playwright](https://playwright.dev/docs/intro) Test. It opens ea
 import { test, expect } from '@playwright/test';
 
 const PAGES = ['/guide/', '/wiring/'];
-const ERROR_TEXT = /unavailable|Unknown guide component/;
+const ERROR_TEXT = /Guide data unavailable|Unknown guide component|Board renderer unavailable|Router unavailable/;
 
 for (const path of PAGES) {
   test(`${path}: components mount without error`, async ({ page }) => {
@@ -39,6 +39,7 @@ for (const path of PAGES) {
     await page.goto(path);
     const roots = await page.locator('[data-buildguide]').all();
     expect(roots.length).toBeGreaterThan(0);
+    // a component sets its class and draws its canvas in one step: after this loop every canvas is in the page
     for (const root of roots) await expect(root).toHaveClass(/\bag-guide\b/);
     for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true');
     for (const root of roots) await expect(root).not.toContainText(ERROR_TEXT);
