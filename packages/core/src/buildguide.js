@@ -6,25 +6,25 @@
   // a second evaluation (Material's instant navigation runs the scripts of the new page again) only mounts what is new
   if (window.BuildGuide) { window.BuildGuide.scan(); return; }
   const HERE = new URL('.', document.currentScript.src);
-  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt()};`);
   // guide data may come from anyone: URLs from it resolve to web or file locations only, anything else becomes '#'
   const safeURL = (value, base) => { try { const u = new URL(value, base); if (/^(https?|file):$/.test(u.protocol)) return u.href; } catch {} return '#'; };
   const decode = v => { try { return decodeURIComponent(v); } catch { return v; } };
-  // end of a fire-and-forget promise: a refused fullscreen request or an unreadable import has nothing more to report
+  // end of a fire-and-forget promise: a refused fullscreen request or unreadable import has nothing to report
   const ignore = () => {};
   const button = (text, action, extra = '') => `<button type="button" data-action="${action}" ${extra}>${text}</button>`;
+  const download = (blob, name) => { const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
   const loaded = {};
   // a failed load is not cached: the next render tries again
   const loadScript = src => loaded[src] ||= new Promise((resolve, reject) => {
     const s = document.createElement('script'); s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('cannot load ' + src));
     document.head.appendChild(s);
   }).catch(error => { delete loaded[src]; throw error; });
-  // JointJS and the board renderer load only when a board component mounts
   const boardRenderer = () => loadScript(new URL('vendor/joint/joint.min.js', HERE).href)
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
 
   const mounted = new WeakMap();
-  // Undo of a reset or import, one per page: until the next tick, a change from elsewhere or 10 s
+  // Undo of a reset or import, one per page: until the next tick, a change elsewhere or 10 s
   let undo;
   const dropUndo = () => { clearTimeout(undo?.timer); undo?.root.querySelector('.ag-message')?.replaceChildren(); undo = null; };
   // data keys come from anyone: only own properties count, never Object.prototype's
@@ -34,16 +34,15 @@
   // a fragment without = is an anchor (#wiring), never a board's position
   const nameOf = pair => pair.includes('=') ? decode(pair.split('=')[0]) : null;
   const pairValue = pair => pair.slice(pair.indexOf('=') + 1);
-  // the pair of name keeps its place among the others. False when pushState failed and the hash was set instead: hashchange follows
+  // the pair of name keeps its place among the others. False when pushState failed and the hash was set instead (hashchange follows)
   function putPair(name, value) {
     const mine = `${encodeURIComponent(name)}=${value}`, all = pairs();
     const next = (all.some(p => nameOf(p) === name) ? all.map(p => nameOf(p) === name ? mine : p) : [...all, mine]).join('&');
-    // pushState, not location.hash: it fires no popstate, which Material's instant navigation answers with a swap of the whole page (on the first hash change)
+    // pushState, not location.hash: no popstate, which Material's instant navigation answers by swapping the whole page
     if (location.hash.slice(1) !== next) { try { history.pushState(history.state, '', `${location.pathname}${location.search}#${next}`); } catch { location.hash = next; return false; } }
     return true;
   }
 
-  // mount(root, data, {view, board, assets}) renders one component into root and returns the function that removes it again
   function mount(root, D, options = {}) {
     mounted.get(root)?.();
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
@@ -72,7 +71,7 @@
     const tally = () => { const list = board ? steps.flatMap(s => s.connections) : items; return [count(list, board ? connKey : bomKey), list.length]; };
     const what = board ? 'connections' : 'parts';
     let wasDone;
-    const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', message: ''};
+    const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', filter: 'All', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
     const label = (c, side) => c['l' + side] ?? (([id, pin]) => `${own(board.parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
     const color = c => own(board.colors, c.color) || {};
@@ -99,7 +98,7 @@
       return state.step !== step || state.wire !== wire;
     }
 
-    // a render replaces the markup: the focused control is found again by its data attribute
+    // a render replaces the markup: the focused control is found again by its attribute
     function focusSelector() {
       const el = document.activeElement;
       if (!root.contains(el)) return null;
@@ -125,7 +124,7 @@
       root.toggleAttribute('data-complete', done);
       root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
         <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status">${message ? '' : line('')}</span></div>`;
-      // a live region announces text added to an element that already exists, not text that arrives with it
+      // a live region announces text added to an existing element, not text that arrives with it
       if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
       bind();
       if (board) {
@@ -146,7 +145,6 @@
       }
       updateScreenButton();
       if (refocus) root.querySelector(refocus)?.focus({preventScroll: true});
-      // phones: bring the current step into the strip without moving the page
       const strip = root.querySelector('.ag-steps'), current = strip?.querySelector('[aria-current]');
       if (current) { const a = strip.getBoundingClientRect(), b = current.getBoundingClientRect(); strip.scrollLeft += b.left - a.left - (a.width - b.width) / 2; }
     }
@@ -163,7 +161,7 @@
             const style = getComputedStyle(el);
             return sum + el.getBoundingClientRect().height + Number.parseFloat(style.marginTop) + Number.parseFloat(style.marginBottom);
           }, 14);
-          // as tall as the window leaves below the component's own top, never smaller than half the screen or the diagram's height at full width
+          // as tall as the window leaves below the component's top, at least half the screen or the diagram's height at full width
           const top = canvas.getBoundingClientRect().top - root.getBoundingClientRect().top;
           const floor = Math.min(Math.round(window.innerHeight * .5), Math.round(canvas.clientWidth * board.size[1] / board.size[0]));
           canvas.style.setProperty('--ag-canvas-height', Math.max(floor, window.innerHeight - top - reserved) + 'px');
@@ -182,8 +180,7 @@
       }).join('')}</nav>`;
     }
     function toolbar() {
-      const option = (value, text) => `<option value="${value}" ${state.scope === value ? 'selected' : ''}>${text}</option>`;
-      return `<div class="ag-board-toolbar"><label>Show <select data-role="scope" aria-label="Visible connections">${option('step', 'This step')}${board.single ? option('single', 'Selected connection') : ''}${option('all', 'All connections')}</select></label><div class="ag-board-controls">${button('−', 'zoom-out', 'aria-label="Zoom out"')}${button('Fit', 'zoom-fit')}${button('+', 'zoom-in', 'aria-label="Zoom in"')}${button('⛶ Fullscreen', 'fullscreen', 'class="ag-fullscreen-button"')}</div></div>`;
+      return `<div class="ag-board-toolbar"><label>Show <select data-role="scope" aria-label="Visible connections"><option value="step">This step</option>${board.single ? '<option value="single">Selected connection</option>' : ''}<option value="all">All connections</option></select></label><div class="ag-board-controls">${button('−', 'zoom-out', 'aria-label="Zoom out"')}${button('Fit', 'zoom-fit')}${button('+', 'zoom-in', 'aria-label="Zoom in"')}${button('⛶ Fullscreen', 'fullscreen', 'class="ag-fullscreen-button"')}</div></div>`;
     }
     function connectionSummary(c) {
       const diode = color(c).diode, key = connKey(c), cable = diode ? '' : [c.cable, c.size].filter(Boolean).join(' · ');
@@ -215,16 +212,17 @@
       return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="Connection ${esc(c.no)}" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
     }
     const bom = D.bom || {}, items = bom.items || [];
-    const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()));
+    const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()) && (state.filter === 'All' || checked(bomKey(p)) === (state.filter === 'Done')));
     function renderBOM() {
-      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label><select data-role="filter" aria-label="Show parts"><option>All</option><option>Missing</option><option>Done</option></select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
     }
+    const groupTally = g => { const all = items.filter(p => p.group === g); return `${count(all, bomKey)} / ${all.length}`; };
     function bomRows() {
       const parts = filteredParts();
-      if (!parts.length) return '<div class="ag-empty">No matching components.</div>';
+      if (!parts.length) return `<div class="ag-empty">No matching components.${state.filter === 'All' ? '' : ` Filter: ${esc(state.filter)}.`}</div>`;
       let group = '';
       const row = p => {
-        const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)}</th></tr>` : ''; group = p.group;
+        const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)} · ${groupTally(p.group)}</th></tr>` : ''; group = p.group;
         const link = p.link ? ` <a class="ag-source-link" href="${esc(safeURL(p.link, location.href))}" target="_blank" rel="noopener">${esc(bom.linkLabel || 'Link')} ↗</a>` : '';
         const done = checked(bomKey(p));
         return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)}" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<img src="${esc(safeURL(p.image, ASSETS))}" alt="" loading="lazy">` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
@@ -232,15 +230,14 @@
       return `<div class="ag-bom-table"><table class="ag-table"><caption class="ag-sr">Bill of materials</caption><thead><tr><th scope="col">Qty</th><th scope="col">Component</th><th scope="col">Specification</th></tr></thead><tbody>${parts.map(row).join('')}</tbody></table></div><p class="ag-result-count">${parts.length} / ${items.length} components</p>`;
     }
     function exportCSV() {
-      const rows = [['Group', 'Component', 'Specification', 'Quantity', bom.linkLabel || 'Link'], ...filteredParts().map(p => [p.group, p.part, p.spec, p.qty, p.link || ''])];
+      const rows = [['Group', 'Component', 'Specification', 'Quantity', bom.linkLabel || 'Link', 'Done'], ...filteredParts().map(p => [p.group, p.part, p.spec, p.qty, p.link || '', checked(bomKey(p)) ? 'Yes' : 'No'])];
       // a leading = + - @ would run as a spreadsheet formula
       const cell = v => '"' + String(v ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"';
-      const blob = new Blob(['﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'});
-      const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = bom.export || 'bom.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      download(new Blob(['﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'}), bom.export || 'bom.csv');
     }
-    // progress files hold one object of true/false values, the shape this script stores
+    // progress files hold one object of true/false values
     const isProgress = v => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'boolean');
-    // every mounted component on the page takes the new object, so a later tick does not write the old ticks back
+    // every mounted component takes the new object, so a later tick does not write the old ticks back
     const shareProgress = (progress, message, before) => {
       dropUndo();
       state.message = message;
@@ -249,12 +246,11 @@
     };
     const store = progress => { try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; } };
     listen(document, 'buildguide-progress', ({detail: d}) => { if (d?.storage === D.storage && isProgress(d.saved)) { if (d.before !== undo?.before) dropUndo(); Object.assign(d.before || {}, {...saved, ...d.before}); saved = {...d.saved}; render(); } });
-    // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared); sessionStorage events do not count
+    // another tab ticked, imported or reset: show what it stored (key null: storage cleared); sessionStorage events do not count
     const area = () => { try { return localStorage; } catch {} };
     listen(window, 'storage', e => { if (e.storageArea === area() && (e.key === D.storage || e.key === null)) { dropUndo(); saved = load(); render(); } });
     function exportProgress() {
-      const blob = new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'});
-      const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${D.storage}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+      download(new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'}), `${D.storage}.json`);
     }
     async function importProgress(file) {
       let progress;
@@ -300,11 +296,12 @@
       for (const box of scope.querySelectorAll('[data-check]')) box.onchange = () => {
         const key = box.dataset.check, sel = `[data-check="${CSS.escape(key)}"]`, index = [...root.querySelectorAll(sel)].indexOf(box);
         save(key, box.checked); render();
-        root.querySelectorAll(sel)[index]?.focus({preventScroll: true});
+        // a row the filter hides is gone: the filter takes the focus
+        (root.querySelectorAll(sel)[index] ?? root.querySelector('[data-role=filter]'))?.focus({preventScroll: true});
       };
     }
     function bind() {
-      const scope = root.querySelector('[data-role=scope]'); if (scope) scope.onchange = () => { state.scope = scope.value; render(); };
+      for (const select of root.querySelectorAll('select')) { select.value = state[select.dataset.role]; select.onchange = () => { if (select.dataset.role === 'scope') state.scope = select.value; else state.filter = select.value; render(); }; }
       for (const b of root.querySelectorAll('[data-step]')) b.onclick = () => navigate(Number(b.dataset.step));
       for (const b of root.querySelectorAll('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); };
@@ -322,13 +319,13 @@
           case 'export': exportCSV(); break;
           case 'print': window.print(); break;
           case 'export-progress': exportProgress(); break;
-          case 'import-progress': root.querySelector('[data-role=import-file]').click(); break;
+          case 'import-progress': file.click(); break;
           case 'reset-progress': resetProgress(); break;
           case 'undo-progress': undoProgress(); break;
         }
       };
     }
-    // history.pushState alone fires neither event: a host that pushes a hash dispatches popstate or hashchange itself
+    // pushState fires neither event: a host that pushes a hash dispatches popstate or hashchange itself
     const follow = () => { if (readHash()) render(); };
     listen(window, 'hashchange', follow); listen(window, 'popstate', follow);
     readHash(); render();
@@ -344,8 +341,8 @@
     return destroy;
   }
 
-  // The combined component: tabs for the BOM and the boards over one panel. Only the shown tab is mounted, so a board is never drawn in a hidden box
-  // and a tab that is left releases its drawing. Hash: one guide=<key> pair next to the boards' own pairs; 'bom' names the BOM.
+  // The combined component: tabs over one panel. Only the shown tab is mounted, so a board is never drawn in a hidden box.
+  // Hash: one guide=<key> pair next to the boards' own pairs; 'bom' names the BOM.
   let tabSeq = 0;
   function mountTabs(root, D, options) {
     const asked = (options.board ?? root.dataset.board ?? '').split(/\s+/).filter(Boolean);
@@ -385,7 +382,7 @@
       sync();
       if (target !== active) show(target);
     }
-    // the listeners of the shown component come after these, so a tab that changes is replaced before the old board hears the same event
+    // the shown component's listeners come after these, so a changed tab is replaced before the old board hears the event
     window.addEventListener('hashchange', follow); window.addEventListener('popstate', follow);
     follow();
     const destroy = () => {
@@ -399,10 +396,10 @@
     return destroy;
   }
 
-  // every [data-buildguide] element mounts itself; elements that name the same data-src share one request
+  // elements that name the same data-src share one request
   const auto = new Map(), requests = {};
   const fetchData = src => { const url = new URL(src, location.href).href; requests[url] ||= fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(error => { delete requests[url]; throw error; }); return requests[url]; };
-  // Runs at load and whenever the page changes without a reload (Material's document$): mounts the new components, unmounts those that left the document
+  // Runs at load and when the page changes without a reload (Material's document$): mounts new components, unmounts those that left
   function scan() {
     for (const [root, entry] of auto) if (!root.isConnected) { auto.delete(root); entry.dead = true; entry.stop?.(); }
     const inline = document.getElementById('guide-data'), pending = [];

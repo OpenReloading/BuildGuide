@@ -725,7 +725,7 @@ test('BOM: ticks, search, row click and CSV export', async ({ page }) => {
   const items = D.bom.items;
   await page.goto(url('bom'));
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(items.length);
-  await expect(page.locator('tr.ag-group')).toHaveText([...new Set(items.map(i => i.group))]);
+  await expect(page.locator('tr.ag-group')).toHaveText([...new Set(items.map(i => i.group))].map(g => `${g} · 0 / ${items.filter(i => i.group === g).length}`));
   await page.locator('tbody input[type=checkbox]').first().check();
   await page.reload();
   await expect(page.locator('tbody input[type=checkbox]').first()).toBeChecked();
@@ -740,10 +740,77 @@ test('BOM: ticks, search, row click and CSV export', async ({ page }) => {
   const file = await download;
   expect(file.suggestedFilename()).toBe(D.bom.export);
   const csv = readFileSync(await file.path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
-  expect(csv[0]).toBe(`"Group","Component","Specification","Quantity","${D.bom.linkLabel}"`);
+  expect(csv[0]).toBe(`"Group","Component","Specification","Quantity","${D.bom.linkLabel}","Done"`);
   expect(csv.length).toBe(items.length + 1);
   await page.locator('[data-role=search]').fill('does-not-exist');
-  await expect(page.locator('.ag-empty')).toBeVisible();
+  await expect(page.locator('.ag-empty')).toHaveText('No matching components.');
+});
+
+test('BOM: filter missing and done with search and ticks, group counts, empty state, CSV Done column', async ({ page }) => {
+  const items = D.bom.items, groups = [...new Set(items.map(i => i.group))], size = g => items.filter(i => i.group === g).length;
+  const rows = page.locator('tbody tr:not(.ag-group)'), filter = page.locator('[data-role=filter]'), search = page.locator('[data-role=search]');
+  const matches = (i, text) => `${i.part} ${i.spec ?? ''} ${i.group}`.toLowerCase().includes(text);
+  await page.goto(url('bom'));
+  await expect(filter).toHaveValue('All');
+  await rows.nth(0).locator('input').check(); await rows.nth(1).locator('input').check();
+  const first = items[0].group, ticked = items.slice(0, 2).filter(i => i.group === first).length;
+  await expect(page.locator('tr.ag-group').first()).toHaveText(`${first} · ${ticked} / ${size(first)}`);
+  await expect(page.locator('tr.ag-group')).toHaveCount(groups.length);
+  await filter.selectOption('Done');
+  await expect(rows).toHaveCount(2);
+  await expect(page.locator('.ag-result-count')).toHaveText(`2 / ${items.length} components`);
+  // a group header counts the whole group, not the rows that the filter and the search leave
+  await expect(page.locator('tr.ag-group').first()).toHaveText(`${first} · ${ticked} / ${size(first)}`);
+  await filter.selectOption('Missing');
+  await expect(rows).toHaveCount(items.length - 2);
+  await search.fill('valve');
+  await expect(rows).toHaveCount(items.slice(2).filter(i => matches(i, 'valve')).length);
+  await expect(filter).toHaveValue('Missing');
+  // the empty state names the filter, and the search text stays
+  await filter.selectOption('Done');
+  await expect(page.locator('.ag-empty')).toHaveText('No matching components. Filter: Done.');
+  await expect(search).toHaveValue('valve');
+  await search.fill('');
+  // a tick keeps the filter; the ticked row leaves the missing list and the focus moves to the filter
+  await filter.selectOption('Missing');
+  await rows.first().locator('input').click();
+  await expect(rows).toHaveCount(items.length - 3);
+  await expect(filter).toHaveValue('Missing');
+  await expect(filter).toBeFocused();
+  await expect(page.locator('.ag-progress')).toHaveText(`3 / ${items.length} checked`);
+  const csvOf = async () => {
+    const download = page.waitForEvent('download');
+    await page.locator('[data-action=export]').click();
+    return readFileSync(await (await download).path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
+  };
+  let csv = await csvOf();
+  expect(csv[0].split(',').at(-1)).toBe('"Done"');
+  expect(csv.length).toBe(items.length - 3 + 1);
+  expect(csv.slice(1).every(r => r.endsWith(',"No"'))).toBe(true);
+  await filter.selectOption('Done');
+  csv = await csvOf();
+  expect(csv.length).toBe(3 + 1);
+  expect(csv.slice(1).every(r => r.endsWith(',"Yes"'))).toBe(true);
+  await filter.selectOption('All');
+  await expect(rows).toHaveCount(items.length);
+  csv = await csvOf();
+  expect(csv.slice(1).filter(r => r.endsWith(',"Yes"')).length).toBe(3);
+});
+
+test('BOM: the filter fits a 390 px phone and keeps its border and contrast in forced colours and dark', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 800 });
+  for (const media of [{}, { forcedColors: 'active' }, { colorScheme: 'dark' }]) {
+    await page.emulateMedia({ forcedColors: 'none', colorScheme: 'light', ...media });
+    await page.goto(url('bom'));
+    const filter = page.locator('[data-role=filter]'), box = await filter.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    expect(box.height).toBeGreaterThanOrEqual(24);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    const look = await filter.evaluate(el => { const c = getComputedStyle(el); return { border: parseFloat(c.borderTopWidth), color: c.color, bg: c.backgroundColor }; });
+    expect(look.border).toBeGreaterThan(0);
+    expect(contrast(look.color, look.bg)).toBeGreaterThanOrEqual(4.5);
+  }
 });
 
 test('one page with a BOM and two boards: own hash, ticks, focus, no duplicate ids', async ({ page }) => {
