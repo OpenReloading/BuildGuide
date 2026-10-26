@@ -232,7 +232,7 @@ body.ag-no-scroll{overflow:hidden}
    "light" opts out of the preference, "dark" opts in, "auto" (or none) leaves the preference. The attribute of the component itself
    beats one of an ancestor. */
 @media screen and (prefers-color-scheme: dark){
- .ag-guide:not([data-ag-scheme=light], [data-ag-scheme=light] *){color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}
+ .ag-guide:not([data-ag-scheme=light], :not([data-ag-scheme]):where([data-ag-scheme=light] *)){color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}
 }
 @media screen{
  .ag-guide:is([data-ag-scheme=dark], :not([data-ag-scheme]):where([data-ag-scheme=dark] *)){color-scheme:dark;--ag-board-filter:invert(.9) hue-rotate(180deg)}

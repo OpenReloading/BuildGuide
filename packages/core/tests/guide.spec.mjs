@@ -368,6 +368,10 @@ test('colour scheme: the attribute of the component beats one of an ancestor', a
   await page.emulateMedia({ colorScheme: 'light' });
   await page.evaluate(() => { document.documentElement.setAttribute('data-ag-scheme', 'light'); document.querySelector('.ag-guide').setAttribute('data-ag-scheme', 'dark'); });
   expect((await scheme(page)).background).toBe(token('page', 'dark'));
+  await page.evaluate(() => { document.documentElement.setAttribute('data-ag-scheme', 'light'); document.querySelector('.ag-guide').setAttribute('data-ag-scheme', 'auto'); });
+  expect((await scheme(page)).background).toBe(token('page', 'light'));
+  await page.emulateMedia({ colorScheme: 'dark' });
+  expect((await scheme(page)).background).toBe(token('page', 'dark'));
 });
 
 test('colour scheme: data-ag-scheme="dark" prints light', async ({ page }) => {

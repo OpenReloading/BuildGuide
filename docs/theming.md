@@ -88,7 +88,7 @@ The plugins send the signal of their theme, whatever the browser prefers:
 | Docusaurus | `data-theme="dark"` on `<html>` | `buildguide-docusaurus.css` |
 | Plain HTML (core) | the browser prefers dark | `buildguide.css` |
 
-Any other host can do the same with two declarations on `.ag-guide`.
+Any other host can do the same with `data-ag-scheme="dark"` or `"light"` (set it from the host's own toggle), or with two declarations on `.ag-guide`.
 
 ## Browser support
 
