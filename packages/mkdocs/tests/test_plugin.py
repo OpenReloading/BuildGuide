@@ -64,14 +64,15 @@ def test_stylesheets_come_before_extra_css(tmp_path, theme):
         assert order[-1] < page.index(f'href="{depth}css/site.css"') < page.index('href="https://example.org/host.css"')
 
 
-def test_stylesheets_come_before_a_single_quoted_extra_css_link(tmp_path):
-    # a custom theme may quote the href any way it likes
+@pytest.mark.parametrize("link", ["<link href='{}' rel='stylesheet'>", "<LINK HREF = \"{}\" rel=stylesheet>", "<link rel=stylesheet href={}>", "<link rel=stylesheet href={} />"])
+def test_stylesheets_come_before_a_differently_written_extra_css_link(tmp_path, link):
+    # a custom theme may quote the href any way it likes, or not at all
     (tmp_path / "theme").mkdir()
-    (tmp_path / "theme/main.html").write_text("<html><head><link href='{{ \"css/site.css\"|url }}' rel='stylesheet'></head><body>{{ page.content }}</body></html>", encoding="utf-8")
+    (tmp_path / "theme/main.html").write_text("<html><head>" + link.format("{{ 'css/site.css'|url }}") + "</head><body>{{ page.content }}</body></html>", encoding="utf-8")
     (tmp_path / "docs/css").mkdir(parents=True)
     (tmp_path / "docs/css/site.css").write_text(".ag-guide{--ag-font:serif}", encoding="utf-8")
     page = (site(tmp_path, theme="null\n  custom_dir: theme", extra_css=["css/site.css"]) / "all/index.html").read_text(encoding="utf-8")
-    assert page.index("buildguide-mkdocs.css") < page.index("css/site.css'")
+    assert page.index("buildguide-mkdocs.css") < page.lower().index("css/site.css")
 
 
 def test_stylesheets_go_to_the_end_of_the_head_without_extra_css(tmp_path):
