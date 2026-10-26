@@ -14,7 +14,7 @@ The URLs are the ones the page requests, built from the URL of `buildguide.js` (
 |---|---|---|
 | [Plain HTML](core.md) | where you unpacked the archive, for example `assets/buildguide-<version>/` | the guide data (`data-src`), the page itself |
 | [MkDocs](mkdocs.md) | `<site>/assets/buildguide/` | `buildguide-mkdocs.css` in the same folder, `guides/<id>.json` in the same folder for each guide of the `guides` option that a page uses, every page that holds a component (the data of the `data` guide is inside it) and the Material theme's own files (stylesheets, `bundle.*.js`, and for search `sitemap.xml`, `search/search_index.json` and the search worker) |
-| [Docusaurus](docusaurus.md) | `<baseUrl>assets/buildguide/` | `guide.json` in the same folder (the guide data), every page that holds a component and the site's own bundles |
+| [Docusaurus](docusaurus.md) | `<baseUrl>assets/buildguide/` | `guide.json` in the same folder (the guide data) and `guides/<id>.json` for each guide of the `guides` option that a page uses, every page that holds a component and the site's own bundles |
 
 BOM images are fetched from the folder of `data-assets` (the `assets` option of the plugins) under the file name in each item's `image`. The license files shipped with the libraries are not fetched. To see the exact list for a page, open it and run this in the browser console:
 

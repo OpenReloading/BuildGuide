@@ -5,7 +5,7 @@ module.exports = {
   baseUrl: '/',
   trailingSlash: true,
   onBrokenLinks: 'throw',
-  plugins: [[require.resolve('..'), { data: '../../core/example/guide.json' }]],
+  plugins: [[require.resolve('..'), { data: '../../core/example/guide.json', guides: { minimal: '../../core/example/minimal/all.json' } }]],
   themeConfig: { navbar: { title: 'BuildGuide example' } },
   presets: [['classic', { docs: { path: 'docs', routeBasePath: 'example' }, blog: false, theme: { customCss: './src/css/custom.css' } }]],
 };
