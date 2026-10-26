@@ -467,6 +467,41 @@ for (const scheme of ['light', 'dark']) {
   });
 }
 
+// the MkDocs plugin loads its stylesheets before the site's extra_css: a plain `.ag-guide{...}` rule of the site beats the component's own at equal specificity
+test('MkDocs: the component stylesheets come before extra_css, so a plain site rule wins', async ({ page }) => {
+  await page.goto(url('bom'));
+  const sheets = await page.evaluate(() => [...document.querySelectorAll('link[rel=stylesheet]')].map(l => l.getAttribute('href')));
+  const at = name => sheets.findIndex(href => href.endsWith(name));
+  test.skip(at('buildguide-material.css') < 0, 'only the MkDocs docs site lists the recipe in extra_css');
+  expect(at('buildguide.css')).toBeGreaterThanOrEqual(0);
+  expect(at('buildguide.css')).toBeLessThan(at('buildguide-mkdocs.css'));
+  expect(at('buildguide-mkdocs.css')).toBeLessThan(at('repo-widget.css'));
+  expect(at('repo-widget.css')).toBeLessThan(at('buildguide-material.css'));
+  const size = () => page.locator('.ag-guide').first().evaluate(el => getComputedStyle(el).getPropertyValue('--ag-text-small'));
+  expect(await size()).toBe('11px');
+  // the rule sits where the site's extra_css links are
+  await page.evaluate(() => document.querySelector('link[href$="repo-widget.css"]').before(Object.assign(document.createElement('style'), { textContent: '.ag-guide{--ag-text-small:15px}' })));
+  expect(await size()).toBe('15px');
+});
+
+// the Docusaurus plugin writes the data to assets/buildguide/guide.json: no page carries it, the components of a page share one request for it
+test('Docusaurus: the data is a file, fetched once per page, and no page holds it', async ({ page }) => {
+  await page.goto(BASE);
+  test.skip(await page.locator('meta[name=generator][content^="Docusaurus"]').count() === 0, 'only the Docusaurus example');
+  const file = `${ORIGIN}${PREFIX}/assets/buildguide/guide.json`;
+  expect(await (await page.request.get(file)).json()).toEqual(D);
+  for (const key of ['', ...PAGES]) {
+    const html = await (await page.request.get(key ? url(key) : BASE)).text();
+    expect(html, `${key || 'index'} page`).not.toContain(D.storage);
+    expect(html, `${key || 'index'} page`).not.toContain('guide-data');
+  }
+  const fetched = [];
+  page.on('request', r => r.url() === file && fetched.push(r.url()));
+  await page.goto(url('all')); await settled(page);
+  await expect(page.locator('.ag-guide')).toHaveCount(3);
+  expect(fetched).toHaveLength(1);
+});
+
 // the tick keys of every item of a component, in order
 const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`) };
 for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));

@@ -1,5 +1,5 @@
 // <BuildGuide view="bom"/>, <BuildGuide view="board" board="wiring"/> and <BuildGuide view="guide"/>: one guide component, any number per page.
-// Data and URLs come from the plugin's #buildguide-data.
+// The URLs come from the plugin's <meta name="buildguide">; the data is fetched once from guide.json.
 import React, { useEffect, useRef } from 'react';
 
 let core;
@@ -16,17 +16,29 @@ const loadCore = (src) =>
     document.head.appendChild(script);
   }));
 
+let guide;
+// components on one page share the request; a failed one is tried again by the next mount
+const loadData = (src) =>
+  (guide ||= fetch(src)
+    .then((response) => {
+      if (!response.ok) throw new Error(`cannot load ${src}`);
+      return response.json();
+    })
+    .catch((error) => {
+      guide = null;
+      throw error;
+    }));
+
 export default function BuildGuide({ view, board }) {
   const root = useRef(null);
   useEffect(() => {
-    const el = document.getElementById('buildguide-data');
-    const { core: url, assets } = el.dataset;
+    const { core: url, assets, src } = document.querySelector('meta[name="buildguide"]').dataset;
     let unmount;
     let gone = false;
-    loadCore(`${url}buildguide.js`)
-      .then((B) => {
+    Promise.all([loadCore(`${url}buildguide.js`), loadData(src)])
+      .then(([B, D]) => {
         // the component may be gone before core has loaded (navigation, StrictMode)
-        if (!gone) unmount = B.mount(root.current, JSON.parse(el.textContent), { view, board, assets });
+        if (!gone) unmount = B.mount(root.current, D, { view, board, assets });
       })
       .catch(() => {
         if (root.current) root.current.textContent = 'Guide data unavailable.';

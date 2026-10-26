@@ -8,25 +8,40 @@ import buildguide from '../src/index.js';
 const example = new URL('../../core/example/guide.json', import.meta.url).pathname;
 const site = (data, options = {}) => buildguide({ siteDir: '/', baseUrl: '/docs/' }, { data, ...options });
 
-test('loads and checks the data, injects it with the core URLs', async () => {
-  const plugin = site(example, { assets: '/media' });
-  const guide = await plugin.loadContent();
+const meta = (options) => site(example, options).injectHtmlTags().headTags[1].attributes;
+
+test('loads and checks the data', async () => {
+  const guide = await site(example).loadContent();
   assert.deepEqual(guide, JSON.parse(readFileSync(example, 'utf8')));
-  const [link, data] = plugin.injectHtmlTags({ content: { title: 'a </script> b' } }).headTags;
-  assert.equal(link.attributes.href, '/docs/assets/buildguide/buildguide.css');
-  assert.equal(data, '<script type="application/json" id="buildguide-data" data-core="/docs/assets/buildguide/" data-assets="/docs/media/">{"title":"a \\u003c/script> b"}</script>');
+});
+
+test('the pages carry the stylesheet link and the URLs, none of the data', () => {
+  assert.deepEqual(site(example, { assets: '/media' }).injectHtmlTags().headTags, [
+    { tagName: 'link', attributes: { rel: 'stylesheet', href: '/docs/assets/buildguide/buildguide.css' } },
+    { tagName: 'meta', attributes: { name: 'buildguide', 'data-core': '/docs/assets/buildguide/', 'data-assets': '/docs/media/', 'data-src': '/docs/assets/buildguide/guide.json' } },
+  ]);
+});
+
+test('guide.json is the validated data, minified, written next to core', async () => {
+  const plugin = site(example);
+  const guide = await plugin.loadContent();
+  const { plugins } = plugin.configureWebpack({}, false, { currentBundler: { name: 'webpack' } });
+  const [, data] = plugins[0].patterns;
+  assert.equal(data.to, 'assets/buildguide/guide.json');
+  assert.equal(data.from, example);
+  assert.equal(data.transform(), JSON.stringify(guide));
+  assert.deepEqual(plugin.configureWebpack({}, true, {}), {});
 });
 
 test('assets is a folder below baseUrl', () => {
-  const url = (assets) => site(example, assets === undefined ? {} : { assets }).injectHtmlTags({ content: {} }).headTags[1].match(/data-assets="([^"]*)"/)[1];
+  const url = (assets) => meta(assets === undefined ? {} : { assets })['data-assets'];
   assert.deepEqual([undefined, '/', '', '/media', 'media/', 'a/b'].map(url), ['/docs/assets/', '/docs/', '/docs/', '/docs/media/', '/docs/media/', '/docs/a/b/']);
 });
 
 test('assets with very many slashes is trimmed in linear time', () => {
   const start = performance.now();
   const inner = '/'.repeat(100000);
-  const url = site(example, { assets: `//a${inner}x//` }).injectHtmlTags({ content: {} }).headTags[1].match(/data-assets="([^"]*)"/)[1];
-  assert.equal(url, `/docs/a${inner}x/`);
+  assert.equal(meta({ assets: `//a${inner}x//` })['data-assets'], `/docs/a${inner}x/`);
   assert.ok(performance.now() - start < 500);
 });
 

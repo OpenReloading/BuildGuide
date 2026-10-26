@@ -12,7 +12,7 @@ import yaml
 from mkdocs.config import config_options as c
 from mkdocs.exceptions import PluginError
 from mkdocs.plugins import BasePlugin, get_plugin_logger
-from mkdocs.utils import get_relative_url
+from mkdocs.utils import get_relative_url, normalize_url
 
 from .check import problems
 
@@ -118,7 +118,13 @@ class BuildGuidePlugin(BasePlugin):
             f'<div id="guide-data" data-assets="{html.escape(assets)}" hidden>{data}</div>'
             f'<script src="{core}buildguide.js" defer></script>'
         )
-        output = self.add_note(output).replace("</head>", styles + "</head>", 1)
+        output = self.add_note(output)
+        # before the site's extra_css links, so a plain `.ag-guide{...}` rule of the site wins at equal specificity; without any, at the end of the head
+        # a custom theme may write the tag and attribute in upper case, with spaces around the = and with either quote or none; the URL is case-sensitive
+        hrefs = (re.escape(html.escape(normalize_url(path, page))) for path in config.extra_css)
+        links = (re.search(rf"(?i:<link\b[^>]*\shref\s*=\s*)(?:\"{h}\"|'{h}'|{h}(?=[\s>]))", output) for h in hrefs)
+        at = min((m.start() for m in links if m), default=None)
+        output = output[:at] + styles + output[at:] if at is not None else output.replace("</head>", styles + "</head>", 1)
         # inside the page's article with Material: Material's instant navigation swaps the article and runs its scripts, but drops the rest of the body
         at = output.rfind("</article>") if config.theme.name == "material" else -1
         if at < 0:

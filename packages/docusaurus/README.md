@@ -53,7 +53,7 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
    | `view` | `bom`, `board`, or `guide` (the BOM and all boards behind tabs) |
    | `board` | key in `boards`, for `board`; for `guide` a space separated list of `bom` and board keys to show, in that order |
 
-The build validates the data against the JSON schema, then runs the core cross-reference check, and stops on a problem. The message names the data file and, one line per problem, the key (`/bom/items/0/quantity: must NOT have additional properties`). An unknown view or board key shows `Unknown guide component` in the page. The theme follows Docusaurus's colour mode ([Theming](https://openreloading.github.io/BuildGuide/theming/)).
+The build validates the data against the JSON schema, then runs the core cross-reference check, and stops on a problem. It then writes the validated data to `<baseUrl>assets/buildguide/guide.json` (without whitespace): no page holds the data, and a page with a component makes one extra request for that file, shared by all its components. The message names the data file and, one line per problem, the key (`/bom/items/0/quantity: must NOT have additional properties`). An unknown view or board key shows `Unknown guide component` in the page. The theme follows Docusaurus's colour mode ([Theming](https://openreloading.github.io/BuildGuide/theming/)).
 
 <!-- --8<-- [end:docs] -->
 

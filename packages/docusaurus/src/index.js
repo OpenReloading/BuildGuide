@@ -1,4 +1,4 @@
-// Docusaurus plugin: validates the guide data against the schema and checks it at build time, serves core at <baseUrl>assets/buildguide/ and
+// Docusaurus plugin: validates the guide data against the schema and checks it at build time, serves core and the data (guide.json) at <baseUrl>assets/buildguide/ and
 // provides <BuildGuide view="bom"/>, <BuildGuide view="board" board="KEY"/> and <BuildGuide view="guide"/> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
@@ -11,12 +11,12 @@ const schemaProblem = (e) => {
   const key = e.params.additionalProperty ?? e.params.missingProperty;
   return `${e.instancePath}${key === undefined ? '' : `/${String(key).replaceAll('~', '~0').replaceAll('/', '~1')}`}: ${e.message}`;
 };
-const attr = (value) => String(value).replace(/[&"<]/g, (c) => ({ '&': '&amp;', '"': '&quot;', '<': '&lt;' })[c]);
 
 module.exports = function buildguide(context, options = {}) {
   if (!options.data) throw new Error('buildguide: the option data (path to the guide JSON) is missing');
   const data = path.resolve(context.siteDir, options.data);
   const core = `${context.baseUrl}assets/buildguide/`;
+  let guide; // the validated data, written to guide.json by the copy below
   // the folder of BOM images below baseUrl, as a URL path with one trailing slash
   const raw = options.assets ?? 'assets/';
   let from = 0, to = raw.length;
@@ -30,7 +30,6 @@ module.exports = function buildguide(context, options = {}) {
     getClientModules: () => [path.join(__dirname, 'buildguide-docusaurus.css')],
     getPathsToWatch: () => [data],
     async loadContent() {
-      let guide;
       try { guide = JSON.parse(readFileSync(data, 'utf8')); } catch (error) { throw new Error(`${options.data}: ${error.message}`); }
       const validate = new Ajv({ allErrors: true, allowUnionTypes: true }).compile(JSON.parse(readFileSync(path.join(CORE, 'buildguide.schema.json'), 'utf8')));
       // before the check: it reads the data as the schema describes it
@@ -40,13 +39,13 @@ module.exports = function buildguide(context, options = {}) {
       if (problems.length) throw new Error(`${options.data}:\n${problems.join('\n')}`);
       return guide;
     },
-    // the theme component reads the data and the URLs from here. The id differs from core's own #guide-data,
-    // so core does not mount by itself when it loads
-    injectHtmlTags({ content }) {
+    // the theme component reads the URLs from here; the data is the file guide.json, so the pages carry none of it.
+    // The name differs from core's own #guide-data, so core does not mount by itself when it loads
+    injectHtmlTags() {
       return {
         headTags: [
           { tagName: 'link', attributes: { rel: 'stylesheet', href: `${core}buildguide.css` } },
-          `<script type="application/json" id="buildguide-data" data-core="${attr(core)}" data-assets="${attr(assets)}">${JSON.stringify(content).replace(/</g, '\\u003c')}</script>`,
+          { tagName: 'meta', attributes: { name: 'buildguide', 'data-core': core, 'data-assets': assets, 'data-src': `${core}guide.json` } },
         ],
       };
     },
@@ -54,7 +53,13 @@ module.exports = function buildguide(context, options = {}) {
       if (isServer) return {};
       const Copy = currentBundler.name === 'rspack' ? currentBundler.instance.CopyRspackPlugin : require('copy-webpack-plugin');
       // minimized: the vendored files ship unmodified
-      return { plugins: [new Copy({ patterns: [{ from: CORE, to: 'assets/buildguide', info: { minimized: true } }] })] };
+      return {
+        plugins: [new Copy({ patterns: [
+          { from: CORE, to: 'assets/buildguide', info: { minimized: true } },
+          // `from` makes the build watch the data file; the content is the validated data without its whitespace
+          { from: data, to: 'assets/buildguide/guide.json', transform: () => JSON.stringify(guide) },
+        ] })],
+      };
     },
   };
 };
