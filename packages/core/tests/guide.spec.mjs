@@ -422,7 +422,7 @@ for (const key of Object.keys(tickKeys)) {
     await expect(bar).toHaveAttribute('value', String(n));
     await expect(message).toHaveText(`All ${what} checked`);
     // a later render of the same state, and a reload of a finished guide, stay silent
-    await page.evaluate(storage => dispatchEvent(new StorageEvent('storage', { key: storage })), D.storage);
+    await page.evaluate(storage => dispatchEvent(new StorageEvent('storage', { key: storage, storageArea: localStorage })), D.storage);
     await page.waitForTimeout(200);
     await expect(message).toHaveText('');
     await expect(component).toHaveAttribute('data-complete', '');
@@ -797,6 +797,19 @@ test('progress: a tick or a reset in another tab shows up here and is not writte
   await expect(page.locator('.ag-progress')).toHaveText(counted(0));
   await ticks(page.locator('body')).nth(2).check();
   expect(Object.keys(await progressOf(page))).toEqual([bomKey(2)]);
+});
+
+test('progress: a storage event of sessionStorage does not re-render, one of localStorage does', async ({ page }) => {
+  await page.goto(url('bom'));
+  const counted = n => `${n} / ${D.bom.items.length} checked`;
+  await expect(page.locator('.ag-progress')).toHaveText(counted(0));
+  // a write in the same tab fires no event: only the events below make the component read it
+  await page.evaluate(([key, tick]) => localStorage.setItem(key, JSON.stringify({ [tick]: true })), [D.storage, bomKey(0)]);
+  await page.evaluate(key => dispatchEvent(new StorageEvent('storage', { key, storageArea: sessionStorage })), D.storage);
+  await page.waitForTimeout(200);
+  await expect(page.locator('.ag-progress')).toHaveText(counted(0));
+  await page.evaluate(key => dispatchEvent(new StorageEvent('storage', { key, storageArea: localStorage })), D.storage);
+  await expect(page.locator('.ag-progress')).toHaveText(counted(1));
 });
 
 test('print: the BOM has a Print button that calls window.print', async ({ page }) => {

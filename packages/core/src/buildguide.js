@@ -249,8 +249,9 @@
     };
     const store = progress => { try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; } };
     listen(document, 'buildguide-progress', ({detail: d}) => { if (d?.storage === D.storage && isProgress(d.saved)) { if (d.before !== undo?.before) dropUndo(); Object.assign(d.before || {}, {...saved, ...d.before}); saved = {...d.saved}; render(); } });
-    // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared)
-    listen(window, 'storage', e => { if (e.key === D.storage || e.key === null) { dropUndo(); saved = load(); render(); } });
+    // another tab ticked, imported or reset: show what it stored (key null: the whole storage was cleared); sessionStorage events do not count
+    const area = () => { try { return localStorage; } catch {} };
+    listen(window, 'storage', e => { if (e.storageArea === area() && (e.key === D.storage || e.key === null)) { dropUndo(); saved = load(); render(); } });
     function exportProgress() {
       const blob = new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'});
       const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = `${D.storage}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
