@@ -331,6 +331,53 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
   });
 }
 
+// data-ag-scheme on the component or an ancestor; a light host signal still wins over dark
+const schemeOf = page => page.locator('.ag-guide').evaluate(el => ({ scheme: getComputedStyle(el).colorScheme, background: getComputedStyle(el).backgroundColor,
+  filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter }));
+const expectScheme = async (page, want) => {
+  const style = await schemeOf(page);
+  expect(style.background).toBe(token('page', want));
+  expect(style.scheme === 'dark').toBe(want === 'dark');
+  expect(style.filter).toBe(want === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
+};
+const setScheme = (page, where, value) => page.evaluate(([w, v]) => (w === 'ancestor' ? document.documentElement : document.querySelector('.ag-guide')).setAttribute('data-ag-scheme', v), [where, value]);
+
+for (const os of ['light', 'dark']) {
+  for (const where of ['component', 'ancestor']) {
+    test(`colour scheme: data-ag-scheme="dark" on the ${where} in a browser preferring ${os}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: os });
+      await page.goto(url('wiring')); await ready(page);
+      await signal(page, 'dark');
+      await setScheme(page, where, 'dark');
+      await expectScheme(page, 'dark');
+    });
+  }
+  test(`colour scheme: data-ag-scheme="auto" follows the host or, without one, the browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    const kind = await signal(page, 'light');
+    await setScheme(page, 'ancestor', 'auto');
+    await expectScheme(page, kind === 'host' ? 'light' : os);
+  });
+  test(`colour scheme: light wins over dark in either nesting, browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    await signal(page, 'light');
+    await setScheme(page, 'ancestor', 'dark'); await setScheme(page, 'component', 'light');
+    await expectScheme(page, 'light');
+    await setScheme(page, 'ancestor', 'light'); await setScheme(page, 'component', 'dark');
+    await expectScheme(page, 'light');
+  });
+}
+
+test('colour scheme: data-ag-scheme="dark" prints light', async ({ page }) => {
+  await page.goto(url('wiring')); await ready(page);
+  await signal(page, 'dark');
+  await setScheme(page, 'component', 'dark');
+  await page.emulateMedia({ media: 'print' });
+  expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
+});
+
 test('colour scheme: a component prints light on a dark host', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(url('wiring')); await ready(page);
