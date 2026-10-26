@@ -16,6 +16,7 @@ function checkBoard(key, board) {
   const steps = board.steps || [];
   const connections = steps.flatMap((s) => s.connections || []);
   for (const id of repeated(steps.map((s) => s.id))) found.push(`${key}: step ${id} used twice`);
+  for (const s of steps) if (s.note && typeof s.note === 'object' && !['note', 'caution', 'warning'].includes(s.note.level)) found.push(`${key}: step ${s.id} note level ${s.note.level} unknown`);
   for (const no of repeated(connections.map((c) => c.no))) found.push(`${key}: connection ${no} used twice`);
   for (const [id, part] of Object.entries(parts)) {
     for (const pin of repeated(Object.values(part.ports || {}).flat())) found.push(`${key}: part ${id} repeats terminal ${pin}`);

@@ -50,6 +50,10 @@ Two plain properties on `.ag-guide` restore dimming or strike-through. Both defa
 .ag-guide{--ag-done-decoration:line-through}
 ```
 
+## Note levels
+
+A step note whose data has a `level` shows the level word (`note`, `caution` or `warning`, in capitals by CSS, the text itself is the data's word) in bold before the text, so the level never rests on colour alone. The note carries `data-level` with that level (empty for a plain string note). `caution` and `warning` also get a start border of their own style and width, which stays when a print drops backgrounds and when forced colours replace the colours (below), and a tint. A site sets the four tokens `--ag-caution-bg`, `--ag-caution-line`, `--ag-warning-bg` and `--ag-warning-line` (see [Tokens](#tokens)); keep 4.5:1 for `--ag-ink` on a background and 3:1 for a line against the page surface and its own background, as `tests/contrast.test.mjs` does for the defaults.
+
 ## Forced colours
 
 With `forced-colors: active` the browser replaces the component's colours with the user's system colours, and shadows and tints disappear. The stylesheet then marks state with shapes, in system colours only, so each marker stays visible (`CanvasText` is the colour a forced-colours palette guarantees to read on the background):
@@ -59,6 +63,8 @@ With `forced-colors: active` the browser replaces the component's colours with t
 | Selected wire row | 3px `CanvasText` outline | tint and a bar from `--ag-row-selected` and `--ag-row-selected-bar` |
 | Done wire row or BOM row | 6px `CanvasText` start border, next to the check mark and the checked box | tint from `--ag-done-bg` |
 | Current step | 3px border instead of 1px | tint and border from `--ag-step-current-bg` and `--ag-step-current-line` |
+| Caution note | 6px double start border | tint and border from `--ag-caution-bg` and `--ag-caution-line` |
+| Warning note | 8px solid start border | tint and border from `--ag-warning-bg` and `--ag-warning-line` |
 
 Outside that media query nothing changes. The tokens do not apply in forced colours.
 

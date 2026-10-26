@@ -205,7 +205,7 @@
       ${toolbar()}
       ${connectionSummary(c)}
       <div class="ag-wire-navigation">${button('← Previous', 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? 'Last connection' : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
-      ${s.note ? `<p class="ag-step-note">${esc(s.note)}</p>` : ''}
+      ${s.note ? `<p class="ag-step-note" data-level="${esc(s.note.level)}">${s.note.level ? `<strong>${esc(s.note.level)}</strong> ` : ''}${esc(s.note.text ?? s.note)}</p>` : ''}
       <div class="ag-list-heading"><h3>${board.listAll ? `All ${esc(title.toLowerCase())} connections` : 'Connections in this step'}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
       </div></section>`;
     }

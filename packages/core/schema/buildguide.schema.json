@@ -148,7 +148,16 @@
             "properties": {
               "id": { "type": "string" },
               "title": { "type": "string" },
-              "note": { "type": "string", "description": "text shown with the step, above its connection list" },
+              "note": {
+                "type": ["string", "object"],
+                "description": "text shown with the step, above its connection list: a string, or an object whose level word (note, caution or warning) is shown before the text",
+                "properties": {
+                  "level": { "enum": ["note", "caution", "warning"] },
+                  "text": { "type": "string" }
+                },
+                "required": ["level", "text"],
+                "additionalProperties": false
+              },
               "connections": {
                 "type": "array",
                 "minItems": 1,
