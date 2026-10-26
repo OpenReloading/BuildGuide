@@ -35,6 +35,10 @@
  --ag-bom-hover:light-dark(#fafcf7, #29322c);
  --ag-done-bg:light-dark(#e6efe1, #2a3b31);
  --ag-error-bg:light-dark(#fff0d5, #4a3b17);
+ --ag-caution-bg:light-dark(#fff0d5, #4a3b17);
+ --ag-caution-line:light-dark(#9a6700, #e3b341);
+ --ag-warning-bg:light-dark(#fde8e4, #4a2420);
+ --ag-warning-line:light-dark(#b3261e, #ff8a80);
  --ag-diode-body:light-dark(#202d28, #cfd6d1);
  --ag-diode-band:light-dark(#c4cdd0, #4a554e);
 }
@@ -95,6 +99,10 @@
 .ag-guide .ag-verify{margin-left:auto;display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;font-size:12px}
 .ag-guide .ag-wire-navigation{position:sticky;bottom:0;z-index:10;display:flex;justify-content:space-between;align-items:center;margin:8px 0 20px;padding:6px 0;background:var(--ag-page);font-size:var(--ag-text-small);color:var(--ag-muted)}
 .ag-guide .ag-step-note{margin:14px 0 0;padding:9px 12px;border-left:4px solid var(--ag-step-current-line);border-radius:0 6px 6px 0;background:var(--ag-surface-soft);font-size:13px}
+.ag-guide .ag-step-note strong{margin-right:.4em;text-transform:uppercase;letter-spacing:.04em}
+/* The level word is text; the border width and style tell the levels apart where colour or background is dropped (print, forced colours). */
+.ag-guide .ag-step-note[data-level=caution]{border-left:6px double var(--ag-caution-line);background:var(--ag-caution-bg)}
+.ag-guide .ag-step-note[data-level=warning]{border-left:8px solid var(--ag-warning-line);background:var(--ag-warning-bg)}
 .ag-guide .ag-list-heading{margin:14px 0 10px}
 .ag-guide .ag-wire-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--ag-line);border-radius:8px;overflow:hidden;background:var(--ag-surface)}
 .ag-guide .ag-wire-row{display:flex;align-items:center;gap:13px;padding:0 14px;border-bottom:1px solid var(--ag-line);border-right:1px solid var(--ag-line)}
@@ -223,7 +231,7 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-bom-table table{min-width:0}
  .ag-guide .ag-part-cell{min-width:0}
  .ag-guide .ag-bom-table th,.ag-guide .ag-bom-table td{padding:8px}
- .ag-guide .ag-panel,.ag-guide tr{break-inside:avoid}
+ .ag-guide .ag-panel,.ag-guide tr,.ag-guide .ag-step-note{break-inside:avoid}
  .ag-guide .is-done td,.ag-guide .is-done button{opacity:1}
 }
 /* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,

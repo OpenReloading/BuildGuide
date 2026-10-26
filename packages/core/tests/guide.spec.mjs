@@ -240,7 +240,8 @@ for (const [key, b] of boards) {
       await expect(page.locator(`.ag-steps [data-step="${i}"]`)).toHaveAttribute('aria-current', 'step');
       await expect(page.locator('.ag-step-note')).toHaveCount(s.note ? 1 : 0);
       if (s.note) {
-        await expect(page.locator('.ag-step-note')).toHaveText(s.note);
+        await expect(page.locator('.ag-step-note')).toHaveText(typeof s.note === 'string' ? s.note : `${s.note.level} ${s.note.text}`);
+        await expect(page.locator('.ag-step-note')).toHaveAttribute('data-level', s.note.level ?? '');
         await expect(page.locator('.ag-step-note + .ag-list-heading')).toHaveCount(1);
       }
     }
@@ -255,6 +256,36 @@ test('a step note is text, not markup', async ({ page }) => {
   await expect(page.locator('.ag-step-note')).toHaveText(d.boards.wiring.steps[0].note);
   await expect(page.locator('.ag-step-note b, .ag-step-note img')).toHaveCount(0);
   expect(await page.evaluate(() => window.hit)).toBeUndefined();
+});
+
+// acceptance (#71): the level word is text in the note, each level has its own border (so print and forced colours still tell them apart),
+// the text stays text, and the note fits a 390 px screen in the light and the dark scheme
+test('a leveled note shows its level word as text, with a border of its own, also printed and in forced colours', async ({ page }) => {
+  const d = structuredClone(D);
+  const levels = ['note', 'caution', 'warning'];
+  d.boards.wiring.steps.forEach((step, i) => { step.note = i < 3 ? { level: levels[i], text: `<b>Mind</b> level ${levels[i]} & more` } : step.note; });
+  await inlinePage(page, 'levels/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'levels/'); await ready(page);
+  const look = () => page.locator('.ag-step-note').evaluate(n => { const c = getComputedStyle(n); return { style: c.borderLeftStyle, width: c.borderLeftWidth }; });
+  const borders = {};
+  for (const [i, level] of levels.entries()) {
+    await page.locator(`.ag-steps [data-step="${i}"]`).click();
+    const note = page.locator('.ag-step-note');
+    await expect(note).toHaveAttribute('data-level', level);
+    await expect(note).toHaveText(`${level} <b>Mind</b> level ${level} & more`);
+    await expect(note.locator('strong')).toHaveText(level);
+    await expect(note.locator('b')).toHaveCount(0);
+    borders[level] = JSON.stringify(await look());
+    for (const emulate of [{ media: 'print' }, { forcedColors: 'active' }, { colorScheme: 'dark' }]) {
+      await page.emulateMedia(emulate);
+      expect(JSON.stringify(await look())).toBe(borders[level]);
+      await expect(note.locator('strong')).toBeVisible();
+      await page.emulateMedia({ media: 'screen', forcedColors: 'none', colorScheme: 'light' });
+    }
+  }
+  expect(new Set(Object.values(borders)).size).toBe(3);
+  await page.setViewportSize({ width: 390, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('keyboard: focus stays on the control after a step or connection changes', async ({ page }) => {

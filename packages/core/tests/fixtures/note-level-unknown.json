@@ -1,0 +1,104 @@
+{
+  "problems": [
+    "wiring: step A note level danger unknown"
+  ],
+  "guide": {
+    "storage": "test-guide",
+    "bom": {
+      "items": [
+        {
+          "id": "psu",
+          "group": "Power",
+          "part": "Power supply",
+          "spec": "12 V",
+          "qty": 1
+        }
+      ]
+    },
+    "boards": {
+      "wiring": {
+        "size": [
+          400,
+          300
+        ],
+        "colors": {
+          "RD": {
+            "line": "#c00",
+            "outline": "#600"
+          }
+        },
+        "parts": {
+          "PSU": {
+            "name": "Power supply",
+            "at": [
+              20,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "right": [
+                "+",
+                "-"
+              ]
+            }
+          },
+          "LAMP": {
+            "name": "Lamp",
+            "at": [
+              250,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "left": [
+                "1",
+                "2"
+              ]
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "A",
+            "title": "Power",
+            "connections": [
+              {
+                "no": "1",
+                "a": "PSU:+",
+                "b": "LAMP:1",
+                "color": "RD"
+              }
+            ],
+            "note": {
+              "level": "danger",
+              "text": "Unplug"
+            }
+          },
+          {
+            "id": "B",
+            "title": "Again",
+            "connections": [
+              {
+                "no": "2",
+                "a": "PSU:-",
+                "b": "LAMP:2",
+                "color": "RD"
+              }
+            ],
+            "note": {
+              "level": "warning",
+              "text": "Unplug"
+            }
+          }
+        ],
+        "title": "Wiring"
+      }
+    }
+  }
+}
