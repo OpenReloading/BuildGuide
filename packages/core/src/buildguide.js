@@ -98,7 +98,7 @@
       return state.step !== step || state.wire !== wire;
     }
 
-    // a render replaces the markup: the focused control is found again by its data attribute
+    // a render replaces the markup: the focused control is found again by its attribute
     function focusSelector() {
       const el = document.activeElement;
       if (!root.contains(el)) return null;
@@ -145,7 +145,6 @@
       }
       updateScreenButton();
       if (refocus) root.querySelector(refocus)?.focus({preventScroll: true});
-      // phones: bring the current step into the strip without moving the page
       const strip = root.querySelector('.ag-steps'), current = strip?.querySelector('[aria-current]');
       if (current) { const a = strip.getBoundingClientRect(), b = current.getBoundingClientRect(); strip.scrollLeft += b.left - a.left - (a.width - b.width) / 2; }
     }
@@ -236,9 +235,9 @@
       const cell = v => '"' + String(v ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"';
       download(new Blob(['﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'}), bom.export || 'bom.csv');
     }
-    // progress files hold one object of true/false values, the shape this script stores
+    // progress files hold one object of true/false values
     const isProgress = v => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'boolean');
-    // every mounted component on the page takes the new object, so a later tick does not write the old ticks back
+    // every mounted component takes the new object, so a later tick does not write the old ticks back
     const shareProgress = (progress, message, before) => {
       dropUndo();
       state.message = message;
@@ -397,7 +396,7 @@
     return destroy;
   }
 
-  // every [data-buildguide] element mounts itself; elements that name the same data-src share one request
+  // elements that name the same data-src share one request
   const auto = new Map(), requests = {};
   const fetchData = src => { const url = new URL(src, location.href).href; requests[url] ||= fetch(url).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).catch(error => { delete requests[url]; throw error; }); return requests[url]; };
   // Runs at load and when the page changes without a reload (Material's document$): mounts new components, unmounts those that left
