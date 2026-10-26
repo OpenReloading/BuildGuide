@@ -36,7 +36,6 @@ jobs:
         id: release
         with:
           token: ${{ steps.app-token.outputs.token }}
-          # the default branch is develop; releases are cut from main
           target-branch: main
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

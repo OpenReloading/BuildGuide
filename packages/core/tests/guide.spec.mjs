@@ -7,7 +7,7 @@ import { TEXT, GRAPHICS } from './contrast-pairs.mjs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
 const MINIMAL = JSON.parse(readFileSync(new URL('../example/minimal/all.json', import.meta.url)));
-// BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /develop for the Pages preview
+// BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /docs
 const PREFIX = process.env.BUILDGUIDE_PREFIX ?? '';
 const ORIGIN = 'http://127.0.0.1:8080', BASE = `${ORIGIN}${PREFIX}/example/`;
 // the core files: src/ here, assets/buildguide/ in a site built with a plugin

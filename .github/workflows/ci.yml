@@ -1,7 +1,7 @@
 name: CI
 on:
   push:
-    branches: [develop]
+    branches: [main]
   pull_request:
 permissions: {}
 concurrency:
@@ -13,9 +13,6 @@ env:
   ACTIONLINT_IMAGE: docker.io/rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
 jobs:
   check:
-    # The promotion pull request (develop -> main) repeats what the push to develop already checked. Matching the head
-    # repository too keeps a fork branch named develop from skipping the checks.
-    if: ${{ !(github.event_name == 'pull_request' && github.head_ref == 'develop' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -54,9 +51,6 @@ jobs:
       - run: npm run dist
       - run: node scripts/audit.mjs
   workflows:
-    # The promotion pull request (develop -> main) repeats what the push to develop already checked. Matching the head
-    # repository too keeps a fork branch named develop from skipping the checks.
-    if: ${{ !(github.event_name == 'pull_request' && github.head_ref == 'develop' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -72,8 +66,7 @@ jobs:
           version: 1.31.1
           advanced-security: false
   dependency-review:
-    # also skipped on the promotion pull request, see `check`
-    if: ${{ github.event_name == 'pull_request' && !(github.head_ref == 'develop' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

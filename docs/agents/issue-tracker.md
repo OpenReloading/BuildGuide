@@ -14,7 +14,7 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
-Pull requests target `develop`, not `main` (`gh pr create --base develop`); see `CONTRIBUTING.md`.
+Pull requests target `main` (`gh pr create --base main`); see `CONTRIBUTING.md`.
 
 ## Pull requests as a triage surface
 
