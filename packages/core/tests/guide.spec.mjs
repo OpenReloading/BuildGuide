@@ -3,6 +3,7 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
+import { TEXT, GRAPHICS } from './contrast-pairs.mjs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
 // BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /develop for the Pages preview
@@ -336,6 +337,8 @@ test('host styles do not restyle the components', async ({ page }) => {
 const css = readFileSync(new URL('../src/buildguide.css', import.meta.url), 'utf8');
 const rgb = hex => { const full = hex.length === 4 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex, n = parseInt(full.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
 const token = (name, scheme) => rgb(css.match(new RegExp(`--ag-${name}:light-dark\\((#[0-9a-f]+), (#[0-9a-f]+)\\)`))[scheme === 'dark' ? 2 : 1]);
+// the docs site and the Docusaurus example load a host recipe (below) that replaces accent, primary, page and surface: those defaults hold only where there is no recipe
+const hasRecipe = page => page.evaluate(() => document.body.hasAttribute('data-md-color-scheme') || document.documentElement.hasAttribute('data-theme'));
 // the signal of the host under test: Material's body attribute, Docusaurus' html attribute, or only the browser preference (core example)
 const signal = (page, want) => page.evaluate(scheme => {
   if (document.body.hasAttribute('data-md-color-scheme')) { document.body.setAttribute('data-md-color-scheme', scheme === 'dark' ? 'slate' : 'default'); return 'host'; }
@@ -353,9 +356,8 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
     const expected = kind === 'host' || want === 'light' ? want : os;
     const style = await page.locator('.ag-guide').evaluate(el => ({ background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color, scheme: getComputedStyle(el).colorScheme,
       filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter, surface: getComputedStyle(el.querySelector('.ag-panel')).backgroundColor }));
-    expect(style.background).toBe(token('page', expected));
+    if (!await hasRecipe(page)) { expect(style.background).toBe(token('page', expected)); expect(style.surface).toBe(token('surface', expected)); }
     expect(style.color).toBe(token('ink', expected));
-    expect(style.surface).toBe(token('surface', expected));
     // the browser's own light scheme is 'normal' when no host or rule names one
     expect(style.scheme === 'dark').toBe(expected === 'dark');
     expect(style.filter).toBe(expected === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
@@ -363,11 +365,12 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
 }
 
 // data-ag-scheme on the component or an ancestor; a light host signal still wins over dark
-const schemeOf = page => page.locator('.ag-guide').evaluate(el => ({ scheme: getComputedStyle(el).colorScheme, background: getComputedStyle(el).backgroundColor,
+const schemeOf = page => page.locator('.ag-guide').evaluate(el => ({ scheme: getComputedStyle(el).colorScheme, background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color,
   filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter }));
 const expectScheme = async (page, want) => {
   const style = await schemeOf(page);
-  expect(style.background).toBe(token('page', want));
+  if (!await hasRecipe(page)) expect(style.background).toBe(token('page', want));
+  expect(style.color).toBe(token('ink', want));
   expect(style.scheme === 'dark').toBe(want === 'dark');
   expect(style.filter).toBe(want === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
 };
@@ -423,6 +426,46 @@ test('colour scheme: a host sets a token itself in both schemes', async ({ page 
   await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(9, 8, 7)'));
   expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 8, 7)');
 });
+
+// the host recipes of docs/theming.md (docs/assets/buildguide-material.css, packages/docusaurus/example/src/css/custom.css) are loaded by the docs site
+// and the Docusaurus example: the component takes the host's font, brand colour and background, and every pair keeps its contrast in both schemes
+const RECIPE = { material: { brand: '--md-typeset-a-color', background: '--md-default-bg-color' },
+  docusaurus: { brand: '--ifm-color-primary', background: '--ifm-background-surface-color' } };
+// the colours of CSS values (var(), light-dark(), color-mix()) as rgba() strings, resolved on the component through a canvas
+const colours = (page, values) => page.locator('.ag-guide').first().evaluate((el, values) => {
+  const probe = el.appendChild(document.createElement('span')), pixel = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  const out = Object.fromEntries(values.map(v => { probe.style.color = v; pixel.clearRect(0, 0, 1, 1); pixel.fillStyle = getComputedStyle(probe).color; pixel.fillRect(0, 0, 1, 1); const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data; return [v, `rgba(${r}, ${g}, ${b}, ${a / 255})`]; }));
+  probe.remove();
+  return out;
+}, values);
+
+for (const scheme of ['light', 'dark']) {
+  test(`host recipe: ${scheme} font, brand colour and background of the host, contrast kept`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto(url('bom'));
+    const host = await page.evaluate(() => document.body.hasAttribute('data-md-color-scheme') ? 'material' : document.documentElement.hasAttribute('data-theme') ? 'docusaurus' : null);
+    test.skip(!host, 'the core example has no host');
+    await signal(page, scheme);
+    const { brand, background } = RECIPE[host];
+    const names = [...new Set([...TEXT, ...GRAPHICS].flat())], values = [`var(${brand})`, `var(${background})`, ...names.map(n => `var(--ag-${n})`)];
+    const c = await colours(page, values), at = n => c[`var(--ag-${n})`];
+    // the font, the brand colour and the background are the host's own
+    const fonts = await page.evaluate(() => [getComputedStyle(document.querySelector('.ag-guide')).fontFamily, getComputedStyle(document.body).fontFamily]);
+    expect(fonts[0]).toBe(fonts[1]);
+    expect(at('accent')).toEqual(c[`var(${brand})`]);
+    expect(at('primary')).toEqual(c[`var(${brand})`]);
+    expect(at('page')).toEqual(c[`var(${background})`]);
+    expect(at('surface')).toEqual(c[`var(${background})`]);
+    expect(at('page')).toMatch(/, 1\)$/);
+    const low = [];
+    for (const [pairs, min] of [[TEXT, 4.5], [GRAPHICS, 3]]) for (const [a, b] of pairs) { const r = contrast(at(a), at(b)); if (r < min) low.push(`${a} on ${b}: ${r.toFixed(2)}`); }
+    expect(low).toEqual([]);
+    // the pairs above are the stylesheet's; axe measures the rendered rows, links and tinted done rows included
+    await tickAll(page.locator('.ag-guide').first());
+    const { violations } = await new AxeBuilder({ page }).include('.ag-guide').withRules(['color-contrast']).analyze();
+    expect(violations.map(v => `${v.id}: ${v.nodes.map(n => n.target.join(' ')).join(', ')}`)).toEqual([]);
+  });
+}
 
 // the tick keys of every item of a component, in order
 const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`) };
@@ -1438,7 +1481,8 @@ for (const want of ['light', 'dark']) {
       const [on, off] = [el.querySelector('[aria-selected=true]'), el.querySelector('[aria-selected=false]')];
       return { on: getComputedStyle(on).color, bar: getComputedStyle(on).borderBottomColor, off: getComputedStyle(off).color };
     });
-    expect(colors).toEqual({ on: token('ink', want), bar: token('accent', want), off: token('muted', want) });
+    // the tab bar is the accent: a host recipe sets it
+    expect(colors).toEqual({ on: token('ink', want), ...(await hasRecipe(page) ? { bar: colors.bar } : { bar: token('accent', want) }), off: token('muted', want) });
   });
 }
 

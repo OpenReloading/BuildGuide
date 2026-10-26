@@ -1,0 +1,13 @@
+/* The recipe of docs/theming.md for MkDocs Material, loaded by this site (extra_css) so that its build and tests exercise it. */
+/* --8<-- [start:recipe] */
+/* :root adds specificity: the plugin's stylesheets come after extra_css and would win at equal specificity */
+:root .ag-guide{
+  --ag-font:var(--md-text-font-family);
+  --ag-accent:var(--md-typeset-a-color);
+  --ag-primary:var(--md-typeset-a-color);
+  --ag-primary-hover:color-mix(in srgb,var(--md-typeset-a-color),light-dark(#000,#fff) 20%);
+  --ag-page:var(--md-default-bg-color);
+  --ag-surface:var(--md-default-bg-color);
+  --ag-done-bg:color-mix(in srgb,var(--md-default-bg-color),#000 8%);
+}
+/* --8<-- [end:recipe] */

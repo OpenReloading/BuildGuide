@@ -1,0 +1,17 @@
+/* The recipe of docs/theming.md for Docusaurus, loaded by the example site (customCss) so that its build and tests exercise it. */
+/* --8<-- [start:recipe] */
+/* the site's brand, one value per colour mode (Infima's default blue is 4.23:1 under white text) */
+:root{--ifm-color-primary:#277548}
+[data-theme='dark']{--ifm-color-primary:#25c2a0}
+
+/* :root adds specificity, so the order of the stylesheets does not matter */
+:root .ag-guide{
+  --ag-font:var(--ifm-font-family-base);
+  --ag-accent:var(--ifm-color-primary);
+  --ag-primary:var(--ifm-color-primary);
+  --ag-primary-hover:color-mix(in srgb,var(--ifm-color-primary),light-dark(#000,#fff) 20%);
+  --ag-page:var(--ifm-background-surface-color);
+  --ag-surface:var(--ifm-background-surface-color);
+  --ag-done-bg:color-mix(in srgb,var(--ifm-background-surface-color),#000 8%);
+}
+/* --8<-- [end:recipe] */
