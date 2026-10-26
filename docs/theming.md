@@ -76,7 +76,7 @@ On a canvas narrower than 560 px (phones) the drawing is drawn large enough for 
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:
 
-- **Without a host signal** the browser preference decides (`prefers-color-scheme`). `data-ag-scheme` on the component or on an ancestor picks the side: `dark` forces dark (the `color-scheme` and the board filter below), `light` opts out and keeps the component light, `auto` is the same as no attribute. When both `dark` and `light` are set on the component and its ancestors, `light` wins. A light host signal (the plugins' rules) wins over `dark`.
+- **Without a host signal** the browser preference decides (`prefers-color-scheme`). `data-ag-scheme` on the component or on an ancestor picks the side: `dark` forces dark (the `color-scheme` and the board filter below), `light` opts out and keeps the component light, `auto` is the same as no attribute: the host signal if there is one, otherwise the browser. When both `dark` and `light` are set on the component and its ancestors, `light` wins. A light host signal (the plugins' rules) wins over `dark`.
 - **With a host signal** the host sets `color-scheme: dark` on `.ag-guide`. It also sets `--ag-board-filter: invert(.9) hue-rotate(180deg)`, which darkens the board drawing: its colours come from the data, so the filter turns white paper to near black and keeps the hue of wires and parts. Set `--ag-board-filter: none` for a light host.
 - **Print** is always light, whatever the screen shows. The step navigation, toolbar, search, wire navigation, Export CSV, Print and the progress buttons are hidden.
 
