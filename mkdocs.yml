@@ -38,6 +38,8 @@ plugins:
   - search
   - buildguide:
       data: packages/core/example/guide.json
+      guides:
+        minimal: packages/core/example/minimal/all.json   # example/second.md
 
 markdown_extensions:
   - admonition
@@ -82,3 +84,4 @@ nav:
       - Tubing: example/tubing.md
       - All components: example/all.md
       - Combined: example/guide.md
+      - Two guides: example/second.md

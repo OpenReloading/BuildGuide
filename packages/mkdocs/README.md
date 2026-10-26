@@ -24,6 +24,7 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
    | Option | Meaning | Default |
    |---|---|---|
    | `data` | guide data, YAML or JSON, in the core data format | required |
+   | `guides` | more guides on the same site, `id: path` (letters, digits, `-` and `_`), each in the core data format | none |
    | `assets` | folder of BOM images, relative to the site root | `assets/` |
 
 3. Place a component where it belongs in a page's Markdown, as many as you need, also several on one page. Write the title and notices as normal Markdown (for Material, admonitions):
@@ -44,11 +45,13 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
    | A board | `<div data-buildguide="board" data-board="KEY"></div>`, `KEY` is a key in `boards` |
    | BOM and all boards behind tabs | `<div data-buildguide="guide"></div>`; `data-board="wiring tubing"` picks tabs (`bom` is the BOM) |
 
+   A component shows the guide of `data`. To show another guide, add `data-guide="ID"` with an id from `guides`: `<div data-buildguide="board" data-board="wiring" data-guide="second"></div>`. A page can use several guides.
+
    Attribute values may use double or single quotes; a board key may hold spaces. The view must be exactly `bom`, `board` or `guide`. An empty element gets a no-JavaScript note after the search index is built. Elements in code blocks and inline code are text, not components.
 
-The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data. A component with an unknown view or board key, or a `data-buildguide` without value, or a BOM component without `bom` data, or a `guide` with a key in `data-board` that does not exist, is a warning (an error with `--strict`).
+The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data of any guide, and when two guides have the same `storage` key: `localStorage` is per origin, so guides with the same key tick each other's connections. A component with an unknown view or board key, an unknown `data-guide`, or a `data-buildguide` without value, or a BOM component without `bom` data, or a `guide` with a key in `data-board` that does not exist, is a warning (an error with `--strict`).
 
-Pages with a component also get the data and core, so Material's `navigation.instant` works. The theme follows Material's colour scheme ([Theming](https://openreloading.github.io/BuildGuide/theming/)). The data and the core files reach the browser from the site only: set the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
+Pages with a component also get the core, so Material's `navigation.instant` works. A page holds the data of the `data` guide only when it has a component of that guide. The other guides are written to `assets/buildguide/guides/<id>.json` (without whitespace); a component with `data-guide` gets `data-src` and `data-assets` for it, so a page with several components of one guide makes one request, and a page without one makes none. A `data-src` or `data-assets` written on the component stays as it is. The theme follows Material's colour scheme ([Theming](https://openreloading.github.io/BuildGuide/theming/)). The data and the core files reach the browser from the site only: set the theme's system fonts (Material: `theme.font: false`) to keep pages free of outside requests.
 
 <!-- --8<-- [end:docs] -->
 
