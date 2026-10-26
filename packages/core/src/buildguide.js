@@ -219,7 +219,7 @@
     const groupTally = g => { const all = items.filter(p => p.group === g); return `${count(all, bomKey)} / ${all.length}`; };
     function bomRows() {
       const parts = filteredParts();
-      if (!parts.length) return `<div class="ag-empty">No matching components.${state.filter === 'All' ? '' : ` Filter: ${state.filter}.`}</div>`;
+      if (!parts.length) return `<div class="ag-empty">No matching components.${state.filter === 'All' ? '' : ` Filter: ${esc(state.filter)}.`}</div>`;
       let group = '';
       const row = p => {
         const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)} · ${groupTally(p.group)}</th></tr>` : ''; group = p.group;
