@@ -15,15 +15,18 @@ TUBING = '<div data-buildguide="board" data-board="tubing"></div>'
 PAGES = {"a/tubing.md": f"# Tubing\n\n{TUBING}\n", "all.md": f"# All\n\n{BOM}\n\n{WIRING}\n\ntext\n\n{TUBING}\n", "index.md": "# Home\n"}
 
 
-def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None, theme=None, extra_css=()):
+def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None, theme=None, extra_css=(), guides=None):
     guide = guide or json.loads(EXAMPLE.read_text(encoding="utf-8"))
     (tmp_path / "guide.json").write_text(json.dumps(guide, indent=indent), encoding="utf-8")
+    for i, other in enumerate((guides or {}).values()):  # the ids are not file names here: a test may give an unsafe one
+        (tmp_path / f"guide-{i}.json").write_text(json.dumps(other), encoding="utf-8")
     for src, text in pages.items():
         (tmp_path / "docs" / src).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs" / src).write_text(text, encoding="utf-8")
     (tmp_path / "mkdocs.yml").write_text(
         "site_name: Test\n" + (f"theme:\n  name: {theme}\n" if theme else "") + "".join(f"extra_css:\n  - {path}\n" if i == 0 else f"  - {path}\n" for i, path in enumerate(extra_css))
-        + "plugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n",
+        + "plugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n"
+        + ("      guides:\n" + "".join(f"        '{name}': guide-{i}.json\n" for i, name in enumerate(guides)) if guides else ""),
         encoding="utf-8",
     )
     build(load_config(str(tmp_path / "mkdocs.yml"), strict=strict))
@@ -260,3 +263,94 @@ def test_data_that_is_not_a_guide_stops_the_build(tmp_path, caplog, text, messag
     with pytest.raises(Abort):
         build(load_config(str(tmp_path / "mkdocs.yml")))
     assert message in caplog.text
+
+
+def second():
+    """A second guide: another storage key, no tubing board."""
+    guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    guide.update(storage="second-demo")
+    del guide["boards"]["tubing"]
+    guide["boards"]["wiring"]["title"] = "Second wiring"
+    return guide
+
+
+SECOND_BOM = '<div data-buildguide="bom" data-guide="second"></div>'
+SECOND_WIRING = '<div data-buildguide="board" data-board="wiring" data-guide="second"></div>'
+
+
+def test_two_guides_on_two_pages_each_page_gets_only_its_own(tmp_path):
+    pages = {"a/first.md": f"# A\n\n{BOM}\n", "b/second.md": f"# B\n\n{SECOND_BOM}\n{SECOND_WIRING}\n"}
+    out = site(tmp_path, pages=pages, guides={"second": second()}, strict=True)
+    first = (out / "a/first/index.html").read_text(encoding="utf-8")
+    assert guide_data(first) == json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    assert "data-src" not in first and "guides/second.json" not in first and "second-demo" not in first
+    other = (out / "b/second/index.html").read_text(encoding="utf-8")
+    assert "guide-data" not in other and "buildguide-demo" not in other and "second-demo" not in other
+    assert other.count('<div data-src="../../assets/buildguide/guides/second.json" data-assets="../../media/" data-buildguide=') == 2
+    assert other.count('<script src="../../assets/buildguide/buildguide.js" defer></script>') == 1
+    assert other.count("<noscript>This guide needs JavaScript.</noscript></div>") == 2
+    assert (out / "assets/buildguide/guides/second.json").read_text(encoding="utf-8") == json.dumps(second(), separators=(",", ":"))
+
+
+def test_a_page_may_use_both_the_guide_of_data_and_a_named_one(tmp_path):
+    out = site(tmp_path, pages={"index.md": f"{BOM}\n\n{SECOND_BOM}\n"}, guides={"second": second()})
+    page = (out / "index.html").read_text(encoding="utf-8")
+    assert guide_data(page)["storage"] == "buildguide-demo"
+    assert page.count('data-src="assets/buildguide/guides/second.json" data-assets="media/"') == 1
+    assert page.count('<script src="assets/buildguide/buildguide.js" defer></script>') == 1
+
+
+def test_a_named_guide_with_a_data_src_or_data_assets_of_its_own_keeps_them(tmp_path):
+    tag = '<div data-buildguide="bom" data-guide="second" data-src="mine.json" data-assets="pics/"></div>'
+    page = (site(tmp_path, pages={"index.md": f"{tag}\n"}, guides={"second": second()}) / "index.html").read_text(encoding="utf-8")
+    assert tag.replace("></div>", "><noscript>This guide needs JavaScript.</noscript></div>") in page
+    assert "guides/second.json" not in page
+    tag = '<div data-buildguide="bom" data-guide="second" data-assets="pics/"></div>'
+    page = (site(tmp_path, pages={"index.md": f"{tag}\n"}, guides={"second": second()}) / "index.html").read_text(encoding="utf-8")
+    assert '<div data-src="assets/buildguide/guides/second.json" data-buildguide="bom" data-guide="second" data-assets="pics/">' in page
+
+
+def test_the_component_must_exist_in_the_guide_it_names(tmp_path, caplog):
+    with pytest.raises(Abort):
+        site(tmp_path, pages={"index.md": '<div data-buildguide="board" data-board="tubing" data-guide="second"></div>\n'}, guides={"second": second()}, strict=True)
+    assert "index.md: no guide component board tubing" in caplog.text
+
+
+@pytest.mark.parametrize("tag", ['<div data-buildguide="bom" data-guide="nowhere"></div>', '<div data-buildguide="bom" data-guide=""></div>'])
+def test_an_unknown_guide_is_a_warning_and_fails_a_strict_build(tmp_path, caplog, tag):
+    site(tmp_path, pages={"index.md": f"{tag}\n"}, guides={"second": second()})
+    assert "index.md: no guide '" in caplog.text
+    with pytest.raises(Abort):
+        site(tmp_path, pages={"index.md": f"{tag}\n"}, guides={"second": second()}, strict=True)
+
+
+def test_guides_may_not_share_a_storage_key(tmp_path, caplog):
+    other = second()
+    other["storage"] = json.loads(EXAMPLE.read_text(encoding="utf-8"))["storage"]
+    with pytest.raises(Abort):
+        site(tmp_path, guides={"second": other})
+    assert "data and guides.second have the same storage key 'buildguide-demo'" in caplog.text
+    caplog.clear()
+    with pytest.raises(Abort):
+        site(tmp_path, guides={"second": second(), "third": second()})
+    assert "guides.second and guides.third have the same storage key 'second-demo'" in caplog.text
+
+
+@pytest.mark.parametrize("name", ["../x", "a b", "a.b", "a/b"])
+def test_a_guide_id_that_is_not_a_plain_name_is_refused(tmp_path, caplog, name):
+    with pytest.raises(Abort):
+        site(tmp_path, guides={name: second()})
+    assert "may only hold letters, digits, - and _" in caplog.text
+    assert not (tmp_path / "x.json").exists()
+
+
+def test_a_problem_in_a_named_guide_stops_the_build(tmp_path, caplog):
+    other = second()
+    other["boards"]["wiring"]["steps"][1]["connections"][0]["no"] = "1"
+    with pytest.raises(Abort):
+        site(tmp_path, guides={"second": other})
+    assert "guide-0.json" in caplog.text and "wiring: connection 1 used twice" in caplog.text
+
+
+def test_a_site_without_guides_writes_no_guide_files(tmp_path):
+    assert list((site(tmp_path) / "assets/buildguide/guides").iterdir()) == []

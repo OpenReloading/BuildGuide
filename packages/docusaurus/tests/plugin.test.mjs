@@ -102,3 +102,54 @@ test('a file that is not JSON fails the build with the file name', async () => {
 test('the data option is required', () => {
   assert.throws(() => site(undefined), /option data/);
 });
+
+const minimal = new URL('../../core/example/minimal/all.json', import.meta.url).pathname;
+const bom = new URL('../../core/example/minimal/bom.json', import.meta.url).pathname;
+const withStorage = (storage) => guideFile({ ...JSON.parse(readFileSync(minimal, 'utf8')), storage });
+
+test('guides: every guide is loaded, watched and written to guides/<id>.json, minified, next to guide.json', async () => {
+  const plugin = site(example, { guides: { minimal, other_2: bom } });
+  const guide = await plugin.loadContent();
+  assert.deepEqual(guide, JSON.parse(readFileSync(example, 'utf8')));
+  assert.deepEqual(plugin.getPathsToWatch(), [example, minimal, bom]);
+  const { plugins } = plugin.configureWebpack({}, false, { currentBundler: { name: 'webpack' } });
+  const [, data, ...guides] = plugins[0].patterns;
+  assert.equal(data.to, 'assets/buildguide/guide.json');
+  assert.deepEqual(guides.map((g) => [g.from, g.to]), [[minimal, 'assets/buildguide/guides/minimal.json'], [bom, 'assets/buildguide/guides/other_2.json']]);
+  assert.equal(guides[0].transform(), JSON.stringify(JSON.parse(readFileSync(minimal, 'utf8'))));
+});
+
+test('guides: the head tags are the same, a component builds the URL of a guide from data-core', () => {
+  assert.deepEqual(site(example, { guides: { minimal } }).injectHtmlTags(), site(example).injectHtmlTags());
+});
+
+test('without guides the build writes guide.json only', () => {
+  const { plugins } = site(example).configureWebpack({}, false, { currentBundler: { name: 'webpack' } });
+  assert.equal(plugins[0].patterns.length, 2);
+});
+
+test('guides: a problem in a named guide stops the build and names its file', async () => {
+  const file = guideFile({ ...JSON.parse(readFileSync(minimal, 'utf8')), extra: 1 });
+  await assert.rejects(site(example, { guides: { bad: file } }).loadContent(), { message: `${file}:\n/extra: must NOT have additional properties` });
+  const broken = guideFile('{"storage": ');
+  await assert.rejects(site(example, { guides: { bad: broken } }).loadContent(), (error) => error.message.startsWith(`${broken}: `));
+});
+
+test('guides: the cross-reference check runs on a named guide', async () => {
+  const fixture = JSON.parse(readFileSync(new URL('../../core/tests/fixtures/board-ids.json', import.meta.url)));
+  const file = guideFile(fixture.guide);
+  await assert.rejects(site(example, { guides: { bad: file } }).loadContent(), { message: `${file}:\n${fixture.problems.join('\n')}` });
+});
+
+test('guides: the same storage key as data, or as another guide, fails the build', async () => {
+  const storage = JSON.parse(readFileSync(example, 'utf8')).storage;
+  await assert.rejects(site(example, { guides: { second: withStorage(storage) } }).loadContent(), { message: `data and guides.second have the same storage key "${storage}": each guide on a site needs its own` });
+  const [a, b] = [withStorage('same'), withStorage('same')];
+  await assert.rejects(site(example, { guides: { a, b } }).loadContent(), /^Error: guides\.a and guides\.b have the same storage key "same"/);
+  await site(example, { guides: { a, b: withStorage('other') } }).loadContent();
+});
+
+test('guides: an id is a file name and a URL segment', () => {
+  for (const id of ['../x', 'a/b', 'a b', '', 'a.json']) assert.throws(() => site(example, { guides: { [id]: minimal } }), /guides id .* may only hold letters, digits, - and _/);
+  site(example, { guides: { 'a-B_9': minimal } });
+});

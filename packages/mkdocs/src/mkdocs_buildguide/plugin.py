@@ -19,6 +19,8 @@ from .check import problems
 HERE = Path(__file__).parent
 log = get_plugin_logger(__name__)
 CLOSED = re.compile(r"\s*</div>")  # nothing but whitespace before the closing tag
+GUIDE_ID = re.compile(r"[A-Za-z0-9_-]+")  # the id is a file name and a URL segment
+GUIDES = "assets/buildguide/guides/"  # next to the core files, in a folder of its own
 
 
 class Divs(HTMLParser):
@@ -54,48 +56,79 @@ def finite(value):
 
 class BuildGuidePlugin(BasePlugin):
     # a typed Config cannot have an option named data (it is the UserDict's own attribute)
-    config_scheme = (("data", c.File(exists=True, required=True)), ("assets", c.Type(str, default="assets/")))
+    config_scheme = (
+        ("data", c.File(exists=True, required=True)),
+        ("guides", c.DictOfItems(c.File(exists=True), default={})),
+        ("assets", c.Type(str, default="assets/")),
+    )
 
-    def on_config(self, config):
-        data = self.config["data"]
+    def load(self, data):
         text = Path(data).read_text(encoding="utf-8")
         try:
-            self.guide = json.loads(text)  # YAML does not read JSON that is indented with tabs
+            guide = json.loads(text)  # YAML does not read JSON that is indented with tabs
         except ValueError:
             try:
-                self.guide = yaml.safe_load(text)
+                guide = yaml.safe_load(text)
             except yaml.YAMLError as error:
                 raise PluginError(f"{data}: not valid JSON or YAML: {error}") from error
-        if not isinstance(self.guide, dict):
+        if not isinstance(guide, dict):
             raise PluginError(f"{data}: not a guide object")
-        if not finite(self.guide):
+        if not finite(guide):
             raise PluginError(f"{data}: NaN or Infinity is not valid in a guide")
-        if found := problems(self.guide):
+        if found := problems(guide):
             raise PluginError(f"{data}:\n" + "\n".join(found))
-        config.watch.append(data)
+        return guide
+
+    def on_config(self, config):
+        self.guide = self.load(self.config["data"])
+        self.guides = {}
+        for name, path in self.config["guides"].items():
+            if not GUIDE_ID.fullmatch(name):
+                raise PluginError(f"guides: the id {name!r} may only hold letters, digits, - and _")
+            self.guides[name] = self.load(path)
+        # localStorage is per origin: guides with the same key tick each other's connections
+        owners = {}
+        for name, guide in {"data": self.guide, **{f"guides.{n}": g for n, g in self.guides.items()}}.items():
+            if (other := owners.setdefault(guide["storage"], name)) != name:
+                raise PluginError(f"{other} and {name} have the same storage key {guide['storage']!r}: each guide on a site needs its own")
+        config.watch.extend([self.config["data"], *self.config["guides"].values()])
 
     def on_pre_build(self, config):
-        self.pages = set()
+        self.pages = {}  # src_uri of a page with a component: the data-guide values it uses, None for the guide of `data`
 
-    def known(self, view, key):
-        boards = self.guide.get("boards") or {}
+    def known(self, guide, view, key):
+        boards = guide.get("boards") or {}
         if view == "guide":  # data-board is a space separated list of 'bom' and board keys, empty for all of them
-            keys = (key or "").split() or [*(["bom"] if "bom" in self.guide else []), *boards]
-            return bool(keys) and all(("bom" in self.guide) if k == "bom" else k in boards for k in keys)
-        return ("bom" in self.guide) if view == "bom" else (view == "board" and key in boards)
+            keys = (key or "").split() or [*(["bom"] if "bom" in guide else []), *boards]
+            return bool(keys) and all(("bom" in guide) if k == "bom" else k in boards for k in keys)
+        return ("bom" in guide) if view == "bom" else (view == "board" and key in boards)
 
-    # components are found in the rendered page; an unknown view or board key is a warning, an error with --strict
+    def assets(self, page):
+        return get_relative_url(self.config["assets"], page.url).rstrip("/") + "/"
+
+    # components are found in the rendered page; an unknown view, guide or board key is a warning, an error with --strict
+    # a component of a named guide gets that guide's file as its data-src: the page holds no data of it, the core fetches the file
     def on_page_content(self, output, page, config, files):
-        for _, _, attributes in Divs(output).found:
+        inserts = []
+        for start, _, attributes in Divs(output).found:
             view = attributes.get("data-buildguide")
             if view is None:
                 continue
-            key = attributes.get("data-board")
+            key, name = attributes.get("data-board"), attributes.get("data-guide")
+            guide = self.guide if name is None else self.guides.get(name)
             if view == "":
                 log.warning(f"{page.file.src_uri}: data-buildguide has no value")
-            elif not self.known(view, key):
+            elif guide is None:
+                log.warning(f"{page.file.src_uri}: no guide {name!r}")
+            elif not self.known(guide, view, key):
                 log.warning(f"{page.file.src_uri}: no guide component {view}{' ' + key if key else ''}")
-            self.pages.add(page.file.src_uri)
+            self.pages.setdefault(page.file.src_uri, set()).add(name)
+            if guide is not None and name is not None and "data-src" not in attributes:
+                src = html.escape(get_relative_url(f"{GUIDES}{name}.json", page.url))
+                assets = "" if "data-assets" in attributes else f' data-assets="{html.escape(self.assets(page))}"'
+                inserts.append((start + len("<div"), f' data-src="{src}"{assets}'))
+        for at, text in reversed(inserts):
+            output = output[:at] + text + output[at:]
         return output
 
     # the note for visitors without JavaScript goes in here, after the search index took the content
@@ -110,14 +143,12 @@ class BuildGuidePlugin(BasePlugin):
         if page.file.src_uri not in self.pages:
             return output
         core = get_relative_url("assets/buildguide/", page.url).rstrip("/") + "/"
-        assets = get_relative_url(self.config["assets"], page.url).rstrip("/") + "/"
         styles = f'<link rel="stylesheet" href="{core}buildguide.css"><link rel="stylesheet" href="{core}buildguide-mkdocs.css">'
         # a hidden element, not <script type="application/json">: Material's instant navigation runs the page's scripts again and drops the type
         data = html.escape(json.dumps(self.guide), quote=False)
-        scripts = (
-            f'<div id="guide-data" data-assets="{html.escape(assets)}" hidden>{data}</div>'
-            f'<script src="{core}buildguide.js" defer></script>'
-        )
+        # only a page with a component of the guide of `data` holds it
+        inline = f'<div id="guide-data" data-assets="{html.escape(self.assets(page))}" hidden>{data}</div>' if None in self.pages[page.file.src_uri] else ""
+        scripts = inline + f'<script src="{core}buildguide.js" defer></script>'
         output = self.add_note(output)
         # before the site's extra_css links, so a plain `.ag-guide{...}` rule of the site wins at equal specificity; without any, at the end of the head
         # a custom theme may write the tag and attribute in upper case, with spaces around the = and with either quote or none; the URL is case-sensitive
@@ -135,3 +166,6 @@ class BuildGuidePlugin(BasePlugin):
         target = Path(config.site_dir, "assets/buildguide")
         shutil.copytree(HERE / "core", target, dirs_exist_ok=True)
         shutil.copy(HERE / "buildguide-mkdocs.css", target)
+        Path(config.site_dir, GUIDES).mkdir(parents=True, exist_ok=True)
+        for name, guide in self.guides.items():
+            Path(config.site_dir, GUIDES, f"{name}.json").write_text(json.dumps(guide, separators=(",", ":")), encoding="utf-8")
