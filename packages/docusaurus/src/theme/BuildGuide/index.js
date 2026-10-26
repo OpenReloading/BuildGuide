@@ -47,7 +47,8 @@ export default function BuildGuide({ view, board, guide }) {
         if (!gone) unmount = B.mount(root.current, D, { view, board, assets });
       })
       .catch(() => {
-        if (root.current) root.current.textContent = 'Guide data unavailable.';
+        // not after the effect ran again for another guide: that request owns the root now
+        if (!gone && root.current) root.current.textContent = 'Guide data unavailable.';
       });
     return () => {
       gone = true;
