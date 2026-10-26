@@ -301,7 +301,7 @@
       };
     }
     function bind() {
-      for (const select of root.querySelectorAll('select')) { select.value = state[select.dataset.role]; select.onchange = () => { state[select.dataset.role] = select.value; render(); }; }
+      for (const select of root.querySelectorAll('select')) { select.value = state[select.dataset.role]; select.onchange = () => { if (select.dataset.role === 'scope') state.scope = select.value; else state.filter = select.value; render(); }; }
       for (const b of root.querySelectorAll('[data-step]')) b.onclick = () => navigate(Number(b.dataset.step));
       for (const b of root.querySelectorAll('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); };
