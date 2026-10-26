@@ -24,7 +24,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |
 | `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM or wire row's text, see [Done state](theming.md#done-state) |
 
-`data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV: what the search and filter show, the last column `Done` holds `Yes` or `No`), `print`, `export-progress`, `import-progress`, `reset-progress`, `undo-progress` (in the status line after a reset or import).
+`data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (CSV: on the BOM what the search and filter show; on a board every connection of every step with the columns `No`, `From`, `To`, `Colour`, `Cable`, `Size`, `Done`, in `<board key>.csv`; the last column `Done` holds `Yes` or `No`, a cell that starts with a formula character is prefixed with `'`), `print`, `export-progress`, `import-progress`, `reset-progress`, `undo-progress` (in the status line after a reset or import).
 
 The [`--ag-*` tokens](theming.md#tokens) are stable too.
 

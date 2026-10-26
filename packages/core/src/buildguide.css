@@ -139,6 +139,7 @@
 @supports(content:'a' / ''){.ag-guide .is-done strong::before,.ag-guide .is-done .ag-wire-number::before{content:'\2713' / ''}}
 .ag-guide .ag-bom-table tbody tr:not(.ag-group){cursor:pointer}
 .ag-guide .ag-bom-actions{display:flex;align-items:center;gap:14px}
+.ag-guide .ag-print-list{display:none}
 .ag-guide .ag-source-link{display:block;font-size:var(--ag-text-small);margin-top:3px}
 .ag-guide .ag-result-count{margin-top:12px;color:var(--ag-muted);font-size:var(--ag-text-small)}
 .ag-guide .ag-empty{padding:65px 20px;text-align:center;border:1px dashed var(--ag-line);border-radius:8px}
@@ -232,6 +233,10 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-part-cell{min-width:0}
  .ag-guide .ag-bom-table th,.ag-guide .ag-bom-table td{padding:8px}
  .ag-guide .ag-panel,.ag-guide tr,.ag-guide .ag-step-note{break-inside:avoid}
+ .ag-guide .ag-wire-list,.ag-guide .ag-list-heading{display:none}
+ .ag-guide .ag-print-list{display:block}
+ .ag-guide .ag-print-list th:nth-child(n){width:auto}
+ .ag-guide .ag-print-list .ag-group{break-after:avoid}
  .ag-guide .is-done td,.ag-guide .is-done button{opacity:1}
 }
 /* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,

@@ -1258,9 +1258,53 @@ test('untrusted data: script URLs become #, ids with spaces and slashes reach th
   await expect(page.locator('tbody a').first()).toHaveAttribute('href', '#');
   expect(await page.evaluate(() => window.hit)).toBeUndefined();
   const download = page.waitForEvent('download');
-  await page.locator('[data-action=export]').click();
+  await bomOf(page).locator('[data-action=export]').click();
   expect(readFileSync(await (await download).path(), 'utf8').split('\r\n')[1]).toContain(`"'=1+1"`);
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+});
+
+for (const [key, b] of boards) {
+  const all = b.steps.flatMap(s => s.connections);
+  test(`${key}: print shows every connection grouped by step, the screen does not`, async ({ page }) => {
+    await page.goto(url(key)); await ready(page);
+    const rows = page.locator('.ag-print-list tbody tr:not(.ag-group)');
+    await expect(rows.first()).toBeHidden();
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.ag-wire-list')).toBeHidden();
+    await expect(page.locator('.ag-print-list .ag-group th')).toHaveText(b.steps.map(s => s.title));
+    await expect(rows).toHaveCount(all.length);
+    for (const r of await rows.all()) await expect(r).toBeVisible();
+    await expect(rows.first().locator('td')).toHaveText([all[0].no, label(b, all[0], 'a'), label(b, all[0], 'b'), all[0].color, all[0].cable ?? '', all[0].size ?? '', 'No']);
+  });
+  test(`${key}: Export CSV writes every connection with its tick`, async ({ page }) => {
+    await page.goto(url(key)); await ready(page);
+    const csvOf = async () => {
+      const download = page.waitForEvent('download');
+      await page.locator('[data-action=export]').click();
+      const file = await download;
+      expect(file.suggestedFilename()).toBe(`${key}.csv`);
+      return readFileSync(await file.path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
+    };
+    let csv = await csvOf();
+    expect(csv[0]).toBe('"No","From","To","Colour","Cable","Size","Done"');
+    expect(csv.length).toBe(all.length + 1);
+    expect(csv[1]).toBe([all[0].no, label(b, all[0], 'a'), label(b, all[0], 'b'), all[0].color, all[0].cable ?? '', all[0].size ?? '', 'No'].map(v => `"${v}"`).join(','));
+    await page.locator(`.ag-wire-row [data-check]`).first().check();
+    csv = await csvOf();
+    expect(csv.filter(r => r.endsWith(',"Yes"')).length).toBe(1);
+  });
+}
+
+test('untrusted data: connection CSV cells that start with a formula character stay text', async ({ page }) => {
+  const d = structuredClone(D), c = d.boards.wiring.steps[0].connections[0];
+  Object.assign(c, { la: '=1+1', lb: '+2', cable: '-3', size: '@4' });
+  await inlinePage(page, 'odd-csv/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(`${BASE}odd-csv/`); await ready(page);
+  const download = page.waitForEvent('download');
+  await page.locator('[data-action=export]').click();
+  const row = readFileSync(await (await download).path(), 'utf8').split('\r\n')[1];
+  expect(row).toContain(`"'=1+1","'+2"`);
+  expect(row).toContain(`"'-3","'@4"`);
 });
 
 test('a foreign hash fragment keeps the boards where they are and stays in the hash', async ({ page }) => {

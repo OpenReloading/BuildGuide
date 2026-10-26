@@ -191,19 +191,21 @@
       const [n, m] = tally();
       return `<span class="ag-progress">${m > 0 && n === m ? `All ${what} checked` : `${n} / ${m} checked`}<progress value="${n}" max="${m}" aria-label="${what} checked"></progress></span>`;
     }
+    const actions = () => `<div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div>`;
     function renderBoard() {
       const s = steps[state.step], c = s.connections[state.wire], all = steps.flatMap(x => x.connections);
       const atEnd = state.step === steps.length - 1 && state.wire === s.connections.length - 1;
       const first = state.step === 0 && state.wire === 0;
       const next = state.wire === s.connections.length - 1 ? 'Next step →' : 'Next connection →';
       const listed = board.listAll ? all : s.connections;
-      return `<section class="ag-workspace"><div class="ag-head">${progress()}</div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
+      return `<section class="ag-workspace"><div class="ag-head">${actions()}</div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
       <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(board.label || title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(board.legend || []).map(legendItem).join('')}</div></div>
       ${toolbar()}
       ${connectionSummary(c)}
       <div class="ag-wire-navigation">${button('← Previous', 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? 'Last connection' : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
       ${s.note ? `<p class="ag-step-note" data-level="${esc(s.note.level)}">${s.note.level ? `<strong>${esc(s.note.level)}</strong> ` : ''}${esc(s.note.text ?? s.note)}</p>` : ''}
       <div class="ag-list-heading"><h3>${board.listAll ? `All ${esc(title.toLowerCase())} connections` : 'Connections in this step'}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
+      <div class="ag-bom-table ag-print-list"><table><caption class="ag-sr">All ${esc(title.toLowerCase())} connections by step</caption><thead><tr>${CONNECTION_HEAD.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>${steps.map(x => `<tbody><tr class="ag-group"><th colspan="7" scope="rowgroup">${esc(x.title)}</th></tr>${connectionRows(x).map(r => `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody>`).join('')}</table></div>
       </div></section>`;
     }
     function connectionRow(c, selected, index) {
@@ -214,7 +216,7 @@
     const bom = D.bom || {}, items = bom.items || [];
     const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()) && (state.filter === 'All' || checked(bomKey(p)) === (state.filter === 'Done')));
     function renderBOM() {
-      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label><select data-role="filter" aria-label="Show parts"><option>All</option><option>Missing</option><option>Done</option></select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div>${actions()}</div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label><select data-role="filter" aria-label="Show parts"><option>All</option><option>Missing</option><option>Done</option></select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
     }
     const groupTally = g => { const all = items.filter(p => p.group === g); return `${count(all, bomKey)} / ${all.length}`; };
     function bomRows() {
@@ -229,11 +231,15 @@
       };
       return `<div class="ag-bom-table"><table class="ag-table"><caption class="ag-sr">Bill of materials</caption><thead><tr><th scope="col">Qty</th><th scope="col">Component</th><th scope="col">Specification</th></tr></thead><tbody>${parts.map(row).join('')}</tbody></table></div><p class="ag-result-count">${parts.length} / ${items.length} components</p>`;
     }
+    const yes = key => checked(key) ? 'Yes' : 'No';
+    const CONNECTION_HEAD = ['No', 'From', 'To', 'Colour', 'Cable', 'Size', 'Done'];
+    const connectionRows = s => s.connections.map(c => [c.no, label(c, 'a'), label(c, 'b'), c.color, c.cable, c.size, yes(connKey(c))]);
     function exportCSV() {
-      const rows = [['Group', 'Component', 'Specification', 'Quantity', bom.linkLabel || 'Link', 'Done'], ...filteredParts().map(p => [p.group, p.part, p.spec, p.qty, p.link || '', checked(bomKey(p)) ? 'Yes' : 'No'])];
+      const rows = board ? [CONNECTION_HEAD, ...steps.flatMap(connectionRows)]
+        : [['Group', 'Component', 'Specification', 'Quantity', bom.linkLabel || 'Link', 'Done'], ...filteredParts().map(p => [p.group, p.part, p.spec, p.qty, p.link || '', yes(bomKey(p))])];
       // a leading = + - @ would run as a spreadsheet formula
       const cell = v => '"' + String(v ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"';
-      download(new Blob(['﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'}), bom.export || 'bom.csv');
+      download(new Blob(['﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'}), board ? boardKey + '.csv' : bom.export || 'bom.csv');
     }
     // progress files hold one object of true/false values
     const isProgress = v => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'boolean');
