@@ -1,6 +1,6 @@
 # Reference
 
-The surface a site may style or test against. Anything not listed here can change in any release.
+The surface a site may style or test against. Anything not listed here can change in any release. A browser test for your own pages: [Testing your site](testing.md). The files a service worker caches: [Offline use](offline.md).
 
 ## Markup
 

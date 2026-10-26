@@ -1,14 +1,17 @@
-"""MkDocs hook: replaces <!-- generated: schema NAME --> and <!-- generated: tokens --> in the docs with tables walked from
-the data schema and from the --ag-* declarations of the stylesheet, so the docs follow the files they describe."""
+"""MkDocs hook: replaces <!-- generated: schema NAME -->, <!-- generated: tokens --> and <!-- generated: files --> in the docs with
+tables walked from the data schema, from the --ag-* declarations of the stylesheet and from the shipped files of core, so the docs
+follow the files they describe."""
 
+import gzip
 import json
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).parents[2]
 SCHEMA = ROOT / "packages/core/schema/buildguide.schema.json"
-CSS = ROOT / "packages/core/src/buildguide.css"
-MARKER = re.compile(r"<!-- generated: (schema|tokens)(?: (\S+))? -->")
+SRC = ROOT / "packages/core/src"
+CSS = SRC / "buildguide.css"
+MARKER = re.compile(r"<!-- generated: (schema|tokens|files)(?: (\S+))? -->")
 TOKEN = re.compile(r"--ag-([\w-]+):light-dark\((#[0-9a-fA-F]+), (#[0-9a-fA-F]+)\)")
 DECLARED = re.compile(r"--ag-[\w-]+:\s*light-dark\(")
 
@@ -92,9 +95,22 @@ def token_table(css):
     return table(["Token", "Light", "Dark"], [(f"`--ag-{name}`", f"`{light}`", f"`{dark}`") for name, light, dark in found])
 
 
+def files_table(src):
+    """The files a page fetches, own files first (size.test.mjs lists the same set): size and gzip size in bytes."""
+    names = ["buildguide.css", "buildguide.js", "buildguide-board.js"] + sorted(
+        path.relative_to(src).as_posix() for path in src.rglob("*") if path.is_file() and path.parent != src and path.name not in ("LICENSE", "README.txt")
+    )
+    sizes = [(name, (src / name).read_bytes()) for name in names]
+    # level 6 is zlib's default, as in the size budgets
+    rows = [(f"`{name}`", f"{len(data):,}", f"{len(gzip.compress(data, 6, mtime=0)):,}") for name, data in sizes]
+    return table(["File", "Bytes", "Gzipped, about"], rows)
+
+
 def on_page_markdown(markdown, page, config, files):
     def fill(match):
         kind, name = match.groups()
+        if kind == "files":
+            return files_table(SRC)
         return token_table(CSS.read_text(encoding="utf-8")) if kind == "tokens" else schema_table(name)
 
     return MARKER.sub(fill, markdown)
