@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.3](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.2...core-v0.2.3) (2026-10-26)
+
+
+### Features
+
+* **core:** data-ag-scheme accepts dark and auto ([#107](https://github.com/OpenReloading/BuildGuide/issues/107)) ([3f148bb](https://github.com/OpenReloading/BuildGuide/commit/3f148bb5f4e30b293d683e1ad99e02800d03ea9b))
+* **core:** font and size tokens, 24 px tick boxes ([#103](https://github.com/OpenReloading/BuildGuide/issues/103)) ([b75616f](https://github.com/OpenReloading/BuildGuide/commit/b75616fd94342f4b34c306ad55a979d76f30d8eb))
+* **core:** undo after reset and import, no confirm() ([#105](https://github.com/OpenReloading/BuildGuide/issues/105)) ([2025067](https://github.com/OpenReloading/BuildGuide/commit/202506753b9b7d5ac8d4359d115f8418cb43c1d4))
+* **core:** warning and caution levels for step notes ([#111](https://github.com/OpenReloading/BuildGuide/issues/111)) ([5f268c7](https://github.com/OpenReloading/BuildGuide/commit/5f268c79da124810c01495e0cd3d4259ad9d0dc4))
+
+
+### Bug fixes
+
+* **core:** ignore storage events of sessionStorage ([#106](https://github.com/OpenReloading/BuildGuide/issues/106)) ([bc99a3a](https://github.com/OpenReloading/BuildGuide/commit/bc99a3aced8ff8b328705401efac42bd9eff84e5))
+
 ## [0.2.2](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.1...core-v0.2.2) (2026-10-25)
 
 

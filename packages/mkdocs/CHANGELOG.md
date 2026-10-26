@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.1...mkdocs-v0.1.2) (2026-10-26)
+
+
+### Features
+
+* **core:** warning and caution levels for step notes ([#111](https://github.com/OpenReloading/BuildGuide/issues/111)) ([5f268c7](https://github.com/OpenReloading/BuildGuide/commit/5f268c79da124810c01495e0cd3d4259ad9d0dc4))
+
 ## [0.1.1](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.0...mkdocs-v0.1.1) (2026-10-23)
 
 
