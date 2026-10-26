@@ -2,16 +2,20 @@
 
 # BuildGuide
 
-Interactive build guides from one JSON file: a BOM checklist, and wiring and tubing boards with a tick per connection, for your own documentation pages. Plain JavaScript and CSS, no requests outside the site.
+A parts checklist plus wiring and tubing diagrams for your build documentation, from one data file. Readers tick off each part and connection as they build, and the ticks stay in their browser.
 
-**Docs, install, data format and live examples: https://openreloading.github.io/BuildGuide/**
+For people who document a hardware build on a MkDocs, Docusaurus or plain HTML site.
 
-| Package | For |
-|---|---|
-| [`core`](packages/core/) | any static site: browser components, schema, check CLI |
-| [`mkdocs`](packages/mkdocs/) | MkDocs: components in Markdown, data checked at build time |
-| [`docusaurus`](packages/docusaurus/) | Docusaurus: `<BuildGuide />` component |
+Try the [live example](https://openreloading.github.io/BuildGuide/example/) (a 12 V control box) or serve it with Node:
 
-Releases: [GitHub Releases](https://github.com/OpenReloading/BuildGuide/releases). Questions and ideas: [Discord](https://discord.gg/KkYJ5fdukR). Contributing and dev commands: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [policy](https://github.com/OpenReloading/.github/blob/main/SECURITY.md).
+```sh
+git clone https://github.com/OpenReloading/BuildGuide.git
+cd BuildGuide
+npm run serve -w packages/core   # http://127.0.0.1:8080/example/
+```
 
-MIT (`LICENSE`). Core vendors JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified, see `packages/core/src/vendor/README.txt` and #1.
+Install with [`core`](packages/core/) (plain HTML), [`mkdocs`](packages/mkdocs/) or [`docusaurus`](packages/docusaurus/). The [docs](https://openreloading.github.io/BuildGuide/) cover the data format and theming.
+
+[Releases](https://github.com/OpenReloading/BuildGuide/releases). Questions: [Discord](https://discord.gg/KkYJ5fdukR). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [policy](https://github.com/OpenReloading/.github/blob/main/SECURITY.md).
+
+MIT (`LICENSE`). Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified, see its [licenses](packages/core/README.md#licenses).
