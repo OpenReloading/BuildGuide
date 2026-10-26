@@ -15,14 +15,15 @@ TUBING = '<div data-buildguide="board" data-board="tubing"></div>'
 PAGES = {"a/tubing.md": f"# Tubing\n\n{TUBING}\n", "all.md": f"# All\n\n{BOM}\n\n{WIRING}\n\ntext\n\n{TUBING}\n", "index.md": "# Home\n"}
 
 
-def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None, theme=None):
+def site(tmp_path, pages=PAGES, guide=None, strict=False, indent=None, theme=None, extra_css=()):
     guide = guide or json.loads(EXAMPLE.read_text(encoding="utf-8"))
     (tmp_path / "guide.json").write_text(json.dumps(guide, indent=indent), encoding="utf-8")
     for src, text in pages.items():
         (tmp_path / "docs" / src).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / "docs" / src).write_text(text, encoding="utf-8")
     (tmp_path / "mkdocs.yml").write_text(
-        "site_name: Test\n" + (f"theme:\n  name: {theme}\n" if theme else "") + "plugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n",
+        "site_name: Test\n" + (f"theme:\n  name: {theme}\n" if theme else "") + "".join(f"extra_css:\n  - {path}\n" if i == 0 else f"  - {path}\n" for i, path in enumerate(extra_css))
+        + "plugins:\n  - search\n  - buildguide:\n      data: guide.json\n      assets: media/\n",
         encoding="utf-8",
     )
     build(load_config(str(tmp_path / "mkdocs.yml"), strict=strict))
@@ -48,6 +49,24 @@ def test_pages_with_components_get_inline_data_and_core_once(tmp_path):
     assert '<script src="../../assets/buildguide/buildguide.js" defer></script>' in nested
     for name in ("buildguide.js", "buildguide-board.js", "buildguide-mkdocs.css", "vendor/joint/joint.min.js", "vendor/libavoid/LICENSE"):
         assert (out / "assets/buildguide" / name).is_file()
+
+
+@pytest.mark.parametrize("theme", [None, "material"])
+def test_stylesheets_come_before_extra_css(tmp_path, theme):
+    # a plain `.ag-guide{...}` rule of the site wins at equal specificity only when it comes later
+    (tmp_path / "docs/css").mkdir(parents=True)
+    (tmp_path / "docs/css/site.css").write_text(".ag-guide{--ag-font:serif}", encoding="utf-8")
+    out = site(tmp_path, theme=theme, extra_css=["css/site.css", "https://example.org/host.css"])
+    for src, depth in (("all", "../"), ("a/tubing", "../../")):
+        page = (out / src / "index.html").read_text(encoding="utf-8")
+        order = [page.index(f'href="{depth}assets/buildguide/buildguide{name}.css"') for name in ("", "-mkdocs")]
+        assert order == sorted(order)
+        assert order[-1] < page.index(f'href="{depth}css/site.css"') < page.index('href="https://example.org/host.css"')
+
+
+def test_stylesheets_go_to_the_end_of_the_head_without_extra_css(tmp_path):
+    page = (site(tmp_path) / "all/index.html").read_text(encoding="utf-8")
+    assert 'buildguide-mkdocs.css"></head>' in page
 
 
 def test_material_gets_data_and_core_inside_the_article(tmp_path):

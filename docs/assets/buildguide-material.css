@@ -1,7 +1,6 @@
 /* The recipe of docs/theming.md for MkDocs Material, loaded by this site (extra_css) so that its build and tests exercise it. */
 /* --8<-- [start:recipe] */
-/* :root adds specificity: the plugin's stylesheets come after extra_css and would win at equal specificity */
-:root .ag-guide{
+.ag-guide{
   --ag-font:var(--md-text-font-family);
   --ag-accent:var(--md-typeset-a-color);
   --ag-primary:var(--md-typeset-a-color);
