@@ -14,14 +14,17 @@ The surface a site may style or test against. Anything not listed here can chang
 | `data-src` | URL of the guide data; components with the same URL share one request |
 | `data-assets` | folder of BOM images, relative to the page |
 | `#guide-data` | an element holding the guide data as JSON (`<script type="application/json">`, or any element with that id), used by components without `data-src`; its `data-assets` is the default for them |
-| `data-step`, `data-wire`, `data-conn`, `data-connection` | step buttons, connection rows and board connections |
+| `data-step`, `data-wire`, `data-conn`, `data-connection` | step buttons, connection rows and board connections; a ticked connection's drawing shows `✓ <number>` in a tinted pill (a diode has no pill: its name label carries the check mark) and its accessible name ends with `; checked` |
 | `data-role` | `scope`, `search`, `import-file` |
-| `data-ag-scheme` | `light` opts a component out of the browser's dark preference |
+| `data-level` | on a step note (`.ag-step-note`): `note`, `caution` or `warning` for a note given as `{level, text}`, empty for a plain string note; the level word is a `<strong>` in the note's text, see [Note levels](theming.md#note-levels) |
+| `data-complete` | set by the component on its `.ag-guide` root while every item of the BOM or board is ticked: the head then reads `All parts checked` or `All connections checked` and the status line announces it once. The head's `<progress>` (inside `.ag-progress`, named `parts checked` or `connections checked`) is filled with `--ag-done` |
+| `data-ag-scheme` | `dark` forces the dark tokens and board filter, `light` opts out of the browser's dark preference (it wins over `dark`), `auto` follows the host's scheme when it has a signal and otherwise the browser; set on the component or an ancestor, see [Light and dark](theming.md#light-and-dark) |
+| `--ag-font`, `--ag-text-small` | font family (default the system sans-serif stack) and the smallest font size (default `11px`) of the component, the board drawing included, see [Font and size](theming.md#font-and-size) |
 | `--ag-board-filter` | filter applied to the board drawing |
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |
 | `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM or wire row's text, see [Done state](theming.md#done-state) |
 
-`data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV), `print`, `export-progress`, `import-progress`, `reset-progress`.
+`data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV), `print`, `export-progress`, `import-progress`, `reset-progress`, `undo-progress` (in the status line after a reset or import).
 
 The [`--ag-*` tokens](theming.md#tokens) are stable too.
 
@@ -49,7 +52,7 @@ A change to a tick key or to the storage key drops the ticks people saved.
 
 | Event on `document` | Meaning |
 |---|---|
-| `buildguide-progress` | the saved progress was imported or reset: `detail: {storage, saved}`. Every mounted component takes the new object. |
+| `buildguide-progress` | the saved progress was imported, reset or restored by Undo: `detail: {storage, saved, before}`. Every mounted component takes the new object and adds the ticks it held to `before`. |
 
 ## Check CLI
 

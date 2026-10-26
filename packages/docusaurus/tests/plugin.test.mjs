@@ -51,7 +51,7 @@ test('a misspelt key or a wrong type fails the build with the file and the key',
   await assert.rejects(site(file).loadContent(), (error) => {
     assert.ok(error.message.startsWith(`${file}:\n`), error.message);
     assert.match(error.message, /^\/bom\/items\/0\/quantity: /m);
-    assert.match(error.message, /^\/boards\/wiring\/steps\/0\/note: must be string$/m);
+    assert.match(error.message, /^\/boards\/wiring\/steps\/0\/note: must be string,object$/m);
     return true;
   });
 });

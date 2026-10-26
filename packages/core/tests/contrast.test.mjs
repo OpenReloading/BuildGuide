@@ -19,10 +19,11 @@ const ratio = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x,
 const TEXT = [['ink', 'surface'], ['ink', 'page'], ['muted', 'surface'], ['muted', 'page'], ['muted', 'surface-head'], ['muted', 'surface-soft'], ['muted', 'step-current-bg'],
   ['text', 'surface'], ['text', 'bom-hover'], ['accent', 'surface'], ['accent', 'page'], ['surface', 'primary'], ['surface', 'primary-hover'], ['surface', 'done'],
   ['control-ink', 'surface'], ['control-ink', 'control-hover'], ['ink', 'step-current-bg'], ['ink', 'row-selected'], ['ink', 'row-hover'], ['ink', 'error-bg'], ['muted', 'row-hover'],
-  ['muted', 'done-bg'], ['ink', 'done-bg'], ['done', 'done-bg'], ['muted', 'row-selected'], ['muted', 'bom-hover']];
+  ['muted', 'done-bg'], ['ink', 'done-bg'], ['done', 'done-bg'], ['muted', 'row-selected'], ['muted', 'bom-hover'], ['ink', 'caution-bg'], ['ink', 'warning-bg']];
 const GRAPHICS = [['control-line', 'surface'], ['control-line', 'page'], ['control-line', 'control-hover'], ['control-line', 'surface-soft'], ['focus', 'surface'], ['focus', 'page'],
   ['glow', 'surface'], ['swatch-line', 'surface'], ['swatch-line', 'row-selected'], ['swatch-line', 'row-hover'], ['swatch-line', 'bom-hover'], ['diode-body', 'surface'],
-  ['diode-band', 'diode-body'], ['step-current-line', 'surface']];
+  ['diode-band', 'diode-body'], ['step-current-line', 'surface'],
+  ['caution-line', 'surface'], ['caution-line', 'caution-bg'], ['warning-line', 'surface'], ['warning-line', 'warning-bg']];
 
 test('the dark tokens are the same set as the light ones', () => {
   assert.ok(Object.keys(tokens.light).length > 25);

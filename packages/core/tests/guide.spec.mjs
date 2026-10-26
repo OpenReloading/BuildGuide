@@ -240,7 +240,8 @@ for (const [key, b] of boards) {
       await expect(page.locator(`.ag-steps [data-step="${i}"]`)).toHaveAttribute('aria-current', 'step');
       await expect(page.locator('.ag-step-note')).toHaveCount(s.note ? 1 : 0);
       if (s.note) {
-        await expect(page.locator('.ag-step-note')).toHaveText(s.note);
+        await expect(page.locator('.ag-step-note')).toHaveText(typeof s.note === 'string' ? s.note : `${s.note.level} ${s.note.text}`);
+        await expect(page.locator('.ag-step-note')).toHaveAttribute('data-level', s.note.level ?? '');
         await expect(page.locator('.ag-step-note + .ag-list-heading')).toHaveCount(1);
       }
     }
@@ -255,6 +256,36 @@ test('a step note is text, not markup', async ({ page }) => {
   await expect(page.locator('.ag-step-note')).toHaveText(d.boards.wiring.steps[0].note);
   await expect(page.locator('.ag-step-note b, .ag-step-note img')).toHaveCount(0);
   expect(await page.evaluate(() => window.hit)).toBeUndefined();
+});
+
+// acceptance (#71): the level word is text in the note, each level has its own border (so print and forced colours still tell them apart),
+// the text stays text, and the note fits a 390 px screen in the light and the dark scheme
+test('a leveled note shows its level word as text, with a border of its own, also printed and in forced colours', async ({ page }) => {
+  const d = structuredClone(D);
+  const levels = ['note', 'caution', 'warning'];
+  d.boards.wiring.steps.forEach((step, i) => { step.note = i < 3 ? { level: levels[i], text: `<b>Mind</b> level ${levels[i]} & more` } : step.note; });
+  await inlinePage(page, 'levels/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(BASE + 'levels/'); await ready(page);
+  const look = () => page.locator('.ag-step-note').evaluate(n => { const c = getComputedStyle(n); return { style: c.borderLeftStyle, width: c.borderLeftWidth }; });
+  const borders = {};
+  for (const [i, level] of levels.entries()) {
+    await page.locator(`.ag-steps [data-step="${i}"]`).click();
+    const note = page.locator('.ag-step-note');
+    await expect(note).toHaveAttribute('data-level', level);
+    await expect(note).toHaveText(`${level} <b>Mind</b> level ${level} & more`);
+    await expect(note.locator('strong')).toHaveText(level);
+    await expect(note.locator('b')).toHaveCount(0);
+    borders[level] = JSON.stringify(await look());
+    for (const emulate of [{ media: 'print' }, { forcedColors: 'active' }, { colorScheme: 'dark' }]) {
+      await page.emulateMedia(emulate);
+      expect(JSON.stringify(await look())).toBe(borders[level]);
+      await expect(note.locator('strong')).toBeVisible();
+      await page.emulateMedia({ media: 'screen', forcedColors: 'none', colorScheme: 'light' });
+    }
+  }
+  expect(new Set(Object.values(borders)).size).toBe(3);
+  await page.setViewportSize({ width: 390, height: 800 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('keyboard: focus stays on the control after a step or connection changes', async ({ page }) => {
@@ -296,6 +327,8 @@ test('host styles do not restyle the components', async ({ page }) => {
   expect([await opacity('.ag-steps small'), await opacity('.ag-connection-detail small')]).toEqual(['1', '1']);
   await page.goto(url('bom'));
   expect(await size('.ag-bom-table th')).toBe('11px');
+  // the part name keeps its own rule (a doubled .ag-guide in the selector once dropped it in a standalone BOM)
+  expect(await page.locator('.ag-part-cell strong').first().evaluate(el => [getComputedStyle(el).fontSize, getComputedStyle(el).fontWeight])).toEqual(['13px', '600']);
   expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
 });
 
@@ -329,6 +362,53 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
   });
 }
 
+// data-ag-scheme on the component or an ancestor; a light host signal still wins over dark
+const schemeOf = page => page.locator('.ag-guide').evaluate(el => ({ scheme: getComputedStyle(el).colorScheme, background: getComputedStyle(el).backgroundColor,
+  filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter }));
+const expectScheme = async (page, want) => {
+  const style = await schemeOf(page);
+  expect(style.background).toBe(token('page', want));
+  expect(style.scheme === 'dark').toBe(want === 'dark');
+  expect(style.filter).toBe(want === 'dark' ? 'invert(0.9) hue-rotate(180deg)' : 'none');
+};
+const setScheme = (page, where, value) => page.evaluate(([w, v]) => (w === 'ancestor' ? document.documentElement : document.querySelector('.ag-guide')).setAttribute('data-ag-scheme', v), [where, value]);
+
+for (const os of ['light', 'dark']) {
+  for (const where of ['component', 'ancestor']) {
+    test(`colour scheme: data-ag-scheme="dark" on the ${where} in a browser preferring ${os}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: os });
+      await page.goto(url('wiring')); await ready(page);
+      await signal(page, 'dark');
+      await setScheme(page, where, 'dark');
+      await expectScheme(page, 'dark');
+    });
+  }
+  test(`colour scheme: data-ag-scheme="auto" follows the host or, without one, the browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    const kind = await signal(page, 'light');
+    await setScheme(page, 'ancestor', 'auto');
+    await expectScheme(page, kind === 'host' ? 'light' : os);
+  });
+  test(`colour scheme: light wins over dark in either nesting, browser preferring ${os}`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: os });
+    await page.goto(url('wiring')); await ready(page);
+    await signal(page, 'light');
+    await setScheme(page, 'ancestor', 'dark'); await setScheme(page, 'component', 'light');
+    await expectScheme(page, 'light');
+    await setScheme(page, 'ancestor', 'light'); await setScheme(page, 'component', 'dark');
+    await expectScheme(page, 'light');
+  });
+}
+
+test('colour scheme: data-ag-scheme="dark" prints light', async ({ page }) => {
+  await page.goto(url('wiring')); await ready(page);
+  await signal(page, 'dark');
+  await setScheme(page, 'component', 'dark');
+  await page.emulateMedia({ media: 'print' });
+  expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
+});
+
 test('colour scheme: a component prints light on a dark host', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(url('wiring')); await ready(page);
@@ -343,6 +423,93 @@ test('colour scheme: a host sets a token itself in both schemes', async ({ page 
   await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(9, 8, 7)'));
   expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 8, 7)');
 });
+
+// the tick keys of every item of a component, in order
+const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`) };
+for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));
+const componentOf = (page, key) => key === 'bom' ? bomOf(page) : boardOf(page, key);
+// the page of a component, opened on its last item
+const openLast = async (page, key) => {
+  const b = D.boards[key], s = b?.steps.at(-1);
+  await page.goto(key === 'bom' ? url('bom') : `${url(key)}#${at(key, s, s.connections.at(-1))}`);
+  if (b) await ready(page);
+};
+
+for (const key of Object.keys(tickKeys)) {
+  test(`${key}: a progress bar, and the all-done state is announced once`, async ({ page }) => {
+    const keys = tickKeys[key], last = keys.at(-1), what = key === 'bom' ? 'parts' : 'connections', n = keys.length;
+    // everything but the last item is stored as ticked
+    await page.addInitScript(([storage, ticked]) => { if (localStorage.getItem(storage) === null) localStorage.setItem(storage, JSON.stringify(Object.fromEntries(ticked.map(k => [k, true])))); }, [D.storage, keys.slice(0, -1)]);
+    await openLast(page, key);
+    const component = componentOf(page, key), bar = component.locator('progress'), message = component.locator('.ag-message');
+    await expect(bar).toHaveAttribute('value', String(n - 1));
+    await expect(bar).toHaveAttribute('max', String(n));
+    await expect(bar).toHaveAccessibleName(`${what} checked`);
+    await expect(component.locator('.ag-progress')).toHaveText(`${n - 1} / ${n} checked`);
+    await expect(component).not.toHaveAttribute('data-complete');
+    await component.locator(`[data-check="${last}"]`).first().check();
+    await expect(component).toHaveAttribute('data-complete', '');
+    await expect(component.locator('.ag-progress')).toHaveText(`All ${what} checked`);
+    await expect(bar).toHaveAttribute('value', String(n));
+    await expect(message).toHaveText(`All ${what} checked`);
+    // a later render of the same state, and a reload of a finished guide, stay silent
+    await page.evaluate(storage => dispatchEvent(new StorageEvent('storage', { key: storage, storageArea: localStorage })), D.storage);
+    await page.waitForTimeout(200);
+    await expect(message).toHaveText('');
+    await expect(component).toHaveAttribute('data-complete', '');
+    await page.reload();
+    await page.waitForTimeout(200);
+    await expect(componentOf(page, key)).toHaveAttribute('data-complete', '');
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+    // one unticked item ends the state; ticking it again announces again
+    await componentOf(page, key).locator(`[data-check="${last}"]`).first().uncheck();
+    await expect(componentOf(page, key)).not.toHaveAttribute('data-complete');
+    await expect(componentOf(page, key).locator('.ag-progress')).toHaveText(`${n - 1} / ${n} checked`);
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+    await componentOf(page, key).locator(`[data-check="${last}"]`).first().check();
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText(`All ${what} checked`);
+  });
+
+  test(`${key}: an item unticked within the announcement delay leaves no stale all-done text`, async ({ page }) => {
+    const keys = tickKeys[key], last = keys.at(-1);
+    await page.addInitScript(([storage, ticked]) => { if (localStorage.getItem(storage) === null) localStorage.setItem(storage, JSON.stringify(Object.fromEntries(ticked.map(k => [k, true])))); }, [D.storage, keys.slice(0, -1)]);
+    await openLast(page, key);
+    // both clicks run before the delayed announcement; each render replaces the box, so it is found again
+    await componentOf(page, key).evaluate((root, k) => { const box = () => root.querySelector(`[data-check="${CSS.escape(k)}"]`); box().click(); box().click(); }, last);
+    await page.waitForTimeout(200);
+    await expect(componentOf(page, key)).not.toHaveAttribute('data-complete');
+    await expect(componentOf(page, key).locator('.ag-message')).toHaveText('');
+  });
+}
+
+// the engines paint the fill through their own pseudo-elements, which getComputedStyle does not report: the stylesheet is read
+test('the progress fill uses --ag-done in every engine and system colours in forced colours', () => {
+  expect(css).toContain('progress::-webkit-progress-value{background:var(--ag-done)}');
+  expect(css).toContain('progress::-moz-progress-bar{background:var(--ag-done)}');
+  expect(css).toMatch(/forced-colors:active\)\{[\s\S]*progress::-webkit-progress-value\{background:CanvasText\}[\s\S]*progress::-moz-progress-bar\{background:CanvasText\}/);
+});
+
+// the bar sits in the head on a phone and stays visible in forced colours
+for (const [name, media, scheme] of [['light', { colorScheme: 'light' }, 'light'], ['dark', { colorScheme: 'dark' }, 'dark'], ['forced colours', { forcedColors: 'active' }]]) {
+  test(`the progress bar fits the head of a phone, ${name}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia(media);
+    for (const key of Object.keys(tickKeys)) {
+      await openLast(page, key);
+      if (scheme) await signal(page, scheme);
+      const m = await componentOf(page, key).locator('progress').evaluate(bar => {
+        const r = bar.getBoundingClientRect(), host = bar.closest('.ag-guide').getBoundingClientRect(), style = getComputedStyle(bar);
+        return { inside: r.left >= host.left && r.right <= host.right, width: r.width, height: r.height, border: style.borderTopColor, borderWidth: style.borderTopWidth, track: style.backgroundColor, sideways: document.body.scrollWidth > innerWidth };
+      });
+      expect(m.inside, key).toBe(true);
+      expect(m.sideways, key).toBe(false);
+      expect(m.width, key).toBeGreaterThan(0);
+      expect(m.height, key).toBeGreaterThan(0);
+      if (scheme) expect(m.track, key).toBe(token('line', scheme));
+      else { expect(parseFloat(m.borderWidth), key).toBeGreaterThan(0); expect(m.border, key).not.toBe(m.track); }
+    }
+  });
+}
 
 test('tubing: all connections listed, keyboard selection', async ({ page }) => {
   const b = D.boards.tubing, all = b.steps.flatMap(s => s.connections);
@@ -514,37 +681,124 @@ test('progress import: anything but an object of true and false is refused', asy
   }
 });
 
-test('progress reset: asks first, then removes the saved progress everywhere', async ({ page }) => {
+test('progress reset: acts at once, without a dialog, and removes the saved progress everywhere', async ({ page }) => {
   await page.goto(url('all'));
   await ready(boardOf(page, 'wiring'));
   await bomOf(page).locator('tbody input[type=checkbox]').first().check();
   await boardOf(page, 'wiring').locator('.ag-verify input').check();
-  const asked = [];
-  page.once('dialog', d => { asked.push(d.message()); d.dismiss(); });
-  await bomOf(page).locator('[data-action=reset-progress]').click();
-  await expect.poll(() => asked.length).toBe(1);
-  expect(Object.keys(await progressOf(page))).toHaveLength(2);
-  await expect(bomOf(page).locator('.ag-progress')).toHaveText(`1 / ${D.bom.items.length} checked`);
-  page.once('dialog', d => d.accept());
+  const dialogs = [];
+  page.on('dialog', d => { dialogs.push(d.message()); d.dismiss(); });
   await bomOf(page).locator('[data-action=reset-progress]').click();
   await expect(bomOf(page).locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
   await expect(boardOf(page, 'wiring').locator('.ag-progress')).toHaveText(`0 / ${D.boards.wiring.steps.flatMap(s => s.connections).length} checked`);
   expect(await page.evaluate(key => localStorage.getItem(key), D.storage)).toBeNull();
+  expect(dialogs).toEqual([]);
+});
+
+// undo after reset and import: the status line offers it until the next tick or 10 s
+const blockStorage = page => page.addInitScript(key => {
+  const real = window.localStorage, no = () => { throw Error('blocked'); };
+  Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? no() : real.getItem(k)), setItem: (k, v) => (k === key ? no() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
+}, D.storage);
+const undoOf = scope => scope.locator('.ag-message [data-action=undo-progress]');
+
+for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
+  test(`progress ${how}${blocked ? ' with storage blocked' : ''}: Undo brings back the previous ticks in every component`, async ({ page }) => {
+    if (blocked) await blockStorage(page);
+    await page.goto(url('all'));
+    const bom = bomOf(page), wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
+    await ready(wiring); await ready(tubing);
+    const wires = D.boards.wiring.steps.flatMap(s => s.connections).length, parts = D.bom.items.length;
+    await bom.locator('tbody input[type=checkbox]').nth(0).check();
+    await bom.locator('tbody input[type=checkbox]').nth(1).check();
+    await wiring.locator('.ag-verify input').check();
+    if (how === 'reset') await tubing.locator('[data-action=reset-progress]').click();
+    else await importFile(tubing, { [bomKey(5)]: true });
+    // the status line carries the message and Undo; the other components offer nothing
+    await expect(undoOf(tubing)).toBeVisible();
+    await expect(tubing.locator('.ag-message')).toContainText(how === 'reset' ? (blocked ? 'Reset for this visit' : 'Progress reset.') : (blocked ? 'Imported, but' : 'Progress imported.'));
+    await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(1);
+    await expect(tubing.locator('.ag-message')).toHaveAttribute('role', 'status');
+    await expect(wiring.locator('.ag-progress')).toHaveText(`0 / ${wires} checked`);
+    await undoOf(tubing).click();
+    await expect(bom.locator('.ag-progress')).toHaveText(`2 / ${parts} checked`);
+    await expect(wiring.locator('.ag-progress')).toHaveText(`1 / ${wires} checked`);
+    await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(0);
+    await expect(tubing.locator('.ag-message')).toContainText(blocked ? 'Restored for this visit' : 'Progress restored.');
+    await expect(tubing.locator('[data-action=reset-progress]')).toBeFocused();
+    // storage holds the restored object when it takes writes
+    if (!blocked) expect(Object.keys(await progressOf(page))).toHaveLength(3);
+    // a tick after the undo is kept: the restored object is the base
+    await bom.locator('tbody input[type=checkbox]').nth(2).check();
+    await expect(bom.locator('.ag-progress')).toHaveText(`3 / ${parts} checked`);
+  });
+}
+
+test('progress undo: the next tick or 10 seconds take the offer away', async ({ page }) => {
+  await page.clock.install();
+  await page.goto(url('bom'));
+  const ticks = bomOf(page).locator('tbody input[type=checkbox]');
+  await ticks.nth(0).check();
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await ticks.nth(1).check();
+  await expect(undoOf(page)).toHaveCount(0);
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await page.clock.runFor(9000);
+  await expect(undoOf(page)).toBeVisible();
+  await page.clock.runFor(1500);
+  await expect(undoOf(page)).toHaveCount(0);
+  await expect(page.locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
+});
+
+test('progress undo: a tick in another component takes the offer away and is not lost', async ({ page }) => {
+  await page.goto(url('all'));
+  const bom = bomOf(page), tubing = boardOf(page, 'tubing');
+  await ready(tubing);
+  await bom.locator('tbody input[type=checkbox]').nth(0).check();
+  await tubing.locator('[data-action=reset-progress]').click();
+  await expect(undoOf(tubing)).toBeVisible();
+  await bom.locator('tbody input[type=checkbox]').nth(1).check();
+  await expect(page.locator('.ag-message [data-action=undo-progress]')).toHaveCount(0);
+  await expect(tubing.locator('.ag-message')).toHaveText('');
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(1)]);
+});
+
+test('progress undo: stays while the board view changes and goes when another tab changes the progress', async ({ page, context }) => {
+  const other = await context.newPage();
+  await page.goto(url('tubing')); await other.goto(url('bom'));
+  const tubing = boardOf(page, 'tubing');
+  await ready(tubing);
+  await tubing.locator('.ag-verify input').check();
+  await tubing.locator('[data-action=reset-progress]').click();
+  await expect(undoOf(page)).toBeVisible();
+  await tubing.locator('[data-step]').nth(1).click();
+  await expect(undoOf(page)).toBeVisible();
+  await bomOf(other).locator('tbody input[type=checkbox]').nth(3).check();
+  await expect(undoOf(page)).toHaveCount(0);
+});
+
+test('progress import: a refused file leaves the offer to undo the earlier import', async ({ page }) => {
+  await page.goto(url('bom'));
+  await bomOf(page).locator('tbody input[type=checkbox]').nth(0).check();
+  await importFile(page, { [bomKey(4)]: true });
+  await importFile(page, '{not json');
+  await expect(page.locator('.ag-message')).toContainText('Not imported: the file is not a progress export.');
+  await undoOf(page).click();
+  expect(Object.keys(await progressOf(page))).toEqual([bomKey(0)]);
 });
 
 for (const how of ['reset', 'import']) for (const blocked of [false, true]) {
   test(`progress ${how}${blocked ? ' with storage blocked' : ''}: a tick in another component does not bring the old ticks back`, async ({ page }) => {
-    if (blocked) await page.addInitScript(key => {
-      const real = window.localStorage, no = () => { throw Error('blocked'); };
-      Object.defineProperty(window, 'localStorage', { value: { getItem: k => (k === key ? no() : real.getItem(k)), setItem: (k, v) => (k === key ? no() : real.setItem(k, v)), removeItem: k => real.removeItem(k) } });
-    }, D.storage);
+    if (blocked) await blockStorage(page);
     await page.goto(url('all'));
     const bom = bomOf(page), wiring = boardOf(page, 'wiring'), tubing = boardOf(page, 'tubing');
     await ready(wiring); await ready(tubing);
     await bom.locator('tbody input[type=checkbox]').nth(0).check();
     await bom.locator('tbody input[type=checkbox]').nth(1).check();
     await wiring.locator('.ag-verify input').check();
-    if (how === 'reset') { page.once('dialog', d => d.accept()); await tubing.locator('[data-action=reset-progress]').click(); }
+    if (how === 'reset') await tubing.locator('[data-action=reset-progress]').click();
     else await importFile(tubing, { [bomKey(5)]: true });
     const left = how === 'reset' ? 0 : 1;
     await expect(bom.locator('.ag-progress')).toHaveText(`${left} / ${D.bom.items.length} checked`);
@@ -570,11 +824,23 @@ test('progress: a tick or a reset in another tab shows up here and is not writte
   await ticks(page.locator('body')).nth(1).check();
   await expect(other.locator('.ag-progress')).toHaveText(counted(2));
   expect(Object.keys(await progressOf(page))).toEqual([bomKey(0), bomKey(1)]);
-  other.once('dialog', d => d.accept());
   await other.locator('[data-action=reset-progress]').click();
   await expect(page.locator('.ag-progress')).toHaveText(counted(0));
   await ticks(page.locator('body')).nth(2).check();
   expect(Object.keys(await progressOf(page))).toEqual([bomKey(2)]);
+});
+
+test('progress: a storage event of sessionStorage does not re-render, one of localStorage does', async ({ page }) => {
+  await page.goto(url('bom'));
+  const counted = n => `${n} / ${D.bom.items.length} checked`;
+  await expect(page.locator('.ag-progress')).toHaveText(counted(0));
+  // a write in the same tab fires no event: only the events below make the component read it
+  await page.evaluate(([key, tick]) => localStorage.setItem(key, JSON.stringify({ [tick]: true })), [D.storage, bomKey(0)]);
+  await page.evaluate(key => dispatchEvent(new StorageEvent('storage', { key, storageArea: sessionStorage })), D.storage);
+  await page.waitForTimeout(200);
+  await expect(page.locator('.ag-progress')).toHaveText(counted(0));
+  await page.evaluate(key => dispatchEvent(new StorageEvent('storage', { key, storageArea: localStorage })), D.storage);
+  await expect(page.locator('.ag-progress')).toHaveText(counted(1));
 });
 
 test('print: the BOM has a Print button that calls window.print', async ({ page }) => {
@@ -597,15 +863,53 @@ test('phones: no sideways scrolling, the next action stays on screen', async ({ 
   }
 });
 
+// a host token set before the component mounts: .ag-guide.ag-guide outranks the stylesheet wherever it sits in the page
+const withTokens = (page, rule) => page.addInitScript(r => document.addEventListener('DOMContentLoaded', () => document.head.insertAdjacentHTML('beforeend', `<style>.ag-guide.ag-guide{${r}}</style>`)), rule);
+
+test('tick boxes are at least 24 x 24 px at 390 px, without sideways scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const key of ['bom', ...Object.keys(D.boards)]) {
+    await page.goto(url(key)); if (key !== 'bom') await ready(page);
+    await page.locator('.ag-guide input[type=checkbox]').first().waitFor();
+    const sizes = await page.locator('.ag-guide input[type=checkbox]').evaluateAll(boxes => boxes.map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; }));
+    expect(sizes.length, key).toBeGreaterThan(0);
+    for (const [width, height] of sizes) { expect(width, key).toBeGreaterThanOrEqual(24); expect(height, key).toBeGreaterThanOrEqual(24); }
+    expect(await page.evaluate(() => document.body.scrollWidth <= innerWidth), key).toBe(true);
+  }
+});
+
+test('--ag-font sets the font of the text, the controls and the drawing', async ({ page }) => {
+  await withTokens(page, '--ag-font:Georgia,serif');
+  await page.goto(url('wiring')); await ready(page);
+  const families = await page.evaluate(() => ['.ag-guide', '.ag-steps button', '.ag-board-toolbar select', '.ag-guide .joint-paper text'].map(sel => getComputedStyle(document.querySelector(sel)).fontFamily));
+  for (const family of families) expect(family).toContain('Georgia');
+});
+
+test('--ag-text-small is the smallest text: 11 px by default, no HTML or drawn text below it', async ({ page }) => {
+  expect(css).not.toContain('.ag-part-cell small');
+  for (const [width, token] of [[1280, 11], [390, 11], [390, 12]]) {
+    await page.setViewportSize({ width, height: 900 });
+    if (token !== 11) await withTokens(page, `--ag-text-small:${token}px`);
+    const smallest = async key => {
+      await page.goto(url(key)); if (key !== 'bom') await ready(page);
+      await page.locator('.ag-guide .ag-status').first().waitFor();
+      return page.evaluate(() => Math.min(...[...document.querySelectorAll('.ag-guide *')].filter(el => el.closest('svg') ? false : [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()))
+        .map(el => Number.parseFloat(getComputedStyle(el).fontSize))));
+    };
+    for (const key of ['bom', ...Object.keys(D.boards)]) expect(await smallest(key), `${key} at ${width} px, token ${token}`).toBeGreaterThanOrEqual(token);
+    if (width === 390) for (const key of Object.keys(D.boards)) { await page.goto(url(key)); await ready(page); expect(Math.min(...await labelSizes(page)), key).toBeGreaterThanOrEqual(token - 0.01); }
+  }
+});
+
 // the font size of every drawn text as the reader sees it: font size x drawing scale
 const labelSizes = page => page.evaluate(() => [...document.querySelectorAll('.ag-board-canvas svg text')].filter(t => t.textContent.trim())
   .map(t => Number.parseFloat(getComputedStyle(t).fontSize) * t.getScreenCTM().a));
 
 for (const [key] of boards) {
-  test(`${key}: phones keep every label at 10 px, Fit shows the whole board`, async ({ page }) => {
+  test(`${key}: phones keep every label at 11 px, Fit shows the whole board`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(url(key)); await ready(page);
-    expect(Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(10 - 0.01);
+    expect(Math.min(...await labelSizes(page))).toBeGreaterThanOrEqual(11 - 0.01);
     const canvas = page.locator('.ag-board-canvas'), paper = canvas.locator('.joint-paper');
     expect((await paper.boundingBox()).width).toBeGreaterThan((await canvas.boundingBox()).width);
     // the selected connection is in view, not the empty corner of the drawing
@@ -794,6 +1098,24 @@ test('a component without any data source says so', async ({ page }) => {
     `<!doctype html><meta charset="utf-8"><div data-buildguide="bom"></div><script src="${CORE}buildguide.js" defer></script>` }));
   await page.goto(BASE + 'nodata/');
   await expect(page.locator('[data-buildguide]')).toHaveText('Guide data unavailable.');
+});
+
+test('a pending all-done announcement does not reach a later mount on the same element', async ({ page }) => {
+  await inlinePage(page, 'pending/', D, '');
+  await page.goto(BASE + 'pending/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const text = await page.evaluate(async data => {
+    const keys = data.bom.items.map(i => `bom-${i.id}:${i.part}`);
+    localStorage.setItem(data.storage, JSON.stringify(Object.fromEntries(keys.slice(0, -1).map(k => [k, true]))));
+    const el = document.createElement('div'); document.body.append(el);
+    const stop = window.BuildGuide.mount(el, data, { view: 'bom' });
+    el.querySelector(`[data-check="${CSS.escape(keys.at(-1))}"]`).click();
+    stop();
+    window.BuildGuide.mount(el, data, { view: 'bom' });
+    await new Promise(r => setTimeout(r, 200));
+    return el.querySelector('.ag-message').textContent;
+  }, D);
+  expect(text).toBe('');
 });
 
 test('a stale or repeated unmount leaves the current mount alone', async ({ page }) => {

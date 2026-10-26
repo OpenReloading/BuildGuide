@@ -29,6 +29,11 @@ def check_board(key, board):
     steps = board.get("steps") or []
     connections = [c for s in steps for c in s.get("connections") or []]
     found += [f"{key}: step {i} used twice" for i in repeated([s.get("id") for s in steps])]
+    found += [
+        f"{key}: step {s.get('id')} note level {s['note'].get('level')} unknown"
+        for s in steps
+        if isinstance(s.get("note"), dict) and s["note"].get("level") not in ("note", "caution", "warning")
+    ]
     found += [f"{key}: connection {no} used twice" for no in repeated([c.get("no") for c in connections])]
     terminals = {pid: [pin for side in (part.get("ports") or {}).values() for pin in side] for pid, part in parts.items()}
     for pid, pins in terminals.items():

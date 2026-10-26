@@ -10,10 +10,10 @@
     }).catch(error => { library = null; throw error; });
     return library;
   }
-  const FONT = 'system-ui, Segoe UI, Helvetica, Arial, sans-serif';
+  const FONT = 'inherit';   // the drawing's text follows --ag-font through the canvas
   const PIN_TEXT = {'-': '−'};
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
-  const MIN_LABEL = 10, SMALLEST = 8.5, PHONE = 560;   // px: smallest rendered text, smallest font size drawn below, canvas width of a phone
+  const SMALLEST = 8.5, PHONE = 560;   // px: smallest font size drawn below, canvas width of a phone
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
   const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
@@ -182,7 +182,7 @@
       return [{x: source.x, y}, {x: target.x, y}];
     }
     function link(c, i, vertices) {
-      const [pa, a] = end(c.a), [pb, b] = end(c.b), col = colorOf(c), diode = col.diode;
+      const [pa, a] = end(c.a), [pb, b] = end(c.b), col = colorOf(c), diode = col.diode, done = options.done?.(c.no), mark = done ? '✓ ' : '';
       const l = new shapes.standard.DoubleLink({
         id: 'c' + c.no, source: {id: pa, port: a}, target: {id: pb, port: b},
         z: 5.5,   // above the area frames, below the parts: terminal numbers stay readable
@@ -194,9 +194,9 @@
           position: [0.5, 0.35, 0.65][i % 3],
           markup: [{tagName: 'rect', selector: 'pill'}, {tagName: 'text', selector: 'num'}],
           attrs: {
-            num: {text: c.no, fontSize: 12, fontWeight: 800, fill: '#17202a', fontFamily: FONT, textAnchor: 'middle', textVerticalAnchor: 'middle'},
+            num: {text: mark + c.no, fontSize: 12, fontWeight: 800, fill: '#17202a', fontFamily: FONT, textAnchor: 'middle', textVerticalAnchor: 'middle'},
             pill: {ref: 'num', x: 'calc(x-7)', y: 'calc(y-3)', width: 'calc(w+14)', height: 'calc(h+6)', rx: 9, ry: 9,
-                   fill: '#ffffff', stroke: col.outline, strokeWidth: 1.5},
+                   fill: done ? '#e1f7df' : '#ffffff', stroke: col.outline, strokeWidth: 1.5},
           },
         }],
       });
@@ -212,7 +212,7 @@
         }, {   // the name stays upright, just beside the body (above it when the diode hangs below a part)
           position: {distance: 0.5, offset: parts[pa].ports.bottom?.includes(a) ? -18 : 18},
           markup: [{tagName: 'text', selector: 'name'}],
-          attrs: {name: {text: c.no, fontSize: 13, fontWeight: 800, fill: '#17202a', fontFamily: FONT, textAnchor: 'middle', textVerticalAnchor: 'middle'}},
+          attrs: {name: {text: mark + c.no, fontSize: 13, fontWeight: 800, fill: '#17202a', fontFamily: FONT, textAnchor: 'middle', textVerticalAnchor: 'middle'}},
         }]);
       }
       l.set({outlineColor: col.outline, outlineWidth: diode ? 5 : (col.width || 4) + 3});
@@ -258,7 +258,7 @@
         view.el.dataset.connection = c.no;
         view.el.setAttribute('role', 'button');
         view.el.setAttribute('tabindex', '0');
-        view.el.setAttribute('aria-label', c.no + ': ' + label(c, 'a') + ' to ' + label(c, 'b') + (diode ? '; ring at ' + label(c, 'a') : ''));
+        view.el.setAttribute('aria-label', c.no + ': ' + label(c, 'a') + ' to ' + label(c, 'b') + (diode ? '; ring at ' + label(c, 'a') : '') + (options.done?.(c.no) ? '; checked' : ''));
         view.el.addEventListener('keydown', event => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.select(c.no); }
         });
@@ -273,17 +273,17 @@
       const placed = [];
       visible.forEach((c, i) => {
         if (colorOf(c).diode) return;
-        const fixed = [...obstacles, ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
+        const hw = options.done?.(c.no) ? 24 : 15, fixed = [...obstacles, ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
         const spots = lines[i].slice(1).flatMap((q, k) => {
           const p = lines[i][k], long = Math.hypot(q.x - p.x, q.y - p.y);
           return [.5, .35, .65, .2, .8].map(t => ({x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, long, room: long * Math.min(t, 1 - t)}));
         }).sort((u, v) => v.long - u.long);
-        // shortcut: the box of a number is a fixed 30 x 24 px, enough for two digits
+        // shortcut: the box of a number is a fixed 30 x 24 px (48 wide with a check mark), enough for two digits
         const spot = [[20, [...fixed, ...near]], [20, fixed], [10, fixed]].reduce((found, [room, others]) =>
-          found ?? spots.find(s => s.room >= room && free({x0: s.x - 15, y0: s.y - 12, x1: s.x + 15, y1: s.y + 12}, others)), null);
+          found ?? spots.find(s => s.room >= room && free({x0: s.x - hw, y0: s.y - 12, x1: s.x + hw, y1: s.y + 12}, others)), null);
         const view = views[i], at = spot ?? view.getPointAtRatio(.5);
         links[c.no].label(0, {position: spot ? view.getClosestPointLength(at) / view.getConnectionLength() : .5});
-        placed.push({x0: at.x - 17, y0: at.y - 14, x1: at.x + 17, y1: at.y + 14});
+        placed.push({x0: at.x - hw - 2, y0: at.y - 14, x1: at.x + hw + 2, y1: at.y + 14});
       });
       highlight(selected.no, true);
       // a drawing wider than the canvas opens on the selected connection
@@ -299,13 +299,13 @@
     paper.on('link:mouseenter', view => highlight(view.model.id.slice(1), true));
     paper.on('link:mouseleave', view => highlight(view.model.id.slice(1), view.model.id === 'c' + selected.no));
     paper.on('link:pointerclick', view => options.select(view.model.id.slice(1)));
-    // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at MIN_LABEL px and pans, else it fits
+    // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at the canvas font size (--ag-text-small) and pans, else it fits
     let zoomFactor = options.zoom, shown = 1, readable = 1;
     function fit() {
       if (disposed) return;
       const whole = Math.min(root.clientWidth / W, root.clientHeight / H);
       if (!(whole > 0)) return;   // hidden: the resize on showing draws it
-      readable = root.clientWidth < PHONE ? Math.max(1, MIN_LABEL / SMALLEST / whole) : 1;
+      readable = root.clientWidth < PHONE ? Math.max(1, Number.parseFloat(getComputedStyle(root).fontSize) / SMALLEST / whole) : 1;
       shown = zoomFactor || readable;
       const scale = whole * shown;
       paper.setDimensions(W * scale, H * scale);
