@@ -30,10 +30,6 @@ extra_css:
   - assets/repo-widget.css
   - assets/buildguide-material.css   # the Material recipe of docs/theming.md
 
-# the Pages workflow builds develop with BUILDGUIDE_PREVIEW=true: noindex and a banner (overrides/main.html)
-extra:
-  preview: !ENV [BUILDGUIDE_PREVIEW, false]
-
 plugins:
   - search
   - buildguide:
