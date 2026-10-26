@@ -23,7 +23,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |
 | `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM or wire row's text, see [Done state](theming.md#done-state) |
 
-`data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV), `print`, `export-progress`, `import-progress`, `reset-progress`.
+`data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV), `print`, `export-progress`, `import-progress`, `reset-progress`, `undo-progress` (in the status line after a reset or import).
 
 The [`--ag-*` tokens](theming.md#tokens) are stable too.
 
@@ -51,7 +51,7 @@ A change to a tick key or to the storage key drops the ticks people saved.
 
 | Event on `document` | Meaning |
 |---|---|
-| `buildguide-progress` | the saved progress was imported or reset: `detail: {storage, saved}`. Every mounted component takes the new object. |
+| `buildguide-progress` | the saved progress was imported, reset or restored by Undo: `detail: {storage, saved, before}`. Every mounted component takes the new object and adds the ticks it held to `before`. |
 
 ## Check CLI
 
