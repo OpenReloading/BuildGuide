@@ -73,6 +73,8 @@ nav:
   - Data format: data-format.md
   - Theming and dark mode: theming.md
   - Reference: reference.md
+  - Testing your site: testing.md
+  - Offline use: offline.md
   - Example guide:
       - Introduction: example/index.md
       - BOM: example/bom.md
