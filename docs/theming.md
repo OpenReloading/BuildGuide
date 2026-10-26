@@ -108,7 +108,7 @@ A few declarations on `.ag-guide` give the component the font, brand colour and 
 --8<-- "docs/assets/buildguide-material.css:recipe"
 ```
 
-Add the file to `mkdocs.yml`:
+Save it as `docs/stylesheets/buildguide-material.css` in your site (this site keeps its copy in `docs/assets/`) and list it in `mkdocs.yml`:
 
 ```yaml
 extra_css:
