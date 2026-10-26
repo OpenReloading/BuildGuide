@@ -120,7 +120,7 @@ class BuildGuidePlugin(BasePlugin):
         )
         output = self.add_note(output)
         # before the site's extra_css links, so a plain `.ag-guide{...}` rule of the site wins at equal specificity; without any, at the end of the head
-        links = (re.search(rf'<link[^>]*href="{re.escape(html.escape(normalize_url(path, page)))}"', output) for path in config.extra_css)
+        links = (re.search(rf'<link[^>]*href=["\']{re.escape(html.escape(normalize_url(path, page)))}["\']', output) for path in config.extra_css)
         at = min((m.start() for m in links if m), default=None)
         output = output[:at] + styles + output[at:] if at is not None else output.replace("</head>", styles + "</head>", 1)
         # inside the page's article with Material: Material's instant navigation swaps the article and runs its scripts, but drops the rest of the body
