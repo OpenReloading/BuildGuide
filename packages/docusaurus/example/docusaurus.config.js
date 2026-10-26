@@ -7,5 +7,5 @@ module.exports = {
   onBrokenLinks: 'throw',
   plugins: [[require.resolve('..'), { data: '../../core/example/guide.json' }]],
   themeConfig: { navbar: { title: 'BuildGuide example' } },
-  presets: [['classic', { docs: { path: 'docs', routeBasePath: 'example' }, blog: false }]],
+  presets: [['classic', { docs: { path: 'docs', routeBasePath: 'example' }, blog: false, theme: { customCss: './src/css/custom.css' } }]],
 };

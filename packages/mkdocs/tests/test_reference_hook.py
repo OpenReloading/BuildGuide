@@ -48,9 +48,23 @@ def test_token_table_lists_every_colour_with_both_schemes():
         reference.token_table(":root{--ag-ink:light-dark(#111, #eee); --ag-x:light-dark(rgb(0,0,0), #000);}")
 
 
+def test_files_table_lists_the_shipped_files_with_sizes(tmp_path):
+    (tmp_path / "libs/lib").mkdir(parents=True)
+    for name in ("buildguide.css", "buildguide.js", "buildguide-board.js", "libs/lib/a.wasm", "libs/lib/LICENSE", "libs/README.txt"):
+        (tmp_path / name).write_bytes(b"x" * 100)
+    rows = table_rows(reference.files_table(tmp_path))
+    assert [row[0] for row in rows] == ["buildguide.css", "buildguide.js", "buildguide-board.js", "libs/lib/a.wasm"]  # no licence or note
+    assert rows[0][1] == "100" and int(rows[0][2]) < 100
+    real = [row[0] for row in table_rows(reference.files_table(reference.SRC))]
+    assert any(name.endswith("/libavoid.wasm") for name in real) and real[:3] == ["buildguide.css", "buildguide.js", "buildguide-board.js"]
+
+
 def test_markers_are_replaced_and_unknown_ones_fail():
     page = "before\n<!-- generated: tokens -->\nafter"
     text = reference.on_page_markdown(page, None, None, None)
     assert "<!--" not in text and "| `--ag-ink` |" in text
+    assert "| `buildguide.js` |" in reference.on_page_markdown("<!-- generated: files -->", None, None, None)
+    lines = reference.on_page_markdown("<!-- generated: precache -->", None, None, None).splitlines()
+    assert lines[0] == "  '/assets/buildguide-<version>/buildguide.css'," and len(lines) == len(table_rows(reference.files_table(reference.SRC)))
     with pytest.raises(ValueError, match="nothing"):
         reference.on_page_markdown("<!-- generated: schema nothing -->", None, None, None)

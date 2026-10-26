@@ -96,6 +96,62 @@ The plugins send the signal of their theme, whatever the browser prefers:
 
 Any other host can do the same with `data-ag-scheme="dark"` or with two declarations on `.ag-guide`.
 
+## Host recipes
+
+A few declarations on `.ag-guide` give the component the font, brand colour and page background of its host. The selector `:root .ag-guide` outranks the component's own `.ag-guide` rule, so the order of the stylesheets does not matter: the MkDocs plugin adds its stylesheets after `extra_css`, and a plain `.ag-guide{...}` there would lose. Both recipes use the host's own variables, which change with its colour mode, so one rule serves light and dark. This docs site loads the Material block and the Docusaurus example site the Docusaurus block (`docs/assets/buildguide-material.css`, `packages/docusaurus/example/src/css/custom.css`); `tests/guide.spec.mjs` checks the font, the colours and every pair of `tests/contrast-pairs.mjs` in both schemes against the built sites.
+
+`--ag-accent` and `--ag-primary` take the brand colour. `--ag-surface` is also the text colour on `--ag-primary` (buttons), so the brand colour must reach 4.5:1 against the background in both schemes. A ticked row is tinted with `--ag-done-bg`, and the accent colour also colours links on it (source links): the recipes darken the background by 8 % for that tint, because the default green tint is lighter than a dark host's background and drops a link in the host's dark link colour below 4.5:1 (3.52:1 for Material's). `--ag-primary-hover` mixes the brand colour 20 % towards black in light and towards white in dark, which keeps the button text readable on hover. `color-mix()` needs Chrome 111, Firefox 113 or Safari 16.2 ([MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color-mix)).
+
+### MkDocs Material
+
+```css
+--8<-- "docs/assets/buildguide-material.css:recipe"
+```
+
+Save it as `docs/stylesheets/buildguide-material.css` in your site (this site keeps its copy in `docs/assets/`) and list it in `mkdocs.yml`:
+
+```yaml
+extra_css:
+  - stylesheets/buildguide-material.css
+```
+
+Material's `--md-primary-fg-color` (the header) and `--md-accent-fg-color` do not make safe text colours: with the palette of this site (`blue grey`, `deep orange`) the primary is 2.94:1 on the dark background and the accent 2.78:1 on the light one. `--md-typeset-a-color` is the colour of the links in the page, which Material keeps readable in both schemes. Names and values: [Changing the colors](https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/); check the variables against your version.
+
+### Docusaurus
+
+```css
+--8<-- "packages/docusaurus/example/src/css/custom.css:recipe"
+```
+
+Add the file to the classic preset (or the `theme` of `docusaurus.config.js`):
+
+```js
+presets: [['classic', { theme: { customCss: './src/css/custom.css' } }]],
+```
+
+Infima's `--ifm-background-color` is `transparent` in light mode, so the recipe uses `--ifm-background-surface-color`, which is opaque in both modes. Infima's default `--ifm-color-primary` (`#3578e5`) is 4.23:1 under white text and fails, so set the brand per colour mode as above. The dark value (`#25c2a0`) is the Docusaurus template's; its light green (`#2e8555`) is below 4.5:1 on the done tint (3.87:1 on the default one), so the recipe darkens it to `#277548`. See [Styling your site with Infima](https://docusaurus.io/docs/styling-layout#styling-your-site-with-infima).
+
+### Contrast of the recipes
+
+Measured in Chromium by the browser test, against the background the recipe sets:
+
+| Host and scheme | Brand on background, background on brand (4.5) | Background on primary hover (4.5) | Brand on done row (4.5) | Body text (4.5) | Control border (3) | Focus ring (3) |
+|---|---|---|---|---|---|---|
+| Material, light | 6.86 | 9.11 | 5.75 | 13.08 | 3.61 | 4.21 |
+| Material, dark | 4.77 | 6.27 | 4.93 | 13.28 | 4.63 | 9.13 |
+| Docusaurus, light | 5.64 | 7.72 | 4.73 | 13.08 | 3.61 | 4.21 |
+| Docusaurus, dark | 6.80 | 7.92 | 7.06 | 12.67 | 4.42 | 8.71 |
+
+The bracketed numbers are the WCAG 2.2 AA minimum for the pair. Material is measured with the `blue grey` palette of this site and Docusaurus with the brand colours above (versions: Docusaurus 3.10.2, Material 9.7.7).
+
+The host's variables follow the host's colour mode, not the component's: on a light host, `data-ag-scheme="dark"` would put a dark component's light text on the host's white background, so leave `--ag-page` and `--ag-surface` out of a site that forces the scheme.
+
+The recipes only move `--ag-accent`, `--ag-primary`, `--ag-primary-hover`, `--ag-page`, `--ag-surface` and `--ag-done-bg`. Tints such as `--ag-surface-soft` and `--ag-line` keep their green; a site whose background is far from white or near black overrides them too. For your own colours, keep 4.5:1 for `--ag-accent` on `--ag-page`, `--ag-surface` and `--ag-done-bg` and for `--ag-surface` on `--ag-primary` and `--ag-primary-hover`, 3:1 for `--ag-control-line` and `--ag-focus` on the page, and run the browser test with your stylesheet.
+
+### Storage key
+
+`localStorage` belongs to one origin (scheme, host and port), not to a path. Two guides on the same origin, or a preview under another path of the site, read and write the same ticks unless their data names different keys. Set a unique `storage` per guide (see [`storage`](data-format.md#what-the-keys-do)); another origin never shares ticks. Changing a key later drops the ticks people saved under the old one.
+
 ## Browser support
 
 | Feature | Chrome | Firefox | Safari |

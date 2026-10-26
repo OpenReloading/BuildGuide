@@ -1,6 +1,6 @@
 # Reference
 
-The surface a site may style or test against. Anything not listed here can change in any release.
+The surface a site may style or test against. Anything not listed here can change in any release. A browser test for your own pages: [Testing your site](testing.md). The files a service worker caches: [Offline use](offline.md).
 
 ## Markup
 
@@ -35,7 +35,7 @@ The [`--ag-*` tokens](theming.md#tokens) are stable too.
 | Hash pair | `<board key>=<step>/<no>`, one per board, joined with `&`: `#wiring=B/4&tubing=3`. `<step>` and `<no>` are percent-encoded; the number is left out for a step with one connection. A fragment without `=` is an anchor and leaves every board where it is. |
 | Tab pair | `guide=<key>`, for the shown tab of a `guide` component, `bom` for the BOM: `#guide=wiring&wiring=B/4`. It sits next to the board pairs. |
 | Tick key | `<prefix>-<no>:<a>:<b>` for a connection, `bom-<id>:<part>` for a BOM item |
-| Storage key | the `storage` of the guide data: one `localStorage` key holding an object of `true` and `false` values |
+| Storage key | the `storage` of the guide data: one `localStorage` key holding an object of `true` and `false` values. `localStorage` is per origin, so give each guide on an origin its own key, see [`storage`](data-format.md#what-the-keys-do) |
 
 A board changes the hash with `history.pushState`, so it fires no `hashchange` and no `popstate` (Material's instant navigation swaps the page on a `popstate`); boards follow `popstate`. Use each board once per page, also across a `guide` component and standalone boards. A foreign fragment stays in the hash and is scrolled to when the components mount.
 
