@@ -6,7 +6,7 @@ Plain HTML needs a web server (the script fetches `guide.json`), for example `py
 
 ## BOM checklist
 
-Items with a group, a name, a specification and a quantity. The component adds search, a tick per item, the CSV export and a print button. Live with the full example data: [BOM](example/bom.md).
+Items with a group, a name, a specification and a quantity. The component adds search, a filter for missing and done items, a tick per item, group counts, the CSV export and a print button. Live with the full example data: [BOM](example/bom.md).
 
 ```json title="guide.json"
 --8<-- "packages/core/example/minimal/bom.json"
