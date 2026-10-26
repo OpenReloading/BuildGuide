@@ -13,7 +13,7 @@ The URLs are the ones the page requests, built from the URL of `buildguide.js` (
 | Host | Folder of the core files | Also fetched |
 |---|---|---|
 | [Plain HTML](core.md) | where you unpacked the archive, for example `assets/buildguide-<version>/` | the guide data (`data-src`), the page itself |
-| [MkDocs](mkdocs.md) | `<site>/assets/buildguide/` | `buildguide-mkdocs.css` in the same folder, every page that holds a component (the data is inside it) |
+| [MkDocs](mkdocs.md) | `<site>/assets/buildguide/` | `buildguide-mkdocs.css` in the same folder, every page that holds a component (the data is inside it) and the Material theme's own files (stylesheets, `bundle.*.js`, and for search `sitemap.xml`, `search/search_index.json` and the search worker) |
 | [Docusaurus](docusaurus.md) | `<baseUrl>assets/buildguide/` | every page that holds a component (the data is inside it) and the site's own bundles |
 
 BOM images are fetched from the folder of `data-assets` (the `assets` option of the plugins) under the file name in each item's `image`. The license files shipped with the libraries are not fetched. To see the exact list for a page, open it and run this in the browser console:
@@ -30,12 +30,7 @@ Save it as `sw.js` at the root of the site (a worker controls only the folder it
 // change the name with every release of the site: the old cache is deleted when the new worker activates
 const CACHE = 'buildguide-site-1';
 const FILES = [
-  '/assets/buildguide-<version>/buildguide.css',
-  '/assets/buildguide-<version>/buildguide.js',
-  '/assets/buildguide-<version>/buildguide-board.js',
-  '/assets/buildguide-<version>/vendor/joint/joint.min.js',
-  '/assets/buildguide-<version>/vendor/libavoid/index.js',
-  '/assets/buildguide-<version>/vendor/libavoid/libavoid.wasm',
+<!-- generated: precache -->
   '/guide.json',
   '/guide/',
 ];

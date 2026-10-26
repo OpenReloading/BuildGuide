@@ -64,5 +64,7 @@ def test_markers_are_replaced_and_unknown_ones_fail():
     text = reference.on_page_markdown(page, None, None, None)
     assert "<!--" not in text and "| `--ag-ink` |" in text
     assert "| `buildguide.js` |" in reference.on_page_markdown("<!-- generated: files -->", None, None, None)
+    lines = reference.on_page_markdown("<!-- generated: precache -->", None, None, None).splitlines()
+    assert lines[0] == "  '/assets/buildguide-<version>/buildguide.css'," and len(lines) == len(table_rows(reference.files_table(reference.SRC)))
     with pytest.raises(ValueError, match="nothing"):
         reference.on_page_markdown("<!-- generated: schema nothing -->", None, None, None)

@@ -1,4 +1,4 @@
-"""MkDocs hook: replaces <!-- generated: schema NAME -->, <!-- generated: tokens --> and <!-- generated: files --> in the docs with
+"""MkDocs hook: replaces <!-- generated: schema NAME -->, <!-- generated: tokens -->, <!-- generated: files --> and <!-- generated: precache --> in the docs with
 tables walked from the data schema, from the --ag-* declarations of the stylesheet and from the shipped files of core, so the docs
 follow the files they describe."""
 
@@ -11,7 +11,7 @@ ROOT = Path(__file__).parents[2]
 SCHEMA = ROOT / "packages/core/schema/buildguide.schema.json"
 SRC = ROOT / "packages/core/src"
 CSS = SRC / "buildguide.css"
-MARKER = re.compile(r"<!-- generated: (schema|tokens|files)(?: (\S+))? -->")
+MARKER = re.compile(r"<!-- generated: (schema|tokens|files|precache)(?: (\S+))? -->")
 TOKEN = re.compile(r"--ag-([\w-]+):light-dark\((#[0-9a-fA-F]+), (#[0-9a-fA-F]+)\)")
 DECLARED = re.compile(r"--ag-[\w-]+:\s*light-dark\(")
 
@@ -95,11 +95,21 @@ def token_table(css):
     return table(["Token", "Light", "Dark"], [(f"`--ag-{name}`", f"`{light}`", f"`{dark}`") for name, light, dark in found])
 
 
-def files_table(src):
-    """The files a page fetches, own files first (size.test.mjs lists the same set): size and gzip size in bytes."""
-    names = ["buildguide.css", "buildguide.js", "buildguide-board.js"] + sorted(
+def fetched(src):
+    """The files a page fetches, own files first (size.test.mjs lists the same set)."""
+    return ["buildguide.css", "buildguide.js", "buildguide-board.js"] + sorted(
         path.relative_to(src).as_posix() for path in src.rglob("*") if path.is_file() and path.parent != src and path.name not in ("LICENSE", "README.txt")
     )
+
+
+def precache_lines(src):
+    """The core files as the quoted URLs of the service worker example in docs/offline.md."""
+    return "\n".join(f"  '/assets/buildguide-<version>/{name}'," for name in fetched(src))
+
+
+def files_table(src):
+    """Size and gzip size in bytes of the fetched files."""
+    names = fetched(src)
     sizes = [(name, (src / name).read_bytes()) for name in names]
     # level 6 is zlib's default, as in the size budgets
     rows = [(f"`{name}`", f"{len(data):,}", f"{len(gzip.compress(data, 6, mtime=0)):,}") for name, data in sizes]
@@ -111,6 +121,8 @@ def on_page_markdown(markdown, page, config, files):
         kind, name = match.groups()
         if kind == "files":
             return files_table(SRC)
+        if kind == "precache":
+            return precache_lines(SRC)
         return token_table(CSS.read_text(encoding="utf-8")) if kind == "tokens" else schema_table(name)
 
     return MARKER.sub(fill, markdown)
