@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.2.0...docusaurus-v1.3.0) (2026-10-26)
+
+
+### Features
+
+* **core:** warning and caution levels for step notes ([#111](https://github.com/OpenReloading/BuildGuide/issues/111)) ([5f268c7](https://github.com/OpenReloading/BuildGuide/commit/5f268c79da124810c01495e0cd3d4259ad9d0dc4))
+
 ## [1.2.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.1.0...docusaurus-v1.2.0) (2026-10-25)
 
 
