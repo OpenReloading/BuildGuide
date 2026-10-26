@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.3.0...docusaurus-v1.4.0) (2026-10-26)
+
+
+### Features
+
+* **docusaurus:** guide data as a file, not in every page head ([#119](https://github.com/OpenReloading/BuildGuide/issues/119)) ([de12c28](https://github.com/OpenReloading/BuildGuide/commit/de12c28bae1ca6c8d59e5b8cdc473bc2bb272ffa))
+* **docusaurus:** more than one guide per site ([#123](https://github.com/OpenReloading/BuildGuide/issues/123)) ([4888e00](https://github.com/OpenReloading/BuildGuide/commit/4888e0010a5240ebb5681cd04682b01acd3cb50d))
+
 ## [1.3.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.2.0...docusaurus-v1.3.0) (2026-10-26)
 
 

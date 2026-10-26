@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.4](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.3...core-v0.2.4) (2026-10-26)
+
+
+### Features
+
+* **docusaurus:** guide data as a file, not in every page head ([#119](https://github.com/OpenReloading/BuildGuide/issues/119)) ([de12c28](https://github.com/OpenReloading/BuildGuide/commit/de12c28bae1ca6c8d59e5b8cdc473bc2bb272ffa))
+* **docusaurus:** more than one guide per site ([#123](https://github.com/OpenReloading/BuildGuide/issues/123)) ([4888e00](https://github.com/OpenReloading/BuildGuide/commit/4888e0010a5240ebb5681cd04682b01acd3cb50d))
+* **mkdocs:** more than one guide per site ([#120](https://github.com/OpenReloading/BuildGuide/issues/120)) ([0dc598c](https://github.com/OpenReloading/BuildGuide/commit/0dc598ccb6068ac84ce56cfbb832557872c8cb6b))
+
+
+### Bug fixes
+
+* **mkdocs:** load the plugin's stylesheets before extra_css ([#117](https://github.com/OpenReloading/BuildGuide/issues/117)) ([f22bc90](https://github.com/OpenReloading/BuildGuide/commit/f22bc90e648d24b6c1b95ec3daa14f807df7d4ce))
+
 ## [0.2.3](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.2...core-v0.2.3) (2026-10-26)
 
 

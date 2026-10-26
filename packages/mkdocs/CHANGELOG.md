@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.3](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.2...mkdocs-v0.1.3) (2026-10-26)
+
+
+### Features
+
+* **mkdocs:** more than one guide per site ([#120](https://github.com/OpenReloading/BuildGuide/issues/120)) ([0dc598c](https://github.com/OpenReloading/BuildGuide/commit/0dc598ccb6068ac84ce56cfbb832557872c8cb6b))
+
+
+### Bug fixes
+
+* **mkdocs:** load the plugin's stylesheets before extra_css ([#117](https://github.com/OpenReloading/BuildGuide/issues/117)) ([f22bc90](https://github.com/OpenReloading/BuildGuide/commit/f22bc90e648d24b6c1b95ec3daa14f807df7d4ce))
+
 ## [0.1.2](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.1...mkdocs-v0.1.2) (2026-10-26)
 
 
