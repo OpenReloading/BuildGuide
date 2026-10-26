@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { TEXT, GRAPHICS } from './contrast-pairs.mjs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
+const MINIMAL = JSON.parse(readFileSync(new URL('../example/minimal/all.json', import.meta.url)));
 // BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /develop for the Pages preview
 const PREFIX = process.env.BUILDGUIDE_PREFIX ?? '';
 const ORIGIN = 'http://127.0.0.1:8080', BASE = `${ORIGIN}${PREFIX}/example/`;
@@ -500,6 +501,49 @@ test('Docusaurus: the data is a file, fetched once per page, and no page holds i
   await page.goto(url('all')); await settled(page);
   await expect(page.locator('.ag-guide')).toHaveCount(3);
   expect(fetched).toHaveLength(1);
+});
+
+// the MkDocs docs site has a second guide (`guides.minimal`) on example/second/ next to the BOM of the example guide:
+// the page holds only the data of the example guide, the second one is a file that its component fetches once
+test('MkDocs: a second guide is a file, a page holds only the data it uses, each guide ticks its own key', async ({ page }) => {
+  test.skip(!(await page.request.get(url('second'))).ok(), 'only the MkDocs docs site has the page with two guides');
+  const file = `${ORIGIN}${PREFIX}/assets/buildguide/guides/minimal.json`;
+  expect(await (await page.request.get(file)).json()).toEqual(MINIMAL);
+  const second = await (await page.request.get(url('second'))).text();
+  expect(second).toContain(D.storage);
+  expect(second).not.toContain(MINIMAL.storage);
+  for (const key of PAGES) {
+    const html = await (await page.request.get(url(key))).text();
+    expect(html, `${key} page`).not.toContain(MINIMAL.storage);
+    expect(html, `${key} page`).not.toContain('guides/minimal.json');
+  }
+  const fetched = [];
+  page.on('request', r => r.url() === file && fetched.push(r.url()));
+  // a page without the second guide first, then the page with both by the site's own navigation (instant navigation: no reload)
+  await page.goto(url('bom')); await settled(page);
+  expect(fetched).toHaveLength(0);
+  await page.getByRole('link', { name: 'Two guides' }).first().click();
+  await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
+  expect(fetched).toHaveLength(1);
+  const [minimal, main] = await page.locator('.ag-guide').all();
+  await expect(minimal.locator('[data-check]')).toHaveCount(MINIMAL.bom.items.length);
+  await expect(main.locator('[data-check]')).toHaveCount(D.bom.items.length);
+  await minimal.locator('[data-check]').first().check();
+  const stored = key => page.evaluate(k => localStorage.getItem(k), key);
+  expect(await stored(MINIMAL.storage)).toContain('true');
+  expect(await stored(D.storage)).toBeNull();
+  await main.locator('[data-check]').first().check();
+  expect(await stored(D.storage)).toContain('true');
+  expect(JSON.parse(await stored(MINIMAL.storage))).toEqual({ [`bom-${MINIMAL.bom.items[0].id}:${MINIMAL.bom.items[0].part}`]: true });
+  for (const scheme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme: scheme });
+    for (const guide of [minimal, main]) {
+      await guide.evaluate(el => { el.scrollIntoView({ block: 'start' }); el.setAttribute('data-axe', ''); });
+      const { violations } = await new AxeBuilder({ page }).include('[data-axe]').withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+      expect(violations.map(v => v.id), scheme).toEqual([]);
+      await guide.evaluate(el => el.removeAttribute('data-axe'));
+    }
+  }
 });
 
 // the tick keys of every item of a component, in order
