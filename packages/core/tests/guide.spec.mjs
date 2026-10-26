@@ -485,10 +485,12 @@ test('MkDocs: the component stylesheets come before extra_css, so a plain site r
   expect(await size()).toBe('15px');
 });
 
+const isDocusaurus = async page => await page.locator('meta[name=generator][content^="Docusaurus"]').count() > 0;
+
 // the Docusaurus plugin writes the data to assets/buildguide/guide.json: no page carries it, the components of a page share one request for it
 test('Docusaurus: the data is a file, fetched once per page, and no page holds it', async ({ page }) => {
   await page.goto(BASE);
-  test.skip(await page.locator('meta[name=generator][content^="Docusaurus"]').count() === 0, 'only the Docusaurus example');
+  test.skip(!await isDocusaurus(page), 'only the Docusaurus example');
   const file = `${ORIGIN}${PREFIX}/assets/buildguide/guide.json`;
   expect(await (await page.request.get(file)).json()).toEqual(D);
   for (const key of ['', ...PAGES]) {
@@ -503,28 +505,8 @@ test('Docusaurus: the data is a file, fetched once per page, and no page holds i
   expect(fetched).toHaveLength(1);
 });
 
-// the MkDocs docs site has a second guide (`guides.minimal`) on example/second/ next to the BOM of the example guide:
-// the page holds only the data of the example guide, the second one is a file that its component fetches once
-test('MkDocs: a second guide is a file, a page holds only the data it uses, each guide ticks its own key', async ({ page }) => {
-  test.skip(!(await page.request.get(url('second'))).ok(), 'only the MkDocs docs site has the page with two guides');
-  const file = `${ORIGIN}${PREFIX}/assets/buildguide/guides/minimal.json`;
-  expect(await (await page.request.get(file)).json()).toEqual(MINIMAL);
-  const second = await (await page.request.get(url('second'))).text();
-  expect(second).toContain(D.storage);
-  expect(second).not.toContain(MINIMAL.storage);
-  for (const key of PAGES) {
-    const html = await (await page.request.get(url(key))).text();
-    expect(html, `${key} page`).not.toContain(MINIMAL.storage);
-    expect(html, `${key} page`).not.toContain('guides/minimal.json');
-  }
-  const fetched = [];
-  page.on('request', r => r.url() === file && fetched.push(r.url()));
-  // a page without the second guide first, then the page with both by the site's own navigation (instant navigation: no reload)
-  await page.goto(url('bom')); await settled(page);
-  expect(fetched).toHaveLength(0);
-  await page.getByRole('link', { name: 'Two guides' }).first().click();
-  await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
-  expect(fetched).toHaveLength(1);
+// the page with both guides: the minimal one and the example one keep their own ticks, and both pass axe in either scheme
+const tickTwoGuides = async page => {
   const [minimal, main] = await page.locator('.ag-guide').all();
   await expect(minimal.locator('[data-check]')).toHaveCount(MINIMAL.bom.items.length);
   await expect(main.locator('[data-check]')).toHaveCount(D.bom.items.length);
@@ -544,6 +526,58 @@ test('MkDocs: a second guide is a file, a page holds only the data it uses, each
       await guide.evaluate(el => el.removeAttribute('data-axe'));
     }
   }
+};
+
+// the MkDocs docs site has a second guide (`guides.minimal`) on example/second/ next to the BOM of the example guide:
+// the page holds only the data of the example guide, the second one is a file that its component fetches once
+test('MkDocs: a second guide is a file, a page holds only the data it uses, each guide ticks its own key', async ({ page }) => {
+  await page.goto(BASE);
+  test.skip(await isDocusaurus(page) || !(await page.request.get(url('second'))).ok(), 'only the MkDocs docs site has the page with two guides');
+  const file = `${ORIGIN}${PREFIX}/assets/buildguide/guides/minimal.json`;
+  expect(await (await page.request.get(file)).json()).toEqual(MINIMAL);
+  const second = await (await page.request.get(url('second'))).text();
+  expect(second).toContain(D.storage);
+  expect(second).not.toContain(MINIMAL.storage);
+  for (const key of PAGES) {
+    const html = await (await page.request.get(url(key))).text();
+    expect(html, `${key} page`).not.toContain(MINIMAL.storage);
+    expect(html, `${key} page`).not.toContain('guides/minimal.json');
+  }
+  const fetched = [];
+  page.on('request', r => r.url() === file && fetched.push(r.url()));
+  // a page without the second guide first, then the page with both by the site's own navigation (instant navigation: no reload)
+  await page.goto(url('bom')); await settled(page);
+  expect(fetched).toHaveLength(0);
+  await page.getByRole('link', { name: 'Two guides' }).first().click();
+  await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
+  expect(fetched).toHaveLength(1);
+  await tickTwoGuides(page);
+});
+
+// the Docusaurus example has the same second guide (`guides.minimal`) on example/second/: a file that its component fetches once, also after client-side navigation
+test('Docusaurus: a second guide is a file, no page holds it, each guide is fetched once and ticks its own key', async ({ page }) => {
+  await page.goto(BASE);
+  test.skip(!await isDocusaurus(page), 'only the Docusaurus example');
+  const [file, main] = ['guides/minimal.json', 'guide.json'].map(name => `${ORIGIN}${PREFIX}/assets/buildguide/${name}`);
+  expect(await (await page.request.get(file)).json()).toEqual(MINIMAL);
+  for (const key of ['', ...PAGES, 'second']) {
+    const html = await (await page.request.get(key ? url(key) : BASE)).text();
+    expect(html, `${key || 'index'} page`).not.toContain(MINIMAL.storage);
+    expect(html, `${key || 'index'} page`).not.toContain('guides/minimal.json');
+  }
+  const fetched = [];
+  page.on('request', r => [file, main].includes(r.url()) && fetched.push(r.url().slice(ORIGIN.length)));
+  // a page of the example guide first, then the page with both by the site's own navigation: the second guide is requested once, the first one is already there
+  await page.goto(url('bom')); await settled(page);
+  expect(fetched).toEqual([`${PREFIX}/assets/buildguide/guide.json`]);
+  await page.getByRole('link', { name: 'Two guides' }).first().click();
+  await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
+  expect(fetched).toEqual([`${PREFIX}/assets/buildguide/guide.json`, `${PREFIX}/assets/buildguide/guides/minimal.json`]);
+  await tickTwoGuides(page);
+  // a fresh load of the page with both: one request for each file
+  fetched.length = 0;
+  await page.goto(url('second')); await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
+  expect(fetched.sort()).toEqual([`${PREFIX}/assets/buildguide/guide.json`, `${PREFIX}/assets/buildguide/guides/minimal.json`]);
 });
 
 // the tick keys of every item of a component, in order

@@ -29,6 +29,7 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
    | Option | Meaning | Default |
    |---|---|---|
    | `data` | guide data (JSON, core data format), relative to the site folder | required |
+   | `guides` | more guides on the same site, `id: path` (letters, digits, `-` and `_`), each in the core data format | none |
    | `assets` | folder of BOM images below `baseUrl` | `assets/` |
 
 3. Use the component in any page, as often as you like on one page. The page has its own title (Docusaurus prints it) and notices (admonitions):
@@ -52,8 +53,11 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
    |---|---|
    | `view` | `bom`, `board`, or `guide` (the BOM and all boards behind tabs) |
    | `board` | key in `boards`, for `board`; for `guide` a space separated list of `bom` and board keys to show, in that order |
+   | `guide` | an id from `guides`; without it the component shows the guide of `data` |
 
-The build validates the data against the JSON schema, then runs the core cross-reference check, and stops on a problem. It then writes the validated data to `<baseUrl>assets/buildguide/guide.json` (without whitespace): no page holds the data, and a page with a component makes one extra request for that file, shared by all its components. The message names the data file and, one line per problem, the key (`/bom/items/0/quantity: must NOT have additional properties`). An unknown view or board key shows `Unknown guide component` in the page. The theme follows Docusaurus's colour mode ([Theming](https://openreloading.github.io/BuildGuide/theming/)).
+   One site can hold several guides: `<BuildGuide guide="second" view="board" board="wiring" />`. A page can use several guides.
+
+The build validates the data of every guide against the JSON schema, then runs the core cross-reference check, and stops on a problem. It also stops when two guides (`data` included) have the same `storage` key: `localStorage` is per origin, so guides with the same key tick each other's connections. It then writes the validated data to `<baseUrl>assets/buildguide/guide.json` (without whitespace) and each named guide to `<baseUrl>assets/buildguide/guides/<id>.json`: no page holds any data, and a page with a component makes one extra request for each file it uses, shared by its components. The message names the data file and, one line per problem, the key (`/bom/items/0/quantity: must NOT have additional properties`). An unknown view or board key shows `Unknown guide component` in the page; an id that is not in `guides` shows `Guide data unavailable.` (the file is not found), the build does not see the id. The theme follows Docusaurus's colour mode ([Theming](https://openreloading.github.io/BuildGuide/theming/)).
 
 <!-- --8<-- [end:docs] -->
 
