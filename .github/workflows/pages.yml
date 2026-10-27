@@ -1,7 +1,8 @@
 name: Pages
 # One site, one deployment (a Pages deployment replaces the whole site): the latest release, built from its tag, at the
 # root, and main under /next/. Without a release, or with a release from before the docs hook docs/hooks/edition.py,
-# the root redirects to /next/. A release is published only when the owner merges the release pull request (release.yml);
+# the root redirects to /next/. A release is published when the release pull request is merged (release.yml; weekly on Monday by
+# release-weekly.yml, or by the owner);
 # that publication, a push to main and a manual run rebuild the site.
 on:
   push:
