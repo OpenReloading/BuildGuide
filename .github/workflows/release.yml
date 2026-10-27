@@ -4,6 +4,8 @@ name: Release
 # workflow after the merge; the owner can also merge the PR by hand. release-please runs as the org's release GitHub App (variable
 # RELEASE_APP_CLIENT_ID, secret RELEASE_APP_PRIVATE_KEY): PRs opened with GITHUB_TOKEN wait for a maintainer to approve
 # their workflow runs, the App's PRs run them. GitHub signs the App's API commits, which main requires.
+# Publishing to GitHub Packages is off until the repository variable NPM_PUBLISH is `true`; the archives and wheels are
+# still attached to the GitHub Release.
 on:
   push:
     branches: [main]
@@ -65,6 +67,7 @@ jobs:
           TAG: ${{ needs.release-please.outputs.core-tag }}
         run: gh release upload "$TAG" packages/core/dist/*.tar.gz packages/core/dist/SHA256SUMS --clobber
       - name: Publish to GitHub Packages
+        if: vars.NPM_PUBLISH == 'true'
         run: npm publish -w packages/core # zizmor: ignore[use-trusted-publishing] GitHub Packages has no trusted publishing
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
@@ -115,6 +118,7 @@ jobs:
           TAG: ${{ needs.release-please.outputs.docusaurus-tag }}
         run: gh release upload "$TAG" packages/docusaurus/dist/*.tgz --clobber
       - name: Publish to GitHub Packages
+        if: vars.NPM_PUBLISH == 'true'
         run: npm publish -w packages/docusaurus # zizmor: ignore[use-trusted-publishing] GitHub Packages has no trusted publishing
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
