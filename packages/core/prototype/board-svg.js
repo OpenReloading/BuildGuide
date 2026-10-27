@@ -94,7 +94,7 @@
     const order = wires.map((_, w) => w).sort((a, b) => o.order === 'short' ? length2(a) - length2(b) : o.order === 'long' ? length2(b) - length2(a) : a - b);
     order.forEach(w => {
       const [pa, pb] = ends[w], [sa, sb] = stubs[w], start = iy.get(q3(sa.y)) * nx + ix.get(q3(sa.x)), goal = iy.get(q3(sb.y)) * nx + ix.get(q3(sb.x)), want = pb.dir ^ 1;
-      const gx = xs[goal % nx], gy = ys[(goal / nx) | 0], h = n => Math.abs(xs[n % nx] - gx) + Math.abs(ys[(n / nx) | 0] - gy);
+      const gx = xs[goal % nx], gy = ys[Math.trunc(goal / nx)], h = n => Math.abs(xs[n % nx] - gx) + Math.abs(ys[Math.trunc(n / nx)] - gy);
       const dist = new Float64Array(N * 4).fill(Infinity), prev = new Int32Array(N * 4).fill(-1), open = heap();
       const s0 = start * 4 + pa.dir;
       dist[s0] = 0; open.push(h(start), s0);
@@ -104,7 +104,7 @@
         if (f >= best) break;
         if (f > g + h(n) + 1e-9) continue;   // a state that was improved after it was queued
         if (n === goal) { const total = g + (hd === want ? 0 : o.bend); if (total < best) { best = total; last = s; } continue; }
-        const i = n % nx, j = (n / nx) | 0;
+        const i = n % nx, j = Math.trunc(n / nx);
         for (let d = 0; d < 4; d++) {
           if (d === (hd ^ 1)) continue;
           const i2 = i + STEP[d][0], j2 = j + STEP[d][1];
@@ -127,7 +127,7 @@
         use[at]++;
         if (k < states.length - 1 && (states[k + 1] & 3) === (s & 3)) pass[(s >> 2) * 2 + ((s & 3) < 2 ? 1 : 0)]++;
       });
-      result[w] = simplify([pa, ...states.map(s => ({x: xs[(s >> 2) % nx], y: ys[((s >> 2) / nx) | 0]})), pb]);
+      result[w] = simplify([pa, ...states.map(s => ({x: xs[(s >> 2) % nx], y: ys[Math.trunc((s >> 2) / nx)]})), pb]);
     });
     return result;
   }

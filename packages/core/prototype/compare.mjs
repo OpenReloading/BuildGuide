@@ -1,21 +1,22 @@
 // Compares the shipped board renderer with the prototype (board-svg.js) on the example boards and on a dense one (dense-guide.json):
 // screenshots, the geometry checks of tests/board-layout.spec.mjs as counts, size and time to ready.
-// Run from packages/core, with the repository's dependencies installed:  node prototype/compare.mjs [output folder]
+// Run from packages/core, with the repository's dependencies installed:  node prototype/compare.mjs
 // It also runs the browser tests, unchanged, against the prototype (set SKIP_SPECS=1 to leave that out).
 import { chromium } from '@playwright/test';
 import { execFileSync, spawn } from 'node:child_process';
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
 const CORE = resolve(import.meta.dirname, '..');
-const OUT = resolve(process.argv[2] ?? `${CORE}/prototype/comparison`);
+const OUT = `${CORE}/prototype/comparison`;
 const WORK = `${CORE}/test-results/compare`;   // inside the package: the static server serves only folders of the repository
 const gz = file => gzipSync(readFileSync(`${CORE}/${file}`)).length;
 // the third-party scripts and the wasm module are the files in the folders under src/
 const thirdParty = readdirSync(`${CORE}/src`, { recursive: true }).filter(f => /[\\/]/.test(f) && /\.(js|wasm)$/.test(f));
 const SIZES = {
-  shipped: ['buildguide-board.js', ...thirdParty].map(f => gz(`src/${f}`)).reduce((a, b) => a + b),
+  shipped: ['buildguide-board.js', ...thirdParty].map(f => gz(`src/${f}`)).reduce((a, b) => a + b, 0),
   prototype: gz('prototype/board-svg.js'),
 };
 
@@ -119,7 +120,7 @@ function measure(guide, key, g, shown) {
 }
 
 const median = list => [...list].sort((a, b) => a - b)[list.length >> 1];
-const server = (dir, port) => spawn('node', ['tests/serve.mjs', String(port), dir], { cwd: CORE, stdio: 'ignore' });
+const server = (dir, port) => spawn(process.execPath, ['tests/serve.mjs', String(port), dir], { cwd: CORE, stdio: 'ignore' });
 
 async function run(renderer, dataset, port, browser) {
   const dir = copy(`${renderer}-${dataset}`, renderer, dataset), srv = server(dir, port);
@@ -177,7 +178,7 @@ await browser.close();
 let specs = 'not run';
 if (!process.env.SKIP_SPECS) {
   const dir = `${WORK}/prototype-demo`;
-  try { specs = execFileSync('npx', ['playwright', 'test', '--reporter=line'], { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim().split('\n').slice(-3).join(' '); }
+  try { specs = execFileSync(process.execPath, [fileURLToPath(import.meta.resolve('@playwright/test/cli')), 'test', '--reporter=line'], { cwd: dir, encoding: 'utf8', stdio: 'pipe' }).trim().split('\n').slice(-3).join(' '); }
   catch (error) { specs = `failed: ${String(error.stdout).trim().split('\n').slice(-6).join(' ')}`; }
 }
 
