@@ -18,16 +18,9 @@
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
   const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
-  // a wheel notch or a trackpad pinch (ctrl + wheel) as a zoom factor, 35 % at most
-  const wheelFactor = (delta, mode) => Math.exp(-Math.max(-30, Math.min(30, delta * [1, 16, 400][mode || 0])) * .01);
-  // what a wheel over the board scrolls instead of it: the scrolling ancestor, null when the page behind is locked (fullscreen)
-  const pageScroller = el => {
-    for (let e = el.parentElement; e; e = e.parentElement) {
-      const overflow = getComputedStyle(e).overflowY;
-      if (e === document.body) return overflow === 'hidden' ? null : document.scrollingElement;
-      if (/auto|scroll/.test(overflow) && e.scrollHeight > e.clientHeight) return e;
-    }
-  };
+  // a wheel delta in pixels, a notch or a trackpad pinch (ctrl + wheel) as a zoom factor of 35 % at most
+  const wheelPx = (delta, mode) => delta * [1, 16, 400][mode || 0];
+  const wheelFactor = (delta, mode) => Math.exp(-Math.max(-30, Math.min(30, wheelPx(delta, mode))) * .01);
 
   window.BuildGuideBoard = (root, B, options) => {
     if (!window.joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
@@ -322,12 +315,12 @@
       paper.setDimensions(W * scale, H * scale);
       paper.scale(scale);
     }
-    // zoom to `next` (1, the whole board, up to the maximum of the buttons) and keep the board point `at` under the page point (x, y)
-    const boardPoint = (x, y) => { const r = holder.getBoundingClientRect(), k = paper.scale().sx; return {x: (x - r.left) / k, y: (y - r.top) / k}; };
-    function zoomTo(next, at, x, y) {
+    // zoom to `next` (1, the whole board, up to the maximum of the buttons), the board point under the page point (x, y) moves to (toX, toY)
+    function zoomTo(next, x, y, toX = x, toY = y) {
+      const {left, top} = holder.getBoundingClientRect(), before = paper.scale().sx;
       zoomFactor = Math.min(Math.max(1, next), Math.max(3, readable * 1.5)); fit();
-      const r = holder.getBoundingClientRect(), k = paper.scale().sx;
-      root.scrollLeft += r.left + at.x * k - x; root.scrollTop += r.top + at.y * k - y;
+      const r = holder.getBoundingClientRect(), grow = paper.scale().sx / before;
+      root.scrollLeft += r.left + (x - left) * grow - toX; root.scrollTop += r.top + (y - top) * grow - toY;
       options.zoomed?.(zoomFactor);
       return zoomFactor;
     }
@@ -337,38 +330,40 @@
     addEventListener('beforeprint', beforePrint); addEventListener('afterprint', fit);
     // mouse and pen dragging pans the zoomed canvas; one finger scrolls it natively and the page takes over at its edge; two fingers pinch and pan
     let drag, pinch;
-    const touches = new Map(), mid = () => { const [a, b] = [...touches.values()]; return [(a.x + b.x) / 2, (a.y + b.y) / 2, Math.hypot(a.x - b.x, a.y - b.y) || 1]; };
+    const touches = new Map(), mid = () => { const [a, b] = [...touches.values()]; return [(a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1]; };
     root.addEventListener('pointerdown', event => {
-      if (event.pointerType === 'touch') {
-        touches.set(event.pointerId, {x: event.clientX, y: event.clientY});
-        if (touches.size === 2) { const [x, y, d] = mid(); pinch = {d, shown, at: boardPoint(x, y)}; }
-        return;
-      }
+      if (event.pointerType === 'touch') { touches.set(event.pointerId, event); pinch = touches.size === 2 ? mid() : null; return; }
       if (event.target.closest('.joint-link')) return;   // connections and their numbers stay clickable
       drag = {x: event.clientX, y: event.clientY, left: root.scrollLeft, top: root.scrollTop};
       root.setPointerCapture(event.pointerId);
     });
     root.addEventListener('pointermove', event => {
       if (touches.has(event.pointerId)) {
-        touches.set(event.pointerId, {x: event.clientX, y: event.clientY});
-        if (pinch && touches.size === 2) { const [x, y, d] = mid(); zoomTo(pinch.shown * d / pinch.d, pinch.at, x, y); }
+        touches.set(event.pointerId, event);
+        if (pinch) { const now = mid(); zoomTo(shown * now[2] / pinch[2], pinch[0], pinch[1], now[0], now[1]); pinch = now; }
       }
       if (!drag) return;
       root.scrollLeft = drag.left + drag.x - event.clientX; root.scrollTop = drag.top + drag.y - event.clientY;
     });
-    const release = event => { drag = null; touches.delete(event.pointerId); if (touches.size < 2) pinch = null; };
+    const release = event => { drag = null; touches.delete(event.pointerId); pinch = null; };
     root.addEventListener('pointerup', release); root.addEventListener('pointercancel', release);
-    // ctrl or cmd with the wheel (and a trackpad pinch) zooms around the pointer; a plain vertical wheel reaches the page
+    // ctrl or cmd with the wheel (and a trackpad pinch) zooms around the pointer; a plain vertical wheel scrolls the nearest ancestor that can move that way, the page last, and keeps the board still
     root.addEventListener('wheel', event => {
-      const {deltaX, deltaY, deltaMode, clientX, clientY} = event, page = pageScroller(root);
-      if (event.ctrlKey || event.metaKey) zoomTo(shown * wheelFactor(deltaY, deltaMode), boardPoint(clientX, clientY), clientX, clientY);
-      else if (page && Math.abs(deltaY) >= Math.abs(deltaX) && root.scrollHeight > root.clientHeight) page.scrollBy(0, deltaY * [1, 16, page.clientHeight][deltaMode]);
-      else return;
+      const {deltaX, deltaY, clientX, clientY} = event, dy = wheelPx(deltaY, event.deltaMode);
+      if (event.ctrlKey || event.metaKey) zoomTo(shown * wheelFactor(deltaY, event.deltaMode), clientX, clientY);
+      else if (Math.abs(deltaY) < Math.abs(deltaX) || root.scrollHeight <= root.clientHeight) return;
+      else for (let e = root.parentElement; e; e = e.parentElement) {
+        const {overflowY} = getComputedStyle(e), body = e === document.body;
+        if (body && overflowY === 'hidden') return;   // the page behind a fullscreen board stays locked
+        const to = body ? document.scrollingElement : e;
+        if ((body || /auto|scroll/.test(overflowY)) && (dy < 0 ? to.scrollTop > 0 : to.scrollTop + to.clientHeight + 1 < to.scrollHeight)) { to.scrollBy(0, dy); break; }
+        if (!e.parentElement) return;
+      }
       event.preventDefault();
     }, {passive: false});
     return {
       destroy() { disposed = true; observer.disconnect(); removeEventListener('beforeprint', beforePrint); removeEventListener('afterprint', fit); paper.remove(); graph.clear(); },
-      zoomBy(step) { const r = root.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2; return zoomTo(shown + step, boardPoint(x, y), x, y); },
+      zoomBy(step) { const r = root.getBoundingClientRect(); return zoomTo(shown + step, r.left + r.width / 2, r.top + r.height / 2); },
       fit() { zoomFactor = 1; fit(); root.scrollTo(0, 0); },
       highlight,
     };

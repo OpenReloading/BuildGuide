@@ -168,6 +168,30 @@ test('wheel: a plain wheel scrolls the page also over a zoomed board, ctrl or cm
   await expect.poll(() => canvas.evaluate(el => el.scrollHeight <= el.clientHeight && el.scrollWidth <= el.clientWidth)).toBe(true);
 });
 
+test('wheel: at the edge of the nearest scrolling ancestor the next one takes over', async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 600 });
+  await page.goto(`${BASE}${boards[0]}/`); await ready(page);
+  const canvas = page.locator('.ag-board-canvas');
+  await page.locator('[data-action=zoom-in]').click();
+  await page.locator('[data-action=zoom-in]').click();
+  // an outer scroller around the component, scrolled to its end, and a page below it that can scroll
+  await canvas.scrollIntoViewIfNeeded();
+  await page.evaluate(() => {
+    const guide = document.querySelector('.ag-guide'), outer = document.createElement('div'), tail = document.createElement('div');
+    outer.id = 'outer'; outer.style.cssText = `height:${guide.offsetHeight - 100}px;overflow-y:auto`; tail.style.height = '2000px';
+    guide.before(outer); outer.append(guide); outer.after(tail);
+    outer.scrollTop = outer.scrollHeight;
+  });
+  await page.evaluate(() => scrollTo(0, document.querySelector('#outer').getBoundingClientRect().top + scrollY));
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const outer = page.locator('#outer'), outerTop = await outer.evaluate(el => el.scrollTop), y = await page.evaluate(() => scrollY), top = await canvas.evaluate(el => el.scrollTop);
+  await page.mouse.wheel(0, 120);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(y);
+  expect(await outer.evaluate(el => el.scrollTop)).toBe(outerTop);
+  expect(await canvas.evaluate(el => el.scrollTop)).toBe(top);
+});
+
 test('phone fullscreen: pinch works, the page behind stays where it was', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${BASE}${boards[0]}/`); await ready(page);
