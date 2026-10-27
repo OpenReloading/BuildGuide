@@ -1,0 +1,1519 @@
+{
+ "storage": "dense-guide",
+ "boards": {
+  "wiring": {
+   "title": "Wiring",
+   "label": "Wiring board",
+   "size": [
+    1360,
+    860
+   ],
+   "prefix": "wire",
+   "single": true,
+   "legend": [
+    {
+     "key": "diode",
+     "text": "Silver ring = cathode"
+    },
+    "Green = selected connection"
+   ],
+   "colors": {
+    "WH": {
+     "line": "#ffffff",
+     "outline": "#334155",
+     "swatch": "#fff"
+    },
+    "BU": {
+     "line": "#2563eb",
+     "outline": "#1e3a8a",
+     "swatch": "#347bdc"
+    },
+    "BN": {
+     "line": "#92400e",
+     "outline": "#451a03",
+     "swatch": "#956238"
+    },
+    "BK": {
+     "line": "#1f2937",
+     "outline": "#000000",
+     "swatch": "#273039"
+    },
+    "GY": {
+     "line": "#9ca3af",
+     "outline": "#4b5563",
+     "swatch": "#929ea9"
+    },
+    "DIODE": {
+     "line": "#d1d5db",
+     "outline": "#111827",
+     "swatch": "#29363a",
+     "diode": true
+    }
+   },
+   "kinds": {
+    "socket": {
+     "fill": "#1f2937",
+     "stroke": "#1f2937",
+     "inset": 17,
+     "diodeLoop": "around"
+    },
+    "box": {
+     "fill": "#f1f5f9",
+     "stroke": "#17202a",
+     "offset": {
+      "bottom": -16
+     }
+    },
+    "diode": {
+     "fill": "#111827",
+     "stroke": "#111827",
+     "band": true
+    },
+    "terminal": {
+     "fill": "#f1f5f9",
+     "stroke": "#64748b"
+    },
+    "plug": {
+     "fill": "#1f2937",
+     "stroke": "#1f2937"
+    },
+    "sensor": {
+     "fill": "#e8f5ec",
+     "stroke": "#15803d",
+     "pins": {
+      "BN": "#92400e",
+      "BU": "#2563eb",
+      "BK": "#111827"
+     }
+    },
+    "button": {
+     "round": true,
+     "stroke": "#9ca3af"
+    }
+   },
+   "areas": {
+    "box": {
+     "title": "Control box",
+     "at": [
+      20,
+      270
+     ],
+     "size": [
+      1320,
+      580
+     ],
+     "color": "#334155",
+     "glands": [
+      [
+       405,
+       "Y1"
+      ],
+      [
+       685,
+       "Y2"
+      ],
+      [
+       840,
+       "P"
+      ],
+      [
+       1036,
+       "B0"
+      ],
+      [
+       1256,
+       "B1"
+      ]
+     ]
+    },
+    "air": {
+     "title": "Air row",
+     "at": [
+      330,
+      10
+     ],
+     "size": [
+      600,
+      230
+     ],
+     "color": "#0f766e"
+    },
+    "machine": {
+     "title": "Cylinder",
+     "at": [
+      950,
+      10
+     ],
+     "size": [
+      390,
+      230
+     ],
+     "color": "#475569"
+    }
+   },
+   "props": [
+    {
+     "name": "desktop PSU plugs into J1 (outside)",
+     "at": [
+      40,
+      200
+     ],
+     "size": [
+      250,
+      30
+     ]
+    },
+    {
+     "name": "5/3 valve",
+     "at": [
+      475,
+      125
+     ],
+     "size": [
+      140,
+      50
+     ]
+    },
+    {
+     "name": "cylinder → press lever",
+     "at": [
+      975,
+      45
+     ],
+     "size": [
+      340,
+      40
+     ]
+    }
+   ],
+   "parts": {
+    "J1": {
+     "name": "J1 · 24 V in",
+     "kind": "box",
+     "at": [
+      45,
+      380
+     ],
+     "size": [
+      80,
+      100
+     ],
+     "ports": {
+      "bottom": [
+       "+",
+       "-"
+      ]
+     }
+    },
+    "F1": {
+     "name": "F1 · T 1 A",
+     "kind": "box",
+     "at": [
+      140,
+      380
+     ],
+     "size": [
+      70,
+      100
+     ],
+     "ports": {
+      "bottom": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    "K1": {
+     "name": "K1",
+     "sub": "AUTO",
+     "kind": "socket",
+     "at": [
+      385,
+      460
+     ],
+     "size": [
+      62,
+      160
+     ],
+     "ports": {
+      "left": [
+       "13",
+       "9",
+       "5",
+       "1"
+      ],
+      "right": [
+       "14",
+       "12",
+       "8",
+       "4"
+      ]
+     }
+    },
+    "K2": {
+     "name": "K2",
+     "sub": "AT FRONT",
+     "kind": "socket",
+     "at": [
+      497,
+      460
+     ],
+     "size": [
+      62,
+      160
+     ],
+     "ports": {
+      "left": [
+       "13",
+       "9",
+       "5",
+       "1"
+      ],
+      "right": [
+       "14",
+       "12",
+       "8",
+       "4"
+      ]
+     }
+    },
+    "K3": {
+     "name": "K3",
+     "sub": "RETRACT",
+     "kind": "socket",
+     "at": [
+      609,
+      460
+     ],
+     "size": [
+      62,
+      160
+     ],
+     "ports": {
+      "left": [
+       "13",
+       "9",
+       "5",
+       "1"
+      ],
+      "right": [
+       "14",
+       "12",
+       "8",
+       "4"
+      ]
+     }
+    },
+    "K4": {
+     "name": "K4",
+     "sub": "AT HOME",
+     "kind": "socket",
+     "at": [
+      721,
+      460
+     ],
+     "size": [
+      62,
+      160
+     ],
+     "ports": {
+      "left": [
+       "13",
+       "9",
+       "5",
+       "1"
+      ],
+      "right": [
+       "14",
+       "12",
+       "8",
+       "4"
+      ]
+     }
+    },
+    "T1": {
+     "name": "T1",
+     "sub": "jam timer",
+     "kind": "socket",
+     "at": [
+      833,
+      460
+     ],
+     "size": [
+      92,
+      160
+     ],
+     "ports": {
+      "left": [
+       "1",
+       "2",
+       "3",
+       "4"
+      ],
+      "right": [
+       "8",
+       "7",
+       "6",
+       "5"
+      ]
+     }
+    },
+    "D5": {
+     "name": "",
+     "sub": "D5 · ring →",
+     "kind": "diode",
+     "at": [
+      1120,
+      330
+     ],
+     "size": [
+      60,
+      22
+     ],
+     "ports": {
+      "left": [
+       "A"
+      ],
+      "right": [
+       "K"
+      ]
+     }
+    },
+    "D6": {
+     "name": "",
+     "sub": "D6 · ring →",
+     "kind": "diode",
+     "at": [
+      1120,
+      376
+     ],
+     "size": [
+      60,
+      22
+     ],
+     "ports": {
+      "left": [
+       "A"
+      ],
+      "right": [
+       "K"
+      ]
+     }
+    },
+    "X-EN": {
+     "name": "",
+     "sub": "X-EN · +24 V while on",
+     "kind": "terminal",
+     "at": [
+      390,
+      330
+     ],
+     "size": [
+      122,
+      30
+     ],
+     "ports": {
+      "top": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5"
+      ]
+     }
+    },
+    "X-M1": {
+     "name": "",
+     "sub": "X-M1 · 0 V",
+     "kind": "terminal",
+     "at": [
+      540,
+      330
+     ],
+     "size": [
+      122,
+      30
+     ],
+     "ports": {
+      "top": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5"
+      ]
+     }
+    },
+    "X-M2": {
+     "name": "",
+     "sub": "X-M2 · 0 V",
+     "kind": "terminal",
+     "at": [
+      690,
+      330
+     ],
+     "size": [
+      122,
+      30
+     ],
+     "ports": {
+      "top": [
+       "1",
+       "2",
+       "3",
+       "4",
+       "5"
+      ]
+     }
+    },
+    "X-D": {
+     "name": "",
+     "sub": "X-D · to timer",
+     "kind": "terminal",
+     "at": [
+      960,
+      330
+     ],
+     "size": [
+      78,
+      30
+     ],
+     "ports": {
+      "top": [
+       "1",
+       "2",
+       "3"
+      ]
+     }
+    },
+    "QPM11": {
+     "name": "QPM11 pressure switch",
+     "kind": "box",
+     "at": [
+      770,
+      95
+     ],
+     "size": [
+      140,
+      90
+     ],
+     "ports": {
+      "bottom": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    "S3": {
+     "name": "",
+     "sub": "E-STOP",
+     "kind": "button",
+     "color": "#dc2626",
+     "at": [
+      40,
+      770
+     ],
+     "size": [
+      48,
+      48
+     ],
+     "ports": {
+      "top": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    "S2": {
+     "name": "",
+     "sub": "STOP",
+     "kind": "button",
+     "color": "#111827",
+     "at": [
+      110,
+      770
+     ],
+     "size": [
+      48,
+      48
+     ],
+     "ports": {
+      "top": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    "S0": {
+     "name": "",
+     "sub": "START",
+     "kind": "button",
+     "color": "#16a34a",
+     "at": [
+      180,
+      770
+     ],
+     "size": [
+      48,
+      48
+     ],
+     "ports": {
+      "top": [
+       "3",
+       "4"
+      ]
+     }
+    },
+    "S1": {
+     "name": "",
+     "sub": "JOG",
+     "kind": "button",
+     "color": "#f8fafc",
+     "at": [
+      250,
+      770
+     ],
+     "size": [
+      48,
+      48
+     ],
+     "ports": {
+      "top": [
+       "3",
+       "4"
+      ]
+     }
+    },
+    "Q1": {
+     "name": "",
+     "sub": "POWER",
+     "kind": "button",
+     "color": "#3b82f6",
+     "at": [
+      320,
+      770
+     ],
+     "size": [
+      68,
+      48
+     ],
+     "ports": {
+      "top": [
+       "IN",
+       "OUT",
+       "GND"
+      ]
+     }
+    },
+    "Y1": {
+     "name": "Y1 · extend coil",
+     "kind": "plug",
+     "at": [
+      350,
+      115
+     ],
+     "size": [
+      110,
+      70
+     ],
+     "ports": {
+      "bottom": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    "Y2": {
+     "name": "Y2 · retract coil",
+     "kind": "plug",
+     "at": [
+      630,
+      115
+     ],
+     "size": [
+      110,
+      70
+     ],
+     "ports": {
+      "bottom": [
+       "1",
+       "2"
+      ]
+     }
+    },
+    "B0": {
+     "name": "B0 · home sensor",
+     "kind": "sensor",
+     "at": [
+      1000,
+      150
+     ],
+     "size": [
+      72,
+      34
+     ],
+     "ports": {
+      "bottom": [
+       "BN",
+       "BU",
+       "BK"
+      ]
+     }
+    },
+    "B1": {
+     "name": "B1 · front sensor",
+     "kind": "sensor",
+     "at": [
+      1220,
+      150
+     ],
+     "size": [
+      72,
+      34
+     ],
+     "ports": {
+      "bottom": [
+       "BN",
+       "BU",
+       "BK"
+      ]
+     }
+    }
+   },
+   "steps": [
+    {
+     "id": "0",
+     "title": "Relay diodes",
+     "connections": [
+      {
+       "no": "D1",
+       "a": "K1:14",
+       "b": "K1:13",
+       "color": "DIODE",
+       "la": "K1 terminal 14",
+       "lb": "K1 terminal 13"
+      },
+      {
+       "no": "D2",
+       "a": "K2:14",
+       "b": "K2:13",
+       "color": "DIODE",
+       "la": "K2 terminal 14",
+       "lb": "K2 terminal 13"
+      },
+      {
+       "no": "D3",
+       "a": "K3:14",
+       "b": "K3:13",
+       "color": "DIODE",
+       "la": "K3 terminal 14",
+       "lb": "K3 terminal 13"
+      },
+      {
+       "no": "D4",
+       "a": "K4:14",
+       "b": "K4:13",
+       "color": "DIODE",
+       "la": "K4 terminal 14",
+       "lb": "K4 terminal 13"
+      }
+     ]
+    },
+    {
+     "id": "A",
+     "title": "Power",
+     "connections": [
+      {
+       "no": "1",
+       "a": "J1:+",
+       "b": "F1:1",
+       "color": "WH",
+       "la": "DC jack J1 +",
+       "lb": "Fuse holder F1 tab 1",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "2",
+       "a": "F1:2",
+       "b": "Q1:IN",
+       "color": "WH",
+       "la": "Fuse holder F1 tab 2",
+       "lb": "Power switch Q1 IN",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "3",
+       "a": "Q1:OUT",
+       "b": "S3:1",
+       "color": "WH",
+       "la": "Power switch Q1 OUT",
+       "lb": "E-STOP button 1 (NC)",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "4",
+       "a": "J1:-",
+       "b": "X-M1:1",
+       "color": "BU",
+       "la": "DC jack J1 −",
+       "lb": "terminal X-M1 (0 V) slot 1",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "5",
+       "a": "X-M1:2",
+       "b": "X-M2:1",
+       "color": "BU",
+       "la": "terminal X-M1 (0 V) slot 2",
+       "lb": "terminal X-M2 (0 V) slot 1",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "6",
+       "a": "X-M1:3",
+       "b": "K1:13",
+       "color": "BU",
+       "la": "terminal X-M1 (0 V) slot 3",
+       "lb": "K1 terminal 13 · twin ferrule with 7a",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "7a",
+       "a": "K1:13",
+       "b": "K2:13",
+       "color": "BU",
+       "la": "K1 terminal 13 · twin ferrule with 6",
+       "lb": "K2 terminal 13 · twin ferrule with 7b",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "7b",
+       "a": "K2:13",
+       "b": "K3:13",
+       "color": "BU",
+       "la": "K2 terminal 13 · twin ferrule with 7a",
+       "lb": "K3 terminal 13 · twin ferrule with 7c",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "7c",
+       "a": "K3:13",
+       "b": "K4:13",
+       "color": "BU",
+       "la": "K3 terminal 13 · twin ferrule with 7b",
+       "lb": "K4 terminal 13",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      }
+     ]
+    },
+    {
+     "id": "B",
+     "title": "E-STOP, STOP and START",
+     "connections": [
+      {
+       "no": "8",
+       "a": "S3:2",
+       "b": "QPM11:1",
+       "color": "WH",
+       "la": "E-STOP button 2 (NC)",
+       "lb": "Pressure switch 1",
+       "cable": "2-core cable, black sheath",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "9",
+       "a": "QPM11:2",
+       "b": "X-EN:1",
+       "color": "WH",
+       "la": "Pressure switch 2",
+       "lb": "terminal X-EN (switched +24 V) slot 1",
+       "cable": "2-core cable, black sheath",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "10",
+       "a": "T1:5",
+       "b": "S2:1",
+       "color": "WH",
+       "la": "T1 terminal 5",
+       "lb": "STOP button 1 (NC)",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "11",
+       "a": "S2:2",
+       "b": "K1:9",
+       "color": "WH",
+       "la": "STOP button 2 (NC)",
+       "lb": "K1 terminal 9 · twin ferrule with 12",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "12",
+       "a": "K1:9",
+       "b": "S0:3",
+       "color": "WH",
+       "la": "K1 terminal 9 · twin ferrule with 11",
+       "lb": "START button 3 (NO) · twin ferrule with 20",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "13",
+       "a": "S0:4",
+       "b": "K1:5",
+       "color": "WH",
+       "la": "START button 4 (NO)",
+       "lb": "K1 terminal 5 · twin ferrule with 14",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "14",
+       "a": "K1:5",
+       "b": "K1:14",
+       "color": "WH",
+       "la": "K1 terminal 5 · twin ferrule with 13",
+       "lb": "K1 terminal 14",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "15",
+       "a": "Q1:GND",
+       "b": "X-M2:2",
+       "color": "BU",
+       "la": "Power switch Q1 GND",
+       "lb": "terminal X-M2 (0 V) slot 2",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      }
+     ]
+    },
+    {
+     "id": "C",
+     "title": "Switched +24 V (EN)",
+     "connections": [
+      {
+       "no": "16",
+       "a": "X-EN:2",
+       "b": "K1:12",
+       "color": "WH",
+       "la": "terminal X-EN (switched +24 V) slot 2",
+       "lb": "K1 terminal 12",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "17",
+       "a": "X-EN:3",
+       "b": "T1:8",
+       "color": "WH",
+       "la": "terminal X-EN (switched +24 V) slot 3",
+       "lb": "T1 terminal 8",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "18",
+       "a": "B1:BN",
+       "b": "X-EN:4",
+       "color": "BN",
+       "la": "Front sensor B1, brown core",
+       "lb": "terminal X-EN (switched +24 V) slot 4",
+       "cable": "The sensor's own cable",
+       "size": "as supplied"
+      },
+      {
+       "no": "19",
+       "a": "B0:BN",
+       "b": "X-EN:5",
+       "color": "BN",
+       "la": "Home sensor B0, brown core",
+       "lb": "terminal X-EN (switched +24 V) slot 5",
+       "cable": "The sensor's own cable",
+       "size": "as supplied"
+      }
+     ]
+    },
+    {
+     "id": "D",
+     "title": "AUTO and JOG: rod out",
+     "connections": [
+      {
+       "no": "20",
+       "a": "S0:3",
+       "b": "S1:3",
+       "color": "WH",
+       "la": "START button 3 (NO) · twin ferrule with 12",
+       "lb": "JOG button 3 (NO)",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "21",
+       "a": "S1:4",
+       "b": "K3:9",
+       "color": "WH",
+       "la": "JOG button 4 (NO) · twin ferrule with 22",
+       "lb": "K3 terminal 9 · twin ferrule with 23",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "22",
+       "a": "K1:8",
+       "b": "S1:4",
+       "color": "WH",
+       "la": "K1 terminal 8 · twin ferrule with 24",
+       "lb": "JOG button 4 (NO) · twin ferrule with 21",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "23",
+       "a": "K3:9",
+       "b": "K2:12",
+       "color": "WH",
+       "la": "K3 terminal 9 · twin ferrule with 21",
+       "lb": "K2 terminal 12",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "24",
+       "a": "K1:8",
+       "b": "K3:12",
+       "color": "WH",
+       "la": "K1 terminal 8 · twin ferrule with 22",
+       "lb": "K3 terminal 12",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "25",
+       "a": "K3:4",
+       "b": "K2:9",
+       "color": "WH",
+       "la": "K3 terminal 4",
+       "lb": "K2 terminal 9",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      }
+     ]
+    },
+    {
+     "id": "E",
+     "title": "Return: rod back",
+     "connections": [
+      {
+       "no": "26",
+       "a": "K2:8",
+       "b": "K3:5",
+       "color": "WH",
+       "la": "K2 terminal 8",
+       "lb": "K3 terminal 5 · twin ferrule with 27",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "27",
+       "a": "K3:5",
+       "b": "K4:9",
+       "color": "WH",
+       "la": "K3 terminal 5 · twin ferrule with 26",
+       "lb": "K4 terminal 9",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "28",
+       "a": "K4:1",
+       "b": "K3:14",
+       "color": "WH",
+       "la": "K4 terminal 1",
+       "lb": "K3 terminal 14",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      }
+     ]
+    },
+    {
+     "id": "F",
+     "title": "End sensors",
+     "connections": [
+      {
+       "no": "29",
+       "a": "B1:BK",
+       "b": "K2:14",
+       "color": "BK",
+       "la": "Front sensor B1, black core",
+       "lb": "K2 terminal 14",
+       "cable": "The sensor's own cable",
+       "size": "as supplied"
+      },
+      {
+       "no": "30",
+       "a": "B1:BU",
+       "b": "X-M1:4",
+       "color": "BU",
+       "la": "Front sensor B1, blue core",
+       "lb": "terminal X-M1 (0 V) slot 4",
+       "cable": "The sensor's own cable",
+       "size": "as supplied"
+      },
+      {
+       "no": "31",
+       "a": "B0:BK",
+       "b": "K4:14",
+       "color": "BK",
+       "la": "Home sensor B0, black core",
+       "lb": "K4 terminal 14",
+       "cable": "The sensor's own cable",
+       "size": "as supplied"
+      },
+      {
+       "no": "32",
+       "a": "B0:BU",
+       "b": "X-M1:5",
+       "color": "BU",
+       "la": "Home sensor B0, blue core",
+       "lb": "terminal X-M1 (0 V) slot 5",
+       "cable": "The sensor's own cable",
+       "size": "as supplied"
+      }
+     ]
+    },
+    {
+     "id": "G",
+     "title": "Valve coils",
+     "connections": [
+      {
+       "no": "33",
+       "a": "K2:1",
+       "b": "Y1:1",
+       "color": "WH",
+       "la": "K2 terminal 1 · twin ferrule with 37",
+       "lb": "Valve plug Y1 pin 1 (+)",
+       "cable": "2-core cable, black sheath",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "34",
+       "a": "Y1:2",
+       "b": "X-M2:3",
+       "color": "BU",
+       "la": "Valve plug Y1 pin 2",
+       "lb": "terminal X-M2 (0 V) slot 3",
+       "cable": "2-core cable, black sheath",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "D7",
+       "a": "Y1:1",
+       "b": "Y1:2",
+       "color": "DIODE",
+       "la": "Valve plug Y1 pin 1 (+)",
+       "lb": "Valve plug Y1 pin 2"
+      },
+      {
+       "no": "35",
+       "a": "K3:8",
+       "b": "Y2:1",
+       "color": "WH",
+       "la": "K3 terminal 8 · twin ferrule with 38",
+       "lb": "Valve plug Y2 pin 1 (+)",
+       "cable": "2-core cable, black sheath",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "36",
+       "a": "Y2:2",
+       "b": "X-M2:4",
+       "color": "BU",
+       "la": "Valve plug Y2 pin 2",
+       "lb": "terminal X-M2 (0 V) slot 4",
+       "cable": "2-core cable, black sheath",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "D8",
+       "a": "Y2:1",
+       "b": "Y2:2",
+       "color": "DIODE",
+       "la": "Valve plug Y2 pin 1 (+)",
+       "lb": "Valve plug Y2 pin 2"
+      }
+     ]
+    },
+    {
+     "id": "H",
+     "title": "Jam timer",
+     "connections": [
+      {
+       "no": "37",
+       "a": "K2:1",
+       "b": "D5:A",
+       "color": "WH",
+       "la": "K2 terminal 1 · twin ferrule with 33",
+       "lb": "Diode D5, plain leg, in its own 2-way terminal with this wire",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "38",
+       "a": "K3:8",
+       "b": "D6:A",
+       "color": "WH",
+       "la": "K3 terminal 8 · twin ferrule with 35",
+       "lb": "Diode D6, plain leg, in its own 2-way terminal with this wire",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "37b",
+       "a": "D5:K",
+       "b": "X-D:1",
+       "color": "GY",
+       "la": "Diode D5, ring leg",
+       "lb": "terminal X-D (diode join) slot 1",
+       "cable": "Diode leg",
+       "size": ""
+      },
+      {
+       "no": "38b",
+       "a": "D6:K",
+       "b": "X-D:2",
+       "color": "GY",
+       "la": "Diode D6, ring leg",
+       "lb": "terminal X-D (diode join) slot 2",
+       "cable": "Diode leg",
+       "size": ""
+      },
+      {
+       "no": "39",
+       "a": "X-D:3",
+       "b": "T1:7",
+       "color": "WH",
+       "la": "terminal X-D (diode join) slot 3",
+       "lb": "T1 terminal 7",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "40",
+       "a": "T1:2",
+       "b": "X-M2:5",
+       "color": "BU",
+       "la": "T1 terminal 2",
+       "lb": "terminal X-M2 (0 V) slot 5",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "41",
+       "a": "K4:12",
+       "b": "T1:1",
+       "color": "WH",
+       "la": "K4 terminal 12",
+       "lb": "T1 terminal 1",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      },
+      {
+       "no": "42",
+       "a": "K4:8",
+       "b": "T1:3",
+       "color": "WH",
+       "la": "K4 terminal 8",
+       "lb": "T1 terminal 3",
+       "cable": "Stranded wire, white or blue",
+       "size": "0.5 mm² · AWG 20"
+      }
+     ]
+    }
+   ]
+  },
+  "tubing": {
+   "title": "Tubing",
+   "label": "Pneumatic tubing diagram",
+   "size": [
+    1100,
+    530
+   ],
+   "prefix": "tube",
+   "scope": "all",
+   "listAll": true,
+   "listColor": false,
+   "legend": [
+    "6 × 4 mm tube · schematic",
+    "Green = selected connection"
+   ],
+   "colors": {
+    "AIR": {
+     "line": "#7694b2",
+     "outline": "#3f5f7f"
+    }
+   },
+   "props": [
+    {
+     "name": "QPM11 on the branch",
+     "at": [
+      520,
+      150
+     ],
+     "size": [
+      160,
+      40
+     ]
+    }
+   ],
+   "parts": {
+    "AIR": {
+     "name": "AIR",
+     "sub": "7–10 bar",
+     "at": [
+      20,
+      250
+     ],
+     "size": [
+      90,
+      56
+     ],
+     "ports": {
+      "right": [
+       "out"
+      ]
+     }
+    },
+    "FRL": {
+     "name": "FRL",
+     "sub": "Filter-regulator",
+     "at": [
+      200,
+      236
+     ],
+     "size": [
+      110,
+      84
+     ],
+     "ports": {
+      "left": [
+       "in"
+      ],
+      "right": [
+       "out"
+      ]
+     }
+    },
+    "SHUT": {
+     "name": "3/2",
+     "sub": "shut-off, vents",
+     "at": [
+      400,
+      250
+     ],
+     "size": [
+      80,
+      56
+     ],
+     "ports": {
+      "left": [
+       "in"
+      ],
+      "right": [
+       "out"
+      ]
+     }
+    },
+    "TEE": {
+     "name": "Tee",
+     "sub": "6 mm",
+     "at": [
+      570,
+      254
+     ],
+     "size": [
+      60,
+      48
+     ],
+     "ports": {
+      "left": [
+       "in"
+      ],
+      "right": [
+       "out"
+      ]
+     }
+    },
+    "VALVE": {
+     "name": "5/3 VALVE · exhaust centre",
+     "at": [
+      720,
+      230
+     ],
+     "size": [
+      200,
+      96
+     ],
+     "ports": {
+      "left": [
+       "P"
+      ],
+      "right": [
+       "A",
+       "B"
+      ],
+      "bottom": [
+       "R+S"
+      ]
+     }
+    },
+    "CYL": {
+     "name": "DSNU CYLINDER",
+     "at": [
+      880,
+      60
+     ],
+     "size": [
+      200,
+      56
+     ],
+     "ports": {
+      "bottom": [
+       "cap",
+       "rod"
+      ]
+     }
+    },
+    "SIL": {
+     "sub": "2 × silencers · R + S → atmosphere",
+     "at": [
+      745,
+      460
+     ],
+     "size": [
+      150,
+      40
+     ],
+     "ports": {
+      "top": [
+       "in"
+      ]
+     }
+    }
+   },
+   "steps": [
+    {
+     "id": "1",
+     "title": "Supply → filter-regulator",
+     "connections": [
+      {
+       "no": "1",
+       "a": "AIR:out",
+       "b": "FRL:in",
+       "color": "AIR",
+       "la": "Air supply (hose coupler)",
+       "lb": "FRL · IN"
+      }
+     ]
+    },
+    {
+     "id": "2",
+     "title": "Filter-regulator → shut-off",
+     "connections": [
+      {
+       "no": "2",
+       "a": "FRL:out",
+       "b": "SHUT:in",
+       "color": "AIR",
+       "la": "FRL · OUT",
+       "lb": "Shut-off · IN"
+      }
+     ]
+    },
+    {
+     "id": "3",
+     "title": "Shut-off → pressure-switch tee",
+     "connections": [
+      {
+       "no": "3",
+       "a": "SHUT:out",
+       "b": "TEE:in",
+       "color": "AIR",
+       "la": "Shut-off · OUT",
+       "lb": "Tee · inlet"
+      }
+     ]
+    },
+    {
+     "id": "4",
+     "title": "Tee → valve supply",
+     "connections": [
+      {
+       "no": "4",
+       "a": "TEE:out",
+       "b": "VALVE:P",
+       "color": "AIR",
+       "la": "Tee · outlet",
+       "lb": "Valve · P"
+      }
+     ]
+    },
+    {
+     "id": "5",
+     "title": "Valve A → cylinder cap end",
+     "connections": [
+      {
+       "no": "5",
+       "a": "VALVE:A",
+       "b": "CYL:cap",
+       "color": "AIR",
+       "la": "Valve · A",
+       "lb": "Cylinder · cap-end flow control"
+      }
+     ]
+    },
+    {
+     "id": "6",
+     "title": "Valve B → cylinder rod end",
+     "connections": [
+      {
+       "no": "6",
+       "a": "VALVE:B",
+       "b": "CYL:rod",
+       "color": "AIR",
+       "la": "Valve · B",
+       "lb": "Cylinder · rod-end flow control"
+      }
+     ]
+    },
+    {
+     "id": "7",
+     "title": "Fit both exhaust silencers",
+     "connections": [
+      {
+       "no": "7",
+       "a": "VALVE:R+S",
+       "b": "SIL:in",
+       "color": "AIR",
+       "la": "Valve · R + S",
+       "lb": "Atmosphere · two silencers"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}
