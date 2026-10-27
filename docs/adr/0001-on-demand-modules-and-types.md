@@ -4,7 +4,7 @@ Status: proposed (spike #129, for the owner's decision).
 
 ## Decision
 
-1. Split `buildguide.js` into classic scripts that load on demand, one file per feature, next to it in `packages/core/src/` (`buildguide-<name>.js`). Core loads them with the loader that already loads the board renderer. The budget of `buildguide.js` stays at 12700 bytes gzipped; each new file gets its own budget in `size.test.mjs`.
+1. Split `buildguide.js` into classic scripts that load on demand, one file per feature, next to it in `packages/core/src/` (`buildguide-<name>.js`). Core loads them with the loader that already loads the board renderer. The budget of `buildguide.js` stays at 12700 bytes gzipped; each new file gets its own budget in `size.test.mjs`. That test finds shipped files with a name pattern that only knows `buildguide.js`, `buildguide-board.js`, `buildguide.css` and the third-party folder, so the pattern and the `BUDGET` keys change together: a budget alone fails the "every shipped file has a budget" test, a file alone is not measured.
 2. No ES modules. Classic scripts keep working from `file:`, with the plugins' script tags and with `document.currentScript`.
 3. No TypeScript source and no build step. Add JSDoc-compatible type checking with `tsc --checkJs --noEmit` as a check only, non-strict first, with the declarations in a `.d.ts` file instead of inline comments (inline JSDoc counts against the gzip budget).
 
@@ -41,7 +41,7 @@ The issue text quotes 11555 of 11600 for `buildguide.js`: the budget was raised 
 
 What follows from the numbers:
 
-- Progress and tabs free about 1.9 kB and cover #75 (+100), #76 (+104) and #77 (+300) with room left. Without any split, #75 alone fits today (483 bytes of headroom) and #76 would not.
+- Progress and tabs free about 1.9 kB and cover #75 (+100), #76 (+104) and #77 (+300) with room left. Without any split, #75 (+100) or #76 (+104, and about 300 of the 530 CSS bytes) alone fits the 483 bytes of headroom today; the three together (+504 with #77) do not.
 - Moving only the BOM CSV does not pay. The export module pays once #75 puts the board CSV and the print list into it.
 - Inline JSDoc is expensive under this budget: 130 synthetic one-line `@param` comments add about 485 gzipped bytes to `buildguide.js`.
 
@@ -54,7 +54,7 @@ Classic scripts. Reasons:
 - A hybrid, a classic entry that calls dynamic `import()`, works ([MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)) but loses `file:` for the on-demand files, and gives no retry: `loadScript` already forgets a failed load so the next render tries again. Whether a browser retries a failed `import()` is unverified.
 - Nothing in core needs bundling or tree shaking, which is what modules would add.
 
-Request cost: each module is one more request after `buildguide.js`. A board page already loads the board renderer, its router and the WebAssembly file in a chain. Start every file a view is known to need in parallel at mount (tabs when the view is `guide`) and load click-only features (progress, export, zoom, language) when first used. Plain HTML pages need nothing: the files sit next to `buildguide.js`, which the dist archive, the MkDocs wheel and the Docusaurus copy already ship as the whole `src/` folder.
+Request cost: each module is one more request after `buildguide.js`. A board page already loads the board renderer, its router and the WebAssembly file in a chain. Start every file a view is known to need in parallel at mount (tabs when the view is `guide`) and load click-only features (progress, the download action of export, zoom, language) when first used. The `export` module is the exception for the print list: it loads when a board mounts (see follow-up 2). Plain HTML pages need nothing: the files sit next to `buildguide.js`, which the dist archive, the MkDocs wheel and the Docusaurus copy already ship as the whole `src/` folder.
 
 Contract for a module: a classic script that adds one function to `window.BuildGuideModules` under its name. Core passes what it needs in a context object. Mutable state (`saved`, `persistent`, `undo`) goes through accessors, which is the main cost of the split (included in the Core column).
 
@@ -69,10 +69,10 @@ JSDoc with `tsc --checkJs` as a check only keeps the rule. Measured with TypeScr
 
 | Setting | Errors |
 |---|---|
-| defaults of TypeScript 7 (strict) | 273, of which 187 are untyped parameters (TS7006) |
-| `--strict false` | 16: globals the code adds (`window.BuildGuide`, `BuildGuideBoard`, `document$`, `joint`), `dataset` and `src` on elements typed as `Element`, one `fetch` overload; none is a logic fault |
+| the flags above (defaults of TypeScript 7, strict) | 273, of which 187 are untyped parameters (TS7006) |
+| the flags above plus `--strict false` | 16: globals the code adds (`window.BuildGuide`, `BuildGuideBoard`, `document$`, `joint`), `dataset` and `src` on elements typed as `Element`, one `fetch` overload; none is a logic fault |
 
-Effect on the published packages: none. No emit, no change to the files that ship. Costs: a `typescript` dev dependency (3.6 MB installed), a `tsconfig.json`, an `npm run typecheck` step in `npm run lint` and the `check` job, and the 16 fixes. Put the globals and the guide data types in a `.d.ts` file outside `src/`; annotate inline only at module boundaries. Going strict later needs about 190 parameter types and costs bytes (see above), so it is not part of this decision.
+Effect on the published packages: none. No emit, no change to the files that ship. Costs: a `typescript` dev dependency (3.6 MB installed), a `tsconfig.json`, an `npm run typecheck` step in `npm run lint` and the `check` job, and the 16 fixes. Put the globals and the guide data types in a `.d.ts` file outside `src/`; annotate inline only at module boundaries. The check is `tsc -p packages/core` (the `npm run typecheck` script): `packages/core/tsconfig.json` lists `buildguide.js`, `buildguide-board.js` and the `.d.ts` in `files`, so the declarations are part of every run. Going strict later needs about 190 parameter types and costs bytes (see above), so it is not part of this decision.
 
 ## Follow-up work
 
