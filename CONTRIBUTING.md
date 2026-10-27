@@ -20,7 +20,7 @@
 
 - `main` is the only long-lived branch and the default branch: pull requests target it and are squash-merged, so history stays linear.
 - release-please opens and updates one release pull request on every push to `main`.
-- Pull requests go through a merge queue (squash): every required check also runs on `merge_group`.
+- Pull requests are squash-merged. A merge queue can be enabled only after every required check reports on `merge_group`; the SonarCloud check does not, so it comes off the required list first.
 
 ## Releases and Pages
 
