@@ -60,6 +60,7 @@ exclude_docs: |
 hooks:
   - docs/hooks/reference.py
   - docs/hooks/repo_facts.py
+  - docs/hooks/edition.py
 
 nav:
   - Home: index.md
