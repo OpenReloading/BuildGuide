@@ -52,10 +52,11 @@ validation:
     anchors: warn
     unrecognized_links: warn
 
-# agent instructions in docs/agents/ and the hooks are not pages
+# agent instructions in docs/agents/, the decision records and the hooks are not pages
 exclude_docs: |
   agents/
   hooks/
+  adr/
 
 hooks:
   - docs/hooks/reference.py
