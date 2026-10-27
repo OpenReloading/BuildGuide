@@ -140,7 +140,7 @@
 .ag-guide .ag-step-item:first-child{border-top:0}
 .ag-guide .ag-step-item.is-done{background:var(--ag-done-bg)}
 .ag-guide .ag-step-item .ag-step-id{margin-top:-1px}
-.ag-guide .ag-step-body{flex:1;min-width:0}
+.ag-guide .ag-step-body{flex:1;min-width:0;overflow-wrap:anywhere}
 .ag-guide .ag-step-title{display:block;font-size:13px;font-weight:600;color:var(--ag-ink)}
 .ag-guide .ag-step-text{margin-top:4px;white-space:pre-line;color:var(--ag-text)}
 .ag-guide .ag-step-item .ag-step-note{margin:8px 0 0}

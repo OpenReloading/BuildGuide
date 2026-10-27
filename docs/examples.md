@@ -230,7 +230,7 @@ The same structure with one colour for the tube. `scope: "all"` shows every tube
 
 ## BOM, steps and boards behind tabs
 
-One component with a tab for the BOM, one for the steps and one for each board, in the order of the data (the BOM, the steps, then the boards). Only the shown tab is mounted, so a board is drawn when you open its tab. `data-board="wiring tubing"` (Docusaurus: `board="wiring tubing"`) picks tabs and their order; `bom` names the BOM and `steps` the steps. The tab is kept in the hash (`#guide=wiring`) next to the boards' own positions. Live with the full example data: [Combined](example/guide.md).
+One component with a tab for the BOM, one for the steps when the data has a top-level `steps` object, and one for each board, in the order of the data (the BOM, the steps, then the boards). Only the shown tab is mounted, so a board is drawn when you open its tab. `data-board="wiring tubing"` (Docusaurus: `board="wiring tubing"`) picks tabs and their order; `bom` names the BOM and `steps` the steps. The tab is kept in the hash (`#guide=wiring`) next to the boards' own positions. Live with the full example data: [Combined](example/guide.md).
 
 ```json title="guide.json"
 --8<-- "packages/core/example/minimal/all.json"
