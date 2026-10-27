@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.3...mkdocs-v0.1.4) (2026-10-27)
+
+
+### Features
+
+* **core:** text steps component with a shared step shape ([#145](https://github.com/OpenReloading/BuildGuide/issues/145)) ([f39be44](https://github.com/OpenReloading/BuildGuide/commit/f39be44def94bc5d6dc14d41a6b43ba6a35c09f4))
+
 ## [0.1.3](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.2...mkdocs-v0.1.3) (2026-10-26)
 
 

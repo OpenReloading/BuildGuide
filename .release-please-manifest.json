@@ -1,5 +1,5 @@
 {
-  "packages/core": "0.2.4",
-  "packages/mkdocs": "0.1.3",
-  "packages/docusaurus": "1.4.0"
+  "packages/core": "0.2.5",
+  "packages/mkdocs": "0.1.4",
+  "packages/docusaurus": "1.5.0"
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.4.0...docusaurus-v1.5.0) (2026-10-27)
+
+
+### Features
+
+* **core:** text steps component with a shared step shape ([#145](https://github.com/OpenReloading/BuildGuide/issues/145)) ([f39be44](https://github.com/OpenReloading/BuildGuide/commit/f39be44def94bc5d6dc14d41a6b43ba6a35c09f4))
+
 ## [1.4.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.3.0...docusaurus-v1.4.0) (2026-10-26)
 
 

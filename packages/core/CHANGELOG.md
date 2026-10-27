@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.5](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.4...core-v0.2.5) (2026-10-27)
+
+
+### Features
+
+* **core:** pinch and wheel zoom on boards that never trap the page scroll ([#141](https://github.com/OpenReloading/BuildGuide/issues/141)) ([3828b6d](https://github.com/OpenReloading/BuildGuide/commit/3828b6d0b289d6b76e09e9f742b124168156efa1))
+* **core:** text steps component with a shared step shape ([#145](https://github.com/OpenReloading/BuildGuide/issues/145)) ([f39be44](https://github.com/OpenReloading/BuildGuide/commit/f39be44def94bc5d6dc14d41a6b43ba6a35c09f4))
+
 ## [0.2.4](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.3...core-v0.2.4) (2026-10-26)
 
 
