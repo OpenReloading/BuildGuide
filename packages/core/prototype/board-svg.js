@@ -7,6 +7,8 @@
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
   const SMALLEST = 8.5, PHONE = 560;   // px: smallest font size drawn below, canvas width of a phone
   const NS = 'http://www.w3.org/2000/svg';
+  // guide colors reach fill and stroke: only a hex value or a color name passes, so url(...) never makes a request
+  const paint = (v, fallback) => typeof v === 'string' && /^(#[0-9a-f]{3,8}|[a-z]+)$/i.test(v) ? v : fallback;
   const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
   const wheelPx = (delta, mode) => delta * [1, 16, 400][mode || 0];
@@ -226,8 +228,11 @@
     let disposed = false;
     const [W, H] = B.size;
     const kinds = B.kinds || {}, colors = B.colors || {}, parts = B.parts || {}, areas = B.areas || {};
-    const kindOf = p => ({...DEFAULT_KIND, ...kinds[p.kind]});
-    const colorOf = c => ({line: '#64748b', outline: '#1f2937', ...colors[c.color]});
+    const kindOf = p => {
+      const k = {...DEFAULT_KIND, ...kinds[p.kind]};
+      return {...k, fill: paint(k.fill, DEFAULT_KIND.fill), stroke: paint(k.stroke, DEFAULT_KIND.stroke), band: k.band === true || paint(k.band)};
+    };
+    const colorOf = c => { const k = colors[c.color]; return {...k, line: paint(k?.line, '#64748b'), outline: paint(k?.outline, '#1f2937')}; };
 
     const holder = document.createElement('div');
     holder.className = 'joint-paper';
@@ -244,10 +249,10 @@
       boxes.push({id, x0: x, y0: y, x1: x + w, y1: y + 18, pins: []});
     };
     for (const [key, a] of Object.entries(areas)) {
-      const frame = a.frame !== false;
-      if (frame) sel('rect', 'body', {width: a.size[0], height: a.size[1], rx: 12, fill: '#f8fafc', stroke: a.color, 'stroke-width': 1.5, 'stroke-dasharray': '6 5'}, cell('buildguide.Area', 'area-' + key, a.at[0], a.at[1], cells));
-      caption('caption-' + key, a.at[0] + (frame ? 14 : 0), a.at[1] + (frame ? 10 : 0), a.title.length * 8, a.title, a.color);
-      for (const [x, name] of a.glands || []) caption('gland-' + name, x + 26, a.at[1] - 9, 22, name, a.color, 12);
+      const frame = a.frame !== false, tone = paint(a.color, '#64748b');
+      if (frame) sel('rect', 'body', {width: a.size[0], height: a.size[1], rx: 12, fill: '#f8fafc', stroke: tone, 'stroke-width': 1.5, 'stroke-dasharray': '6 5'}, cell('buildguide.Area', 'area-' + key, a.at[0], a.at[1], cells));
+      caption('caption-' + key, a.at[0] + (frame ? 14 : 0), a.at[1] + (frame ? 10 : 0), a.title.length * 8, a.title, tone);
+      for (const [x, name] of a.glands || []) caption('gland-' + name, x + 26, a.at[1] - 9, 22, name, tone, 12);
     }
     for (const [i, p] of (B.props || []).entries()) {
       const g = cell('standard.Rectangle', 'prop-' + i, p.at[0], p.at[1], cells);
@@ -271,14 +276,14 @@
       const k = kindOf(p), [w, h] = p.size;
       const g = cell('buildguide.Part', id, p.at[0], p.at[1], cells);
       partEls[id] = g;
-      const body = k.round ? {fill: p.color || k.fill, stroke: k.stroke, rx: w / 2} : {fill: k.fill, stroke: k.stroke, ...(k.rx != null && {rx: k.rx})};
+      const body = k.round ? {fill: paint(p.color, k.fill), stroke: k.stroke, rx: w / 2} : {fill: k.fill, stroke: k.stroke, ...(k.rx != null && {rx: k.rx})};
       sel('rect', 'body', {width: w, height: h, rx: 6, 'stroke-width': 1.5, ...body}, g);
       sel('rect', 'band', k.band ? {x: w - 14, y: 0, width: 7, height: h, fill: k.band === true ? '#d1d5db' : k.band} : {display: 'none'}, g);
       text('title', p.name || '', {x: w / 2, y: p.ports?.top ? 24 : -10, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 800, fill: '#17202a', ...(p.ports?.top && inkOn(body.fill))}, g);
       text('sub', p.sub || '', {x: w / 2, y: p.ports?.bottom ? h - 14 : h + 17, 'text-anchor': 'middle', 'font-size': 11.5, 'font-weight': 600, fill: '#5b6672', ...(p.ports?.bottom && inkOn(body.fill))}, g);
       const pins = [];
       for (const [side, names] of Object.entries(p.ports || {})) for (const pin of names) {
-        const at = portAt(id, pin), core = k.pins?.[pin], port = svg('g', {class: 'joint-port', transform: `translate(${at.x - p.at[0]},${at.y - p.at[1]})`}, g);
+        const at = portAt(id, pin), core = paint(k.pins?.[pin]), port = svg('g', {class: 'joint-port', transform: `translate(${at.x - p.at[0]},${at.y - p.at[1]})`}, g);
         portEls[id + ':' + pin] = [
           sel('circle', 'pb', core ? {r: 6, fill: core, stroke: core} : {r: 9.5, fill: '#e5e7eb', stroke: '#9ca3af', 'stroke-width': 1}, port),
           text('pt', core ? '' : (PIN_TEXT[pin] || pin), {'text-anchor': 'middle', y: 3.6, 'font-size': pin.length > 2 ? 8.5 : 10, 'font-weight': 700, fill: '#475569', 'pointer-events': 'none'}, port),

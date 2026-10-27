@@ -122,9 +122,20 @@ function measure(guide, key, g, shown) {
 const median = list => [...list].sort((a, b) => a - b)[list.length >> 1];
 const server = (dir, port) => spawn(process.execPath, ['tests/serve.mjs', String(port), dir], { cwd: CORE, stdio: 'ignore' });
 
+async function waitForServer(port) {
+  for (let i = 0; i < 100; i++) {
+    try { await fetch(`http://127.0.0.1:${port}/example/`); return; } catch { await new Promise(r => setTimeout(r, 50)); }
+  }
+  throw new Error(`no server on port ${port}`);
+}
+
 async function run(renderer, dataset, port, browser) {
   const dir = copy(`${renderer}-${dataset}`, renderer, dataset), srv = server(dir, port);
-  await new Promise(r => setTimeout(r, 600));
+  try { return await measureAll(renderer, dataset, port, browser, dir); } finally { srv.kill(); }
+}
+
+async function measureAll(renderer, dataset, port, browser, dir) {
+  await waitForServer(port);
   const guide = JSON.parse(readFileSync(`${dir}/example/guide.json`)), out = [];
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, deviceScaleFactor: 2 });
   await page.addInitScript(() => {
@@ -163,7 +174,7 @@ async function run(renderer, dataset, port, browser) {
       out.push(row);
     }
   }
-  await page.close(); srv.kill();
+  await page.close();
   return out;
 }
 
@@ -171,8 +182,11 @@ mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch();
 const rows = [];
 let port = 8120;
-for (const dataset of ['demo', 'dense']) for (const renderer of ['shipped', 'prototype']) rows.push(...await run(renderer, dataset, port++, browser));
-await browser.close();
+try {
+  for (const dataset of ['demo', 'dense']) for (const renderer of ['shipped', 'prototype']) rows.push(...await run(renderer, dataset, port++, browser));
+} finally {
+  await browser.close();
+}
 
 // the browser tests, unchanged, against the prototype
 let specs = 'not run';
