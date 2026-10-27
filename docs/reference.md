@@ -8,21 +8,21 @@ The surface a site may style or test against. Anything not listed here can chang
 |---|---|
 | `.ag-guide` | the root of a mounted component |
 | `.ag-*` | the component classes inside it |
-| `data-buildguide` | on the element to fill: `bom`, `board` or `guide` |
-| `data-board` | the board key, for `board`; for `guide` a space separated list of `bom` and board keys (so no key with a space) to show as tabs, in that order, empty for the BOM and every board |
-| `.ag-tabbed`, `.ag-tabs`, `role=tab`, `role=tabpanel` | the root of a `guide` component (it carries `.ag-guide` too), its tab list, its tabs and its one panel; the panel is a mounted BOM or board component |
+| `data-buildguide` | on the element to fill: `bom`, `steps`, `board` or `guide` |
+| `data-board` | the board key, for `board`; for `guide` a space separated list of `bom`, `steps` and board keys (so no key with a space) to show as tabs, in that order, empty for the BOM, the steps and every board |
+| `.ag-tabbed`, `.ag-tabs`, `role=tab`, `role=tabpanel` | the root of a `guide` component (it carries `.ag-guide` too), its tab list, its tabs and its one panel; the panel is a mounted BOM, steps or board component |
 | `data-src` | URL of the guide data; components with the same URL share one request |
 | `data-assets` | folder of BOM images, relative to the page |
 | `#guide-data` | an element holding the guide data as JSON (`<script type="application/json">`, or any element with that id), used by components without `data-src`; its `data-assets` is the default for them |
 | `data-step`, `data-wire`, `data-conn`, `data-connection` | step buttons, connection rows and board connections; a ticked connection's drawing shows `✓ <number>` in a tinted pill (a diode has no pill: its name label carries the check mark) and its accessible name ends with `; checked` |
 | `data-role` | `scope`, `search`, `filter`, `import-file`. `filter` is the BOM's `All / Missing / Done` select next to the search: it composes with the search text, a group header reads `<group> · <ticked> / <size>` for the whole group, and the empty state reads `No matching components. Filter: <value>.` while a filter other than `All` is on. A tick that the filter hides moves the focus to the select |
 | `data-level` | on a step note (`.ag-step-note`): `note`, `caution` or `warning` for a note given as `{level, text}`, empty for a plain string note; the level word is a `<strong>` in the note's text, see [Note levels](theming.md#note-levels) |
-| `data-complete` | set by the component on its `.ag-guide` root while every item of the BOM or board is ticked: the head then reads `All parts checked` or `All connections checked` and the status line announces it once. The head's `<progress>` (inside `.ag-progress`, named `parts checked` or `connections checked`) is filled with `--ag-done` |
+| `data-complete` | set by the component on its `.ag-guide` root while every item of the BOM, the steps or a board is ticked: the head then reads `All parts checked`, `All steps checked` or `All connections checked` and the status line announces it once. The head's `<progress>` (inside `.ag-progress`, named `parts checked`, `steps checked` or `connections checked`) is filled with `--ag-done` |
 | `data-ag-scheme` | `dark` forces the dark tokens and board filter, `light` opts out of the browser's dark preference (it wins over `dark`), `auto` follows the host's scheme when it has a signal and otherwise the browser; set on the component or an ancestor, see [Light and dark](theming.md#light-and-dark) |
 | `--ag-font`, `--ag-text-small` | font family (default the system sans-serif stack) and the smallest font size (default `11px`) of the component, the board drawing included, see [Font and size](theming.md#font-and-size) |
 | `--ag-board-filter` | filter applied to the board drawing |
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |
-| `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM or wire row's text, see [Done state](theming.md#done-state) |
+| `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM, step or wire row's text, see [Done state](theming.md#done-state) |
 
 `data-action` values: `fullscreen`, `zoom-in`, `zoom-out`, `zoom-fit`, `prev-wire`, `next-wire`, `export` (BOM as CSV: what the search and filter show, the last column `Done` holds `Yes` or `No`), `print`, `export-progress`, `import-progress`, `reset-progress`, `undo-progress` (in the status line after a reset or import).
 
@@ -33,13 +33,13 @@ The [`--ag-*` tokens](theming.md#tokens) are stable too.
 | Name | Format |
 |---|---|
 | Hash pair | `<board key>=<step>/<no>`, one per board, joined with `&`: `#wiring=B/4&tubing=3`. `<step>` and `<no>` are percent-encoded; the number is left out for a step with one connection. A fragment without `=` is an anchor and leaves every board where it is. |
-| Tab pair | `guide=<key>`, for the shown tab of a `guide` component, `bom` for the BOM: `#guide=wiring&wiring=B/4`. It sits next to the board pairs. |
-| Tick key | `<prefix>-<no>:<a>:<b>` for a connection, `bom-<id>:<part>` for a BOM item |
+| Tab pair | `guide=<key>`, for the shown tab of a `guide` component, `bom` for the BOM and `steps` for the steps: `#guide=wiring&wiring=B/4`. It sits next to the board pairs. |
+| Tick key | `<prefix>-<no>:<a>:<b>` for a connection, `bom-<id>:<part>` for a BOM item, `step-<id>` for a text step |
 | Storage key | the `storage` of the guide data: one `localStorage` key holding an object of `true` and `false` values. `localStorage` is per origin, so give each guide on an origin its own key, see [`storage`](data-format.md#what-the-keys-do) |
 
 A board changes the hash with `history.pushState`, so it fires no `hashchange` and no `popstate` (Material's instant navigation swaps the page on a `popstate`); boards follow `popstate`. Use each board once per page, also across a `guide` component and standalone boards. A foreign fragment stays in the hash and is scrolled to when the components mount.
 
-A `guide` component mounts the shown tab only: a board is drawn when its tab is shown, never in a hidden box, and a tab that is left releases its drawing, search text and filter. Ticks and each board's position (its hash pair) stay. When the hash is read (on load, `hashchange`, `popstate`), the tab pair names the tab; without one, a board pair that changed (on load: the first) opens its board's tab; without that, an anchor or a pair of the shown board leaves the tab as it is, and a hash with none of these shows the first tab. Printing prints the shown component, without the tabs. A board whose key is `guide` or `bom` is not usable in a `guide` component.
+A `guide` component mounts the shown tab only: a board is drawn when its tab is shown, never in a hidden box, and a tab that is left releases its drawing, search text and filter. Ticks and each board's position (its hash pair) stay. When the hash is read (on load, `hashchange`, `popstate`), the tab pair names the tab; without one, a board pair that changed (on load: the first) opens its board's tab; without that, an anchor or a pair of the shown board leaves the tab as it is, and a hash with none of these shows the first tab. Printing prints the shown component, without the tabs. A board whose key is `guide` or `bom`, or `steps` in a guide with steps, is not usable in a `guide` component.
 
 A change to a tick key or to the storage key drops the ticks people saved.
 

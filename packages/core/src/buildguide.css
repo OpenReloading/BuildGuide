@@ -134,9 +134,22 @@
 .ag-guide .ag-have{display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:normal}
 .ag-guide .is-done td,.ag-guide .is-done button{color:var(--ag-muted);opacity:var(--ag-done-opacity);text-decoration:var(--ag-done-decoration)}
 .ag-guide .is-done strong{color:inherit}
+/* Text steps: one row per step, the tick first */
+.ag-guide .ag-step-list{display:block;margin:0;padding:0;list-style:none;border:1px solid var(--ag-line);border-radius:9px;overflow:hidden;background:var(--ag-surface)}
+.ag-guide .ag-step-item{display:flex;align-items:flex-start;gap:12px;margin:0;padding:14px 17px;border-top:1px solid var(--ag-line)}
+.ag-guide .ag-step-item:first-child{border-top:0}
+.ag-guide .ag-step-item.is-done{background:var(--ag-done-bg)}
+.ag-guide .ag-step-item .ag-step-id{margin-top:-1px}
+.ag-guide .ag-step-body{flex:1;min-width:0}
+.ag-guide .ag-step-title{display:block;font-size:13px;font-weight:600;color:var(--ag-ink)}
+.ag-guide .ag-step-text{margin-top:4px;white-space:pre-line;color:var(--ag-text)}
+.ag-guide .ag-step-item .ag-step-note{margin:8px 0 0}
+.ag-guide .ag-step-parts{margin-top:8px;font-size:var(--ag-text-small);color:var(--ag-muted)}
+.ag-guide .is-done .ag-step-title,.ag-guide .is-done .ag-step-text{color:var(--ag-muted);opacity:var(--ag-done-opacity);text-decoration:var(--ag-done-decoration)}
 /* the check mark has no alternative text where supported: the checked box already says it */
 .ag-guide .is-done strong::before,.ag-guide .is-done .ag-wire-number::before{content:"\2713";display:inline-block;margin-right:4px;color:var(--ag-done);text-decoration:none}
 @supports(content:'a' / ''){.ag-guide .is-done strong::before,.ag-guide .is-done .ag-wire-number::before{content:'\2713' / ''}}
+.ag-guide .ag-step-note strong::before{content:none}
 .ag-guide .ag-bom-table tbody tr:not(.ag-group){cursor:pointer}
 .ag-guide .ag-bom-actions{display:flex;align-items:center;gap:14px}
 .ag-guide .ag-source-link{display:block;font-size:var(--ag-text-small);margin-top:3px}
@@ -231,8 +244,8 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-bom-table table{min-width:0}
  .ag-guide .ag-part-cell{min-width:0}
  .ag-guide .ag-bom-table th,.ag-guide .ag-bom-table td{padding:8px}
- .ag-guide .ag-panel,.ag-guide tr,.ag-guide .ag-step-note{break-inside:avoid}
- .ag-guide .is-done td,.ag-guide .is-done button{opacity:1}
+ .ag-guide .ag-panel,.ag-guide tr,.ag-guide .ag-step-note,.ag-guide .ag-step-item{break-inside:avoid}
+ .ag-guide .is-done td,.ag-guide .is-done button,.ag-guide .is-done .ag-step-title,.ag-guide .is-done .ag-step-text{opacity:1}
 }
 /* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,
    wire and part colours keep their hue). A host that signals dark sets color-scheme:dark and the filter on .ag-guide;
@@ -260,4 +273,5 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-wire-row.selected{outline:3px solid CanvasText;outline-offset:-3px}
  .ag-guide .ag-wire-row.is-done{border-inline-start:6px solid CanvasText;padding-inline-start:8px}
  .ag-guide .ag-bom-table tr.is-done td:first-child{border-inline-start:6px solid CanvasText;padding-inline-start:14px}
+ .ag-guide .ag-step-item.is-done{border-inline-start:6px solid CanvasText;padding-inline-start:11px}
 }

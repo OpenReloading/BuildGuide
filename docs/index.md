@@ -1,6 +1,6 @@
 # BuildGuide
 
-Interactive build guide components from one data file: a BOM checklist, and wiring and tubing boards with a tick per connection, to place in your own documentation pages. Plain JavaScript and CSS, no requests outside the site. Source and releases: [OpenReloading/BuildGuide](https://github.com/OpenReloading/BuildGuide).
+Interactive build guide components from one data file: a BOM checklist, a list of text steps, and wiring and tubing boards with a tick per connection, to place in your own documentation pages. Plain JavaScript and CSS, no requests outside the site. Source and releases: [OpenReloading/BuildGuide](https://github.com/OpenReloading/BuildGuide).
 
 ## Getting started
 
@@ -16,4 +16,4 @@ Interactive build guide components from one data file: a BOM checklist, and wiri
 - [Data format](data-format.md): every key of the guide data, with the example.
 - [Theming and dark mode](theming.md): colour tokens, the dark theme, print, browser support.
 - [Reference](reference.md): the markup, hash, storage and script surface a site can rely on, the check CLI and the plugin options.
-- [Example guide](example/index.md): the components on pages of this site, from `packages/core/example/guide.json`. [All components](example/all.md) shows three on one page, [Combined](example/guide.md) the BOM and both boards behind tabs.
+- [Example guide](example/index.md): the components on pages of this site, from `packages/core/example/guide.json`. [All components](example/all.md) shows three on one page, [Combined](example/guide.md) the BOM, the steps and both boards behind tabs.

@@ -1,0 +1,94 @@
+{
+  "problems": [
+    "wiring: prefix step is taken by the steps"
+  ],
+  "guide": {
+    "bom": {
+      "items": [
+        {
+          "id": "psu",
+          "group": "Power",
+          "part": "Power supply",
+          "spec": "12 V",
+          "qty": 1
+        }
+      ]
+    },
+    "boards": {
+      "wiring": {
+        "size": [
+          400,
+          300
+        ],
+        "colors": {
+          "RD": {
+            "line": "#c00",
+            "outline": "#600"
+          }
+        },
+        "parts": {
+          "PSU": {
+            "name": "Power supply",
+            "at": [
+              20,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "right": [
+                "+",
+                "-"
+              ]
+            }
+          },
+          "LAMP": {
+            "name": "Lamp",
+            "at": [
+              250,
+              20
+            ],
+            "size": [
+              80,
+              60
+            ],
+            "ports": {
+              "left": [
+                "1",
+                "2"
+              ]
+            }
+          }
+        },
+        "steps": [
+          {
+            "id": "A",
+            "title": "Power",
+            "connections": [
+              {
+                "no": "1",
+                "a": "PSU:+",
+                "b": "LAMP:1",
+                "color": "RD"
+              }
+            ]
+          }
+        ],
+        "title": "Wiring",
+        "prefix": "step"
+      }
+    },
+    "storage": "test-guide",
+    "steps": {
+      "items": [
+        {
+          "id": "a",
+          "title": "Frame a",
+          "text": "Join the rails."
+        }
+      ]
+    }
+  }
+}

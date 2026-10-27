@@ -1,4 +1,4 @@
-"""MkDocs plugin: `<div data-buildguide="bom"></div>`, `<div data-buildguide="board" data-board="KEY"></div>` and `<div data-buildguide="guide"></div>` in a page become guide components."""
+"""MkDocs plugin: `<div data-buildguide="bom"></div>`, `<div data-buildguide="steps"></div>`, `<div data-buildguide="board" data-board="KEY"></div>` and `<div data-buildguide="guide"></div>` in a page become guide components."""
 
 import html
 import json
@@ -98,10 +98,10 @@ class BuildGuidePlugin(BasePlugin):
 
     def known(self, guide, view, key):
         boards = guide.get("boards") or {}
-        if view == "guide":  # data-board is a space separated list of 'bom' and board keys, empty for all of them
-            keys = (key or "").split() or [*(["bom"] if "bom" in guide else []), *boards]
-            return bool(keys) and all(("bom" in guide) if k == "bom" else k in boards for k in keys)
-        return ("bom" in guide) if view == "bom" else (view == "board" and key in boards)
+        if view == "guide":  # data-board is a space separated list of 'bom', 'steps' and board keys, empty for all of them
+            keys = (key or "").split() or [*(k for k in ("bom", "steps") if k in guide), *boards]
+            return bool(keys) and all(k in guide if k == "bom" else k in boards or (k == "steps" and "steps" in guide) for k in keys)
+        return view in guide if view in ("bom", "steps") else (view == "board" and key in boards)
 
     def assets(self, page):
         return get_relative_url(self.config["assets"], page.url).rstrip("/") + "/"

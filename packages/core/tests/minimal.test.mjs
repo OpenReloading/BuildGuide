@@ -9,7 +9,7 @@ const validate = new Ajv({ allErrors: true }).compile(JSON.parse(readFileSync(ne
 const folder = new URL('../example/minimal/', import.meta.url);
 const names = readdirSync(folder).filter(f => f.endsWith('.json'));
 
-test('there is one minimal example per component and one for all of them', () => assert.deepEqual(names.sort((a, b) => a.localeCompare(b)), ['all.json', 'bom.json', 'tubing.json', 'wiring.json']));
+test('there is one minimal example per component and one for all of them', () => assert.deepEqual(names.sort((a, b) => a.localeCompare(b)), ['all.json', 'bom.json', 'steps.json', 'tubing.json', 'wiring.json']));
 for (const name of names) {
   test(`minimal/${name} matches the schema and the check`, () => {
     const data = JSON.parse(readFileSync(new URL(name, folder)));

@@ -1,5 +1,5 @@
 // Browser checks of the example guide components. Every expectation is derived from example/guide.json.
-// The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,wiring,tubing,all,guide}/.
+// The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,steps,wiring,tubing,all,guide}/.
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
@@ -20,6 +20,7 @@ const url = key => `${BASE}${key}/`;
 // one component of a page: a board by its steps navigation, the BOM by its table
 const boardOf = (page, key) => page.locator('.ag-guide').filter({ has: page.locator(`nav[aria-label="${D.boards[key].title} steps"]`) });
 const bomOf = page => page.locator('.ag-guide').filter({ has: page.locator('.ag-bom') });
+const stepsOf = page => page.locator('.ag-guide').filter({ has: page.locator('.ag-text-steps') });
 
 let problems;
 test.beforeEach(async ({ page }) => {
@@ -51,7 +52,7 @@ for (const [key, b] of boards) {
 }
 
 // every example page: components only, so the audit covers .ag-guide and not the host's own chrome
-const PAGES = ['bom', 'wiring', 'tubing', 'all', 'guide'];
+const PAGES = ['bom', 'steps', 'wiring', 'tubing', 'all', 'guide'];
 const settled = async page => { for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true'); };
 
 // every box ticked, one at a time: a tick re-renders the component
@@ -77,15 +78,16 @@ for (const key of PAGES) {
 }
 
 // computed colours of a done row, measured: text 4.5:1 on the row (3:1 for the check mark), nothing translucent. In forced colours the system picks the colours.
-const luminance = rgb => rgb.match(/[\d.]+/g).slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
+// a host's color-mix() computes to color(srgb r g b) with channels from 0 to 1, rgb() has 0 to 255
+const luminance = rgb => rgb.match(/[\d.]+/g).slice(0, 3).map(v => { v /= rgb.startsWith('color(') ? 1 : 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
 const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
 for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { colorScheme: 'dark' }], ['forced colours', { forcedColors: 'active' }]]) {
-  test(`a done row stays legible: BOM and wire rows, ${name}`, async ({ page }) => {
+  test(`a done row stays legible: BOM, step and wire rows, ${name}`, async ({ page }) => {
     await page.emulateMedia(media);
     const measure = (row, text) => row.evaluate((tr, sel) => {
       const behind = el => { for (; el; el = el.parentElement) { const bg = getComputedStyle(el).backgroundColor; if (!/rgba?\(.*, 0\)$/.test(bg) && bg !== 'transparent') return bg; } return 'rgb(255, 255, 255)'; };
       const el = tr.querySelector(sel), mark = getComputedStyle(el, '::before');
-      return { color: getComputedStyle(el).color, bg: behind(el), opacity: getComputedStyle(el.closest('td,button')).opacity, mark: mark.content, markColor: mark.color };
+      return { color: getComputedStyle(el).color, bg: behind(el), opacity: getComputedStyle(el.closest('td,button') ?? el).opacity, mark: mark.content, markColor: mark.color };
     }, text);
     const check = async (row, text) => {
       const m = await measure(row, text);
@@ -97,6 +99,9 @@ for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { col
     await page.goto(url('bom')); await settled(page);
     await page.locator('tbody input[type=checkbox]').first().check();
     await check(page.locator('tbody tr.is-done').first(), 'strong');
+    await page.goto(url('steps')); await settled(page);
+    await page.locator('.ag-step-item input[type=checkbox]').first().check();
+    await check(page.locator('.ag-step-item.is-done').first(), '.ag-step-title');
     await page.goto(url('wiring')); await settled(page);
     await page.locator('.ag-verify input').check();
     await check(page.locator('.ag-wire-row.is-done').first(), '.ag-wire-number');
@@ -138,6 +143,15 @@ test('selected, done and current are visible in forced colours', async ({ page }
   await page.locator('tbody input[type=checkbox]').first().check();
   const offsets = await page.locator('tbody tr:not(.ag-group)').evaluateAll(rows => rows.slice(0, 2).map(tr => tr.firstElementChild.firstElementChild.getBoundingClientRect().left));
   expect(offsets[0]).toBe(offsets[1]);
+  // a done step has the same start border, and its content starts where an open step's does
+  await page.goto(url('steps')); await settled(page);
+  await page.locator('.ag-step-item input[type=checkbox]').first().check();
+  const step = await measure(page.locator('.ag-step-item.is-done').first(), MARKERS);
+  expect(parseFloat(step.borderInlineStartWidth)).toBeGreaterThan(0);
+  expect(contrast(step.borderInlineStartColor, step.bg)).toBeGreaterThanOrEqual(3);
+  expect(contrast(step.color, step.bg)).toBeGreaterThanOrEqual(4.5);
+  const starts = await page.locator('.ag-step-item').evaluateAll(rows => rows.slice(0, 2).map(li => li.firstElementChild.getBoundingClientRect().left));
+  expect(starts[0]).toBe(starts[1]);
   await page.emulateMedia({ forcedColors: 'none' });
   const plain = await markers();
   expect(plain.selected.outlineStyle).toBe('none');
@@ -581,19 +595,20 @@ test('Docusaurus: a second guide is a file, no page holds it, each guide is fetc
 });
 
 // the tick keys of every item of a component, in order
-const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`) };
+const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`), steps: D.steps.items.map(i => `step-${i.id}`) };
 for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));
-const componentOf = (page, key) => key === 'bom' ? bomOf(page) : boardOf(page, key);
+const WHAT = { bom: 'parts', steps: 'steps' };
+const componentOf = (page, key) => key === 'bom' ? bomOf(page) : key === 'steps' ? stepsOf(page) : boardOf(page, key);
 // the page of a component, opened on its last item
 const openLast = async (page, key) => {
   const b = D.boards[key], s = b?.steps.at(-1);
-  await page.goto(key === 'bom' ? url('bom') : `${url(key)}#${at(key, s, s.connections.at(-1))}`);
+  await page.goto(WHAT[key] ? url(key) : `${url(key)}#${at(key, s, s.connections.at(-1))}`);
   if (b) await ready(page);
 };
 
 for (const key of Object.keys(tickKeys)) {
   test(`${key}: a progress bar, and the all-done state is announced once`, async ({ page }) => {
-    const keys = tickKeys[key], last = keys.at(-1), what = key === 'bom' ? 'parts' : 'connections', n = keys.length;
+    const keys = tickKeys[key], last = keys.at(-1), what = WHAT[key] ?? 'connections', n = keys.length;
     // everything but the last item is stored as ticked
     await page.addInitScript(([storage, ticked]) => { if (localStorage.getItem(storage) === null) localStorage.setItem(storage, JSON.stringify(Object.fromEntries(ticked.map(k => [k, true])))); }, [D.storage, keys.slice(0, -1)]);
     await openLast(page, key);
@@ -1076,7 +1091,7 @@ test('print: the BOM has a Print button that calls window.print', async ({ page 
 
 test('phones: no sideways scrolling, the next action stays on screen', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ['', 'bom/', 'wiring/', 'tubing/', 'all/']) {
+  for (const path of ['', 'bom/', 'steps/', 'wiring/', 'tubing/', 'all/']) {
     await page.goto(BASE + path);
     expect(await page.evaluate(() => document.body.scrollWidth <= innerWidth)).toBe(true);
   }
@@ -1091,8 +1106,8 @@ const withTokens = (page, rule) => page.addInitScript(r => document.addEventList
 
 test('tick boxes are at least 24 x 24 px at 390 px, without sideways scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const key of ['bom', ...Object.keys(D.boards)]) {
-    await page.goto(url(key)); if (key !== 'bom') await ready(page);
+  for (const key of ['bom', 'steps', ...Object.keys(D.boards)]) {
+    await page.goto(url(key)); if (D.boards[key]) await ready(page);
     await page.locator('.ag-guide input[type=checkbox]').first().waitFor();
     const sizes = await page.locator('.ag-guide input[type=checkbox]').evaluateAll(boxes => boxes.map(b => { const r = b.getBoundingClientRect(); return [r.width, r.height]; }));
     expect(sizes.length, key).toBeGreaterThan(0);
@@ -1114,12 +1129,12 @@ test('--ag-text-small is the smallest text: 11 px by default, no HTML or drawn t
     await page.setViewportSize({ width, height: 900 });
     if (token !== 11) await withTokens(page, `--ag-text-small:${token}px`);
     const smallest = async key => {
-      await page.goto(url(key)); if (key !== 'bom') await ready(page);
+      await page.goto(url(key)); if (D.boards[key]) await ready(page);
       await page.locator('.ag-guide .ag-status').first().waitFor();
       return page.evaluate(() => Math.min(...[...document.querySelectorAll('.ag-guide *')].filter(el => el.closest('svg') ? false : [...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim()))
         .map(el => Number.parseFloat(getComputedStyle(el).fontSize))));
     };
-    for (const key of ['bom', ...Object.keys(D.boards)]) expect(await smallest(key), `${key} at ${width} px, token ${token}`).toBeGreaterThanOrEqual(token);
+    for (const key of ['bom', 'steps', ...Object.keys(D.boards)]) expect(await smallest(key), `${key} at ${width} px, token ${token}`).toBeGreaterThanOrEqual(token);
     if (width === 390) for (const key of Object.keys(D.boards)) { await page.goto(url(key)); await ready(page); expect(Math.min(...await labelSizes(page)), key).toBeGreaterThanOrEqual(token - 0.01); }
   }
 });
@@ -1232,8 +1247,11 @@ test('BOM images are decorative: empty alt, the part name sits in the same cell'
 
 // the small examples of the docs, one component each: they mount and show what the docs say
 const minimal = name => JSON.parse(readFileSync(new URL(`../example/minimal/${name}.json`, import.meta.url)));
-test('minimal examples: a BOM, a wiring board and a tubing board each mount from their own small guide', async ({ page }) => {
-  const bom = minimal('bom'), wiring = minimal('wiring'), tubing = minimal('tubing');
+test('minimal examples: a BOM, steps, a wiring board and a tubing board each mount from their own small guide', async ({ page }) => {
+  const bom = minimal('bom'), steps = minimal('steps'), wiring = minimal('wiring'), tubing = minimal('tubing');
+  await inlinePage(page, 'minimal-steps/', steps, '<div data-buildguide="steps"></div>');
+  await page.goto(BASE + 'minimal-steps/');
+  await expect(page.locator('.ag-step-item')).toHaveCount(steps.steps.items.length);
   await inlinePage(page, 'minimal-bom/', bom, '<div data-buildguide="bom"></div>');
   await page.goto(BASE + 'minimal-bom/');
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(bom.bom.items.length);
@@ -1431,14 +1449,109 @@ test('mounting again on the same root after an unmount: one render per hash chan
   await expect(body).not.toHaveClass(/ag-no-scroll/);
 });
 
-// the combined component: a tab for the BOM and one per board, the active tab's component in one panel
-const TABS = ['Bill of materials', ...boards.map(([, b]) => b.title)];
+// the text steps: the list, the shared storage, escaping, keyboard and print
+const items = D.steps.items, partName = id => D.bom.items.find(p => p.id === id).part;
+test('steps: every step with its title, text, note and part names, a tick per step in the shared storage', async ({ page }) => {
+  await page.goto(url('steps'));
+  const component = stepsOf(page), rows = component.locator('.ag-step-item');
+  await expect(rows).toHaveCount(items.length);
+  for (const [i, s] of items.entries()) {
+    const row = rows.nth(i);
+    await expect(row.locator('.ag-step-title')).toHaveText(s.title);
+    await expect(row.locator('.ag-step-text')).toHaveCount(s.text ? 1 : 0);
+    if (s.text) await expect(row.locator('.ag-step-text')).toHaveText(s.text.replace(/\n/g, ' ').replace(/\s+/g, ' '));
+    const note = row.locator('.ag-step-note');
+    await expect(note).toHaveCount(s.note ? 1 : 0);
+    if (s.note) {
+      await expect(note).toHaveAttribute('data-level', s.note.level ?? '');
+      await expect(note).toContainText(s.note.text ?? s.note);
+      if (s.note.level) await expect(note.locator('strong')).toHaveText(s.note.level);
+    }
+    if (s.parts) await expect(row.locator('.ag-step-parts')).toHaveText(`Parts: ${s.parts.map(partName).join(', ')}`);
+    else await expect(row.locator('.ag-step-parts')).toHaveCount(0);
+    await expect(row.locator('[data-check]')).toHaveAttribute('data-check', `step-${s.id}`);
+    await expect(row.getByRole('checkbox', { name: s.title })).not.toBeChecked();
+  }
+  await expect(component.locator('.ag-head')).toContainText(D.steps.note);
+  await expect(component.locator('.ag-progress')).toHaveText(`0 / ${items.length} checked`);
+  await rows.nth(1).getByRole('checkbox').check();
+  await expect(rows.nth(1)).toHaveClass(/is-done/);
+  await expect(component.locator('.ag-progress')).toHaveText(`1 / ${items.length} checked`);
+  expect(await page.evaluate(storage => JSON.parse(localStorage.getItem(storage)), D.storage)).toEqual({ [`step-${items[1].id}`]: true });
+  await page.reload();
+  await expect(stepsOf(page).locator('.ag-step-item').nth(1).getByRole('checkbox')).toBeChecked();
+  // the other components of the guide keep their own ticks next to it
+  await page.goto(url('bom'));
+  await bomOf(page).locator('tbody input[type=checkbox]').first().check();
+  expect(await page.evaluate(storage => Object.keys(JSON.parse(localStorage.getItem(storage))), D.storage)).toEqual([`step-${items[1].id}`, `bom-${D.bom.items[0].id}:${D.bom.items[0].part}`]);
+});
+
+test('steps: titles, texts, notes and part ids are text, not markup', async ({ page }) => {
+  const d = structuredClone(D), s = d.steps.items[0];
+  s.title = '<img src=x onerror="window.hit=1">Title';
+  s.text = '<b>bold</b>\nsecond line';
+  s.note = { level: 'warning', text: '<i>note</i>' };
+  s.parts = ['nowhere<u>'];
+  s.id = 'a b/c';
+  await inlinePage(page, 'steps-odd/', d, '<div data-buildguide="steps"></div>');
+  await page.goto(BASE + 'steps-odd/');
+  const row = page.locator('.ag-step-item').first();
+  await expect(row.locator('.ag-step-title')).toHaveText(s.title);
+  await expect(row.locator('.ag-step-text')).toHaveText('<b>bold</b> second line');
+  await expect(row.locator('.ag-step-note')).toContainText('<i>note</i>');
+  await expect(row.locator('.ag-step-parts')).toHaveText('Parts: nowhere<u>');
+  await expect(row.locator('b, i, u, img')).toHaveCount(0);
+  expect(await page.evaluate(() => window.hit)).toBeUndefined();
+  await row.getByRole('checkbox').check();
+  expect(await page.evaluate(storage => Object.keys(JSON.parse(localStorage.getItem(storage))), d.storage)).toEqual(['step-a b/c']);
+});
+
+test('steps: keyboard, Space ticks and the focus stays on the box', async ({ page }) => {
+  await page.goto(url('steps'));
+  const boxes = stepsOf(page).locator('.ag-step-item input[type=checkbox]');
+  await boxes.first().focus();
+  await page.keyboard.press('Space');
+  await expect(boxes.first()).toBeChecked();
+  await expect(boxes.first()).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(boxes.nth(1)).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(boxes.nth(1)).toBeChecked();
+  await expect(boxes.nth(1)).toBeFocused();
+  await page.keyboard.press('Space');
+  await expect(boxes.nth(1)).not.toBeChecked();
+  await expect(stepsOf(page).locator('.ag-progress')).toHaveText(`1 / ${items.length} checked`);
+});
+
+test('steps: the Print button calls window.print, and a printed step is whole, light and without the tools', async ({ page }) => {
+  await page.goto(url('steps'));
+  await page.evaluate(() => { window.print = () => { window.__printed = (window.__printed || 0) + 1; }; });
+  await stepsOf(page).locator('[data-action=print]').click();
+  expect(await page.evaluate(() => window.__printed)).toBe(1);
+  await stepsOf(page).locator('.ag-step-item input[type=checkbox]').first().check();
+  await page.emulateMedia({ media: 'print', colorScheme: 'dark' });
+  await expect(stepsOf(page).locator('.ag-progress-tools')).toBeHidden();
+  await expect(stepsOf(page).locator('[data-action=print]')).toBeHidden();
+  const m = await stepsOf(page).locator('.ag-step-item').first().evaluate(li => ({ breakInside: getComputedStyle(li).breakInside, opacity: getComputedStyle(li.querySelector('.ag-step-title')).opacity, scheme: getComputedStyle(li.closest('.ag-guide')).colorScheme }));
+  expect(m).toEqual({ breakInside: 'avoid', opacity: '1', scheme: 'light' });
+});
+
+test('steps: a guide without steps says so', async ({ page }) => {
+  const d = structuredClone(D); delete d.steps;
+  await inlinePage(page, 'no-steps/', d, '<div data-buildguide="steps"></div><div data-buildguide="guide"></div>');
+  await page.goto(BASE + 'no-steps/');
+  await expect(page.locator('[data-buildguide]').first()).toHaveText('Unknown guide component: steps.');
+  await expect(page.getByRole('tab')).toHaveText(['Bill of materials', ...boards.map(([, b]) => b.title)]);
+});
+
+// the combined component: a tab for the BOM, one for the steps and one per board, the active tab's component in one panel
+const TABS = ['Bill of materials', D.steps.title, ...boards.map(([, b]) => b.title)];
 const tabOf = (page, name) => page.getByRole('tab', { name, exact: true });
 const panelOf = page => page.getByRole('tabpanel');
 const hashNow = page => page.evaluate(() => decodeURIComponent(location.hash));
 const selected = (page, name) => expect(page.getByRole('tab', { selected: true })).toHaveText(name);
 
-test('guide: a tab for the BOM and one per board, in the order of the data, and the BOM component in the panel', async ({ page }) => {
+test('guide: a tab for the BOM, one for the steps and one per board, in the order of the data, and the BOM component in the panel', async ({ page }) => {
   await page.goto(url('guide'));
   await expect(page.getByRole('tab')).toHaveText(TABS);
   await expect(page.getByRole('tablist')).toHaveCount(1);
@@ -1448,8 +1561,13 @@ test('guide: a tab for the BOM and one per board, in the order of the data, and 
   // only the active tab's component exists
   await expect(page.locator('.ag-steps')).toHaveCount(0);
   await tabOf(page, TABS[1]).click();
-  await selected(page, TABS[1]); await ready(panelOf(page));
+  await selected(page, TABS[1]);
   await expect(panelOf(page)).toHaveAccessibleName(TABS[1]);
+  await expect(panelOf(page).locator('.ag-step-item')).toHaveCount(D.steps.items.length);
+  await expect(page.locator('.ag-bom')).toHaveCount(0);
+  await tabOf(page, TABS[2]).click();
+  await selected(page, TABS[2]); await ready(panelOf(page));
+  await expect(panelOf(page)).toHaveAccessibleName(TABS[2]);
   await expect(panelOf(page).locator(`nav[aria-label="${boards[0][1].title} steps"]`)).toHaveCount(1);
   await expect(page.locator('.ag-bom')).toHaveCount(0);
 });
@@ -1478,7 +1596,7 @@ test('guide: keyboard, arrows move between the tabs, Home and End jump, one tab 
   await expect(tabs.nth(1)).toHaveAttribute('tabindex', '-1');
   await tabs.first().focus();
   await page.keyboard.press('ArrowRight');
-  await selected(page, TABS[1]); await expect(tabs.nth(1)).toBeFocused(); await ready(panelOf(page));
+  await selected(page, TABS[1]); await expect(tabs.nth(1)).toBeFocused();
   await expect(tabs.nth(1)).toHaveAttribute('tabindex', '0');
   await expect(tabs.first()).toHaveAttribute('tabindex', '-1');
   await page.keyboard.press('End');
@@ -1584,6 +1702,18 @@ test('guide: ticks of the BOM and the boards survive switching tabs and reloadin
   // the status line and the progress tools exist once: those of the shown component
   await expect(page.locator('.ag-status')).toHaveCount(1);
   await expect(panelOf(page).locator('[data-role=import-file]')).toHaveCount(1);
+});
+
+test('guide: the steps tab is in the hash as guide=steps, opens from it, and keeps its ticks', async ({ page }) => {
+  await page.goto(url('guide'));
+  await tabOf(page, TABS[1]).click();
+  expect(await hashNow(page)).toBe('#guide=steps');
+  await panelOf(page).locator('.ag-step-item input[type=checkbox]').first().check();
+  await tabOf(page, TABS[0]).click();
+  await page.goto(`${url('guide')}#guide=steps`); await page.reload();
+  await selected(page, TABS[1]);
+  await expect(panelOf(page).locator('.ag-step-item input[type=checkbox]').first()).toBeChecked();
+  await expect(panelOf(page).locator('.ag-progress')).toHaveText(`1 / ${items.length} checked`);
 });
 
 test('guide: data-board picks tabs in the order given, an unknown key says so', async ({ page }) => {
