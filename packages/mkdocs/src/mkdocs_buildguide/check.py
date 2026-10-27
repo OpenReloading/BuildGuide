@@ -80,13 +80,27 @@ def check(data):
             found.append(f"bom.{item.get('id')}: part missing")
         if item.get("qty", "") == "":
             found.append(f"bom.{item.get('id')}: qty missing")
+    steps = (data.get("steps") or {}).get("items") or []
+    bom_ids = [item.get("id") for item in items]
+    found += [f"steps: id {step_id} used twice" for step_id in repeated([step.get("id") for step in steps])]
+    for step in steps:
+        if not step.get("title"):
+            found.append(f"steps.{step.get('id')}: title missing")
+        note = step.get("note")
+        if isinstance(note, dict) and note.get("level") not in ("note", "caution", "warning"):
+            found.append(f"steps.{step.get('id')}: note level {note.get('level')} unknown")
+        found += [f"steps.{step.get('id')}: no bom item {part}" for part in step.get("parts") or [] if part not in bom_ids]
     boards = list((data.get("boards") or {}).items())
     for key, board in boards:
         found += check_board(key, board)
-    # tick keys start with the prefix: boards and the BOM ('bom') must not share one
+    # tick keys start with the prefix: boards, the BOM ('bom') and the text steps ('step') must not share one
     prefixes = [(key, board.get("prefix") or key) for key, board in boards]
     found += [f"boards: prefix {prefix} used twice" for prefix in repeated([p for _, p in prefixes])]
     found += [f"{key}: prefix bom is taken by the BOM" for key, prefix in prefixes if prefix == "bom"]
+    found += [f"{key}: prefix step is taken by the steps" for key, prefix in prefixes if prefix == "step"]
+    # the combined guide's tab 'steps' is the text steps, not a board
+    if data.get("steps") is not None and any(key == "steps" for key, _ in boards):
+        found.append("boards: key steps is taken by the steps")
     return found
 
 

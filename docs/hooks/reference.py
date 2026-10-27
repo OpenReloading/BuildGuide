@@ -81,6 +81,8 @@ def schema_table(name):
         ]
     elif name == "bom":
         rows = walk(schema, schema["properties"]["bom"], "bom", False)
+    elif name == "steps":
+        rows = walk(schema, schema["properties"]["steps"], "steps", False)
     elif name == "board":
         rows = walk(schema, schema["$defs"]["board"], "boards.<key>", False)
     else:

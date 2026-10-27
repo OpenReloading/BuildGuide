@@ -60,6 +60,62 @@ Items with a group, a name, a specification and a quantity. The component adds s
     <BuildGuide view="bom" />
     ```
 
+## Steps
+
+A numbered list of text steps, each with a title, text, an optional note and the BOM items it uses (`parts`, ids from the BOM). The component adds a tick per step, a progress bar and a print button. Live with the full example data: [Steps](example/steps.md).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/steps.json"
+```
+
+=== "Plain HTML"
+
+    ```html title="steps.html"
+    <!doctype html>
+    <html lang="en">
+    <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Steps</title>
+    <link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+    </head>
+    <body>
+    <h1>Steps</h1>
+    <div data-buildguide="steps" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+    <script src="assets/buildguide-<version>/buildguide.js" defer></script>
+    </body>
+    </html>
+    ```
+
+=== "MkDocs"
+
+    ```yaml title="mkdocs.yml"
+    plugins:
+      - search
+      - buildguide:
+          data: guide.json
+    ```
+
+    ```markdown title="docs/steps.md"
+    # Steps
+
+    <div data-buildguide="steps"></div>
+    ```
+
+=== "Docusaurus"
+
+    ```js title="docusaurus.config.js"
+    plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+    ```
+
+    ```mdx title="docs/steps.mdx"
+    # Steps
+
+    import BuildGuide from '@theme/BuildGuide';
+
+    <BuildGuide view="steps" />
+    ```
+
 ## Wiring board
 
 Parts with terminals on their sides, placed by `at` and `size`, and numbered connections from `PART:terminal` to `PART:terminal` in steps. The colour code names the wire; the routes are computed. Live with the full example data: [Wiring](example/wiring.md).
@@ -172,9 +228,9 @@ The same structure with one colour for the tube. `scope: "all"` shows every tube
     <BuildGuide view="board" board="tubing" />
     ```
 
-## BOM and boards behind tabs
+## BOM, steps and boards behind tabs
 
-One component with a tab for the BOM and one for each board, in the order of the data. Only the shown tab is mounted, so a board is drawn when you open its tab. `data-board="wiring tubing"` (Docusaurus: `board="wiring tubing"`) picks tabs and their order; `bom` names the BOM. The tab is kept in the hash (`#guide=wiring`) next to the boards' own positions. Live with the full example data: [Combined](example/guide.md).
+One component with a tab for the BOM, one for the steps when the data has a top-level `steps` object, and one for each board, in the order of the data (the BOM, the steps, then the boards). Only the shown tab is mounted, so a board is drawn when you open its tab. `data-board="wiring tubing"` (Docusaurus: `board="wiring tubing"`) picks tabs and their order; `bom` names the BOM and `steps` the steps. The tab is kept in the hash (`#guide=wiring`) next to the boards' own positions. Live with the full example data: [Combined](example/guide.md).
 
 ```json title="guide.json"
 --8<-- "packages/core/example/minimal/all.json"

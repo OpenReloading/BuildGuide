@@ -1,5 +1,5 @@
 // Docusaurus plugin: validates the guide data against the schema and checks it at build time, serves core and the data (guide.json, more guides in guides/<id>.json)
-// at <baseUrl>assets/buildguide/ and provides <BuildGuide view="bom"/>, <BuildGuide view="board" board="KEY"/>, <BuildGuide view="guide"/> and <BuildGuide guide="ID" .../> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
+// at <baseUrl>assets/buildguide/ and provides <BuildGuide view="bom"/>, <BuildGuide view="steps"/>, <BuildGuide view="board" board="KEY"/>, <BuildGuide view="guide"/> and <BuildGuide guide="ID" .../> as @theme/BuildGuide. Core is copied into ../core/ by scripts/copy-core.mjs.
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');

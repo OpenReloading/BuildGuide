@@ -1,0 +1,15 @@
+{
+  "storage": "minimal-steps",
+  "bom": {
+    "items": [
+      { "id": "frame", "group": "Mechanical", "part": "Frame", "spec": "20 x 20 mm profile", "qty": 4 },
+      { "id": "bracket", "group": "Mechanical", "part": "Corner bracket", "spec": "M5", "qty": 8 }
+    ]
+  },
+  "steps": {
+    "items": [
+      { "id": "rails", "title": "Join the rails", "text": "Fix the four rails with the corner brackets.", "parts": ["frame", "bracket"] },
+      { "id": "check", "title": "Check the frame", "text": "Measure both diagonals. They must match within 1 mm.", "note": { "level": "note", "text": "Do not fully tighten the screws before this check." } }
+    ]
+  }
+}

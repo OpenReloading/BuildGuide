@@ -35,10 +35,44 @@
       },
       "additionalProperties": false
     },
+    "steps": {
+      "type": "object",
+      "required": ["items"],
+      "description": "text steps, one list with a tick each: the steps component and the later 3D assembly view",
+      "properties": {
+        "title": { "type": "string", "description": "tab label in the combined guide; default: Steps" },
+        "note": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "title"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "description": "unique among the steps; the tick key is step-<id>" },
+              "title": { "type": "string", "minLength": 1 },
+              "text": { "type": "string", "description": "plain text, shown with the step" },
+              "note": { "$ref": "#/$defs/note", "description": "text shown with the step, below its text: a string, or an object whose level word (note, caution or warning) is shown before the text" },
+              "parts": { "type": "array", "items": { "type": "string" }, "description": "ids of the bom items the step uses" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
     "boards": { "type": "object", "additionalProperties": { "$ref": "#/$defs/board" } }
   },
   "additionalProperties": false,
   "$defs": {
+    "note": {
+      "type": ["string", "object"],
+      "properties": {
+        "level": { "enum": ["note", "caution", "warning"] },
+        "text": { "type": "string" }
+      },
+      "required": ["level", "text"],
+      "additionalProperties": false
+    },
     "point": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
     "board": {
       "type": "object",
@@ -148,16 +182,7 @@
             "properties": {
               "id": { "type": "string" },
               "title": { "type": "string" },
-              "note": {
-                "type": ["string", "object"],
-                "description": "text shown with the step, above its connection list: a string, or an object whose level word (note, caution or warning) is shown before the text",
-                "properties": {
-                  "level": { "enum": ["note", "caution", "warning"] },
-                  "text": { "type": "string" }
-                },
-                "required": ["level", "text"],
-                "additionalProperties": false
-              },
+              "note": { "$ref": "#/$defs/note", "description": "text shown with the step, above its connection list: a string, or an object whose level word (note, caution or warning) is shown before the text" },
               "connections": {
                 "type": "array",
                 "minItems": 1,

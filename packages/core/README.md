@@ -1,6 +1,6 @@
 # BuildGuide core
 
-Browser components (BOM checklist, wiring and tubing boards), JSON Schema and check CLI for any static site. Plain JavaScript and CSS, no build step. Docs: https://openreloading.github.io/BuildGuide/
+Browser components (BOM checklist, text steps, wiring and tubing boards), JSON Schema and check CLI for any static site. Plain JavaScript and CSS, no build step. Docs: https://openreloading.github.io/BuildGuide/
 
 <!-- --8<-- [start:docs] -->
 ## Use
@@ -21,7 +21,7 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    then `npm install @openreloading/buildguide` and copy `node_modules/@openreloading/buildguide/src/` into the site's assets.
 
-2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist or one board (wiring or tubing). Use as many as you like on one page, each board once:
+2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist, the text steps or one board (wiring or tubing). Use as many as you like on one page, each board once:
 
    ```html
    <link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
@@ -32,8 +32,8 @@ Browser components (BOM checklist, wiring and tubing boards), JSON Schema and ch
 
    | Attribute | Meaning | Default |
    |---|---|---|
-   | `data-buildguide` | `bom`, `board`, or `guide` (the BOM and all boards behind tabs) | required |
-   | `data-board` | key in `boards`, for `board`; for `guide` a space separated list of `bom` and board keys to show, in that order | required for `board`, all for `guide` |
+   | `data-buildguide` | `bom`, `steps`, `board`, or `guide` (the BOM, the steps and all boards behind tabs) | required |
+   | `data-board` | key in `boards`, for `board`; for `guide` a space separated list of `bom`, `steps` and board keys to show, in that order | required for `board`, all for `guide` |
    | `data-src` | URL of the guide data. Components with the same URL share one request | the JSON in an element with the id `guide-data` |
    | `data-assets` | folder of BOM images, relative to the page | `assets/` (or the `data-assets` of `#guide-data`) |
 

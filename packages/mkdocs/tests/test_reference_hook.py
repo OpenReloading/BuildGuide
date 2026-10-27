@@ -25,8 +25,16 @@ def test_board_table_walks_maps_arrays_and_refs():
     assert rows["boards.<key>.areas.<key>.glands"][1] == "array of array of [number, string]"
 
 
+def test_steps_table_walks_the_items_and_the_shared_note():
+    rows = {row[0]: row for row in table_rows(reference.schema_table("steps"))}
+    assert rows["steps.items"][2] == "yes" and rows["steps.items[].id"][2] == "yes"
+    assert rows["steps.items[].note"][1] == "string or object"  # $ref to the note shared with a board's steps
+    assert rows["steps.items[].note.level"][1].startswith("one of")
+    assert rows["steps.items[].parts"][1] == "array of string"
+
+
 def test_root_and_bom_tables():
-    assert [row[0] for row in table_rows(reference.schema_table("root"))] == ["$schema", "storage", "bom", "boards"]
+    assert [row[0] for row in table_rows(reference.schema_table("root"))] == ["$schema", "storage", "bom", "steps", "boards"]
     bom = {row[0]: row for row in table_rows(reference.schema_table("bom"))}
     assert bom["bom.items[].qty"][1] == "integer or string"
     assert bom["bom.items[].id"][2] == "yes"

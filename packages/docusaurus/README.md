@@ -1,6 +1,6 @@
 # BuildGuide for Docusaurus
 
-Docusaurus 3 plugin: validates and checks the guide data at build time, serves the core browser files and provides the `<BuildGuide />` component for a BOM checklist or a wiring or tubing board. Your pages, notices and navigation stay your own.
+Docusaurus 3 plugin: validates and checks the guide data at build time, serves the core browser files and provides the `<BuildGuide />` component for a BOM checklist, text steps or a wiring or tubing board. Your pages, notices and navigation stay your own.
 
 <!-- --8<-- [start:docs] -->
 ## Use
@@ -51,8 +51,8 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
 
    | Prop | Meaning |
    |---|---|
-   | `view` | `bom`, `board`, or `guide` (the BOM and all boards behind tabs) |
-   | `board` | key in `boards`, for `board`; for `guide` a space separated list of `bom` and board keys to show, in that order |
+   | `view` | `bom`, `steps`, `board`, or `guide` (the BOM, the steps and all boards behind tabs) |
+   | `board` | key in `boards`, for `board`; for `guide` a space separated list of `bom`, `steps` and board keys to show, in that order |
    | `guide` | an id from `guides`; without it the component shows the guide of `data` |
 
    One site can hold several guides: `<BuildGuide guide="second" view="board" board="wiring" />`. A page can use several guides.

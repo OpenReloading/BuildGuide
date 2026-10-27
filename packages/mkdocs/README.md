@@ -1,6 +1,6 @@
 # BuildGuide for MkDocs
 
-MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing board) anywhere in a Markdown page. The plugin checks the data at build time and bundles the core browser files. Your pages, notices and navigation stay your own.
+MkDocs plugin: put a BuildGuide component (a BOM checklist, text steps or a wiring or tubing board) anywhere in a Markdown page. The plugin checks the data at build time and bundles the core browser files. Your pages, notices and navigation stay your own.
 
 <!-- --8<-- [start:docs] -->
 ## Use
@@ -42,12 +42,13 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist or a wiring or tubing
    | Component | Markup |
    |---|---|
    | BOM checklist | `<div data-buildguide="bom"></div>` |
+   | Text steps | `<div data-buildguide="steps"></div>` |
    | A board | `<div data-buildguide="board" data-board="KEY"></div>`, `KEY` is a key in `boards` |
-   | BOM and all boards behind tabs | `<div data-buildguide="guide"></div>`; `data-board="wiring tubing"` picks tabs (`bom` is the BOM) |
+   | BOM, steps and all boards behind tabs | `<div data-buildguide="guide"></div>`; `data-board="wiring tubing"` picks tabs (`bom` is the BOM, `steps` the steps) |
 
    A component shows the guide of `data`. To show another guide, add `data-guide="ID"` with an id from `guides`: `<div data-buildguide="board" data-board="wiring" data-guide="second"></div>`. A page can use several guides.
 
-   Attribute values may use double or single quotes; a board key may hold spaces. The view must be exactly `bom`, `board` or `guide`. An empty element gets a no-JavaScript note after the search index is built. Elements in code blocks and inline code are text, not components.
+   Attribute values may use double or single quotes; a board key may hold spaces. The view must be exactly `bom`, `steps`, `board` or `guide`. An empty element gets a no-JavaScript note after the search index is built. Elements in code blocks and inline code are text, not components.
 
 The build fails on a schema error, on a problem the core check finds (`buildguide-check.mjs`), and on NaN or Infinity in the data of any guide, and when two guides have the same `storage` key: `localStorage` is per origin, so guides with the same key tick each other's connections. A component with an unknown view or board key, an unknown `data-guide`, or a `data-buildguide` without value, or a BOM component without `bom` data, or a `guide` with a key in `data-board` that does not exist, is a warning (an error with `--strict`).
 

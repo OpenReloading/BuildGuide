@@ -20,6 +20,17 @@
       { "id": "bracket", "group": "3D printed", "part": "Sensor bracket", "spec": "PETG, 0.2 mm layers", "qty": 1, "link": "https://example.org/models/sensor-bracket" }
     ]
   },
+  "steps": {
+    "title": "Assembly",
+    "note": "Do the steps in order. The parts of each step are listed in the BOM.",
+    "items": [
+      { "id": "cylinder", "title": "Mount the cylinder", "text": "Fix the cylinder to the base plate with two M4 screws. The rod points to the right.", "parts": ["cylinder"] },
+      { "id": "bracket", "title": "Fit the sensor bracket", "text": "Slide the sensor into the bracket and fix the bracket beside the end of the stroke.\nSet the sensing face 2 mm from the rod when it is fully out.", "note": "Tighten the sensor nuts by hand first, then a quarter turn with a spanner.", "parts": ["bracket", "sensor"] },
+      { "id": "valve", "title": "Mount the valve and the regulator", "text": "Screw the regulator into the supply port of the valve. Fix the valve beside the cylinder.", "note": { "level": "caution", "text": "Seal the threads with PTFE tape, and keep tape out of the ports." }, "parts": ["valve", "regulator"] },
+      { "id": "tube", "title": "Cut the tube", "text": "Cut six pieces to length with a tube cutter, square to the tube. Do not connect them yet: the tubing board shows where each one goes.", "note": { "level": "warning", "text": "Never cut or pull a tube that is under pressure. Vent the supply first." }, "parts": ["tube"] },
+      { "id": "box", "title": "Fit the control box", "text": "Clip the power supply, relay socket and lever connector to the rail inside the box. Fit the buttons and the fuse holder in the lid.", "parts": ["psu", "fuse", "buttons", "relay", "join"] }
+    ]
+  },
   "boards": {
     "wiring": {
       "title": "Wiring",

@@ -1,5 +1,5 @@
-/* BuildGuide components: a BOM checklist and board workspaces (wiring, tubing) from one guide data object, alone or behind tabs.
-   Markup: <div data-buildguide="bom"></div>, <div data-buildguide="board" data-board="wiring"></div> or <div data-buildguide="guide"></div>, any number per page,
+/* BuildGuide components: a BOM checklist, a text step list and board workspaces (wiring, tubing) from one guide data object, alone or behind tabs.
+   Markup: <div data-buildguide="bom"></div>, <div data-buildguide="steps"></div>, <div data-buildguide="board" data-board="wiring"></div> or <div data-buildguide="guide"></div>, any number per page,
    plus the data in <script type="application/json" id="guide-data"> (any element with that id) or a data-src="guide.json" URL on the div. */
 (() => {
   'use strict';
@@ -23,6 +23,8 @@
   const boardRenderer = () => loadScript(new URL('vendor/joint/joint.min.js', HERE).href)
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
 
+  // the note of a step, a string or {level, text}, in a board step and in a text step
+  const noteLine = note => note ? `<p class="ag-step-note" data-level="${esc(note.level)}">${note.level ? `<strong>${esc(note.level)}</strong> ` : ''}${esc(note.text ?? note)}</p>` : '';
   const mounted = new WeakMap();
   // Undo of a reset or import, one per page: until the next tick, a change elsewhere or 10 s
   let undo;
@@ -48,7 +50,7 @@
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
     if (view === 'guide') return mountTabs(root, D, options);
     const board = view === 'board' ? own(D.boards, boardKey) : null;
-    if (view === 'bom' ? !D.bom : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
+    if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
     const ASSETS = new URL(options.assets ?? root.dataset.assets ?? 'assets/', location.href);
     const steps = board?.steps || [];
     const title = board?.title || boardKey;
@@ -68,8 +70,9 @@
     // a tick belongs to one exact connection: change either end and it is unchecked again
     const connKey = c => `${prefix}-${c.no}:${c.a}:${c.b}`, bomKey = p => `bom-${p.id}:${p.part}`;
     const count = (items, key) => items.filter(x => checked(key(x))).length;
-    const tally = () => { const list = board ? steps.flatMap(s => s.connections) : items; return [count(list, board ? connKey : bomKey), list.length]; };
-    const what = board ? 'connections' : 'parts';
+    const stepKey = s => `step-${s.id}`;
+    const tally = () => view === 'steps' ? [count(textSteps, stepKey), textSteps.length] : (list => [count(list, board ? connKey : bomKey), list.length])(board ? steps.flatMap(s => s.connections) : items);
+    const what = board ? 'connections' : view === 'steps' ? 'steps' : 'parts';
     let wasDone;
     const state = {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', filter: 'All', message: ''};
     const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
@@ -122,7 +125,7 @@
       if (last) message = `All ${what} checked`;
       wasDone = done;
       root.toggleAttribute('data-complete', done);
-      root.innerHTML = `${board ? renderBoard() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
+      root.innerHTML = `${board ? renderBoard() : view === 'steps' ? renderSteps() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
         <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status">${message ? '' : line('')}</span></div>`;
       // a live region announces text added to an existing element, not text that arrives with it
       if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
@@ -202,7 +205,7 @@
       ${toolbar()}
       ${connectionSummary(c)}
       <div class="ag-wire-navigation">${button('← Previous', 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? 'Last connection' : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
-      ${s.note ? `<p class="ag-step-note" data-level="${esc(s.note.level)}">${s.note.level ? `<strong>${esc(s.note.level)}</strong> ` : ''}${esc(s.note.text ?? s.note)}</p>` : ''}
+      ${noteLine(s.note)}
       <div class="ag-list-heading"><h3>${board.listAll ? `All ${esc(title.toLowerCase())} connections` : 'Connections in this step'}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
       </div></section>`;
     }
@@ -211,10 +214,17 @@
       const target = `data-conn="${esc(c.no)}" ` + (index >= 0 ? `data-wire="${index}"` : `data-goto="${esc(c.no)}"`);
       return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="Connection ${esc(c.no)}" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
     }
-    const bom = D.bom || {}, items = bom.items || [];
+    const bom = D.bom || {}, items = bom.items || [], textSteps = D.steps?.items || [];
     const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()) && (state.filter === 'All' || checked(bomKey(p)) === (state.filter === 'Done')));
     function renderBOM() {
       return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div></div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label><select data-role="filter" aria-label="Show parts"><option>All</option><option>Missing</option><option>Done</option></select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+    }
+    function renderSteps() {
+      const row = (s, i) => {
+        const done = checked(stepKey(s)), parts = (s.parts || []).map(id => items.find(p => p.id === id)?.part ?? id);
+        return `<li class="ag-step-item ${done ? 'is-done' : ''}"><label class="ag-have"><input type="checkbox" data-check="${esc(stepKey(s))}" aria-label="${esc(s.title)}" ${done ? 'checked' : ''}></label><span class="ag-step-id ${done ? 'complete' : ''}" aria-hidden="true">${i + 1}</span><div class="ag-step-body"><strong class="ag-step-title">${esc(s.title)}</strong>${s.text ? `<p class="ag-step-text">${esc(s.text)}</p>` : ''}${noteLine(s.note)}${parts.length ? `<p class="ag-step-parts">Parts: ${esc(parts.join(', '))}</p>` : ''}</div></li>`;
+      };
+      return `<section class="ag-text-steps"><div class="ag-head"><div>${D.steps.note ? `<p>${esc(D.steps.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}</div></div><ol class="ag-step-list">${textSteps.map(row).join('')}</ol></section>`;
     }
     const groupTally = g => { const all = items.filter(p => p.group === g); return `${count(all, bomKey)} / ${all.length}`; };
     function bomRows() {
@@ -348,18 +358,20 @@
   let tabSeq = 0;
   function mountTabs(root, D, options) {
     const asked = (options.board ?? root.dataset.board ?? '').split(/\s+/).filter(Boolean);
-    const keys = asked.length ? asked : [...(D.bom ? ['bom'] : []), ...Object.keys(D.boards ?? {})];
-    if (!keys.length || keys.some(k => k === 'bom' ? !D.bom : !own(D.boards, k))) { root.textContent = `Unknown guide component: guide${asked.map(k => ' ' + k).join('')}.`; return () => {}; }
+    // 'bom' and, with steps data, 'steps' name the components; any other key is a board
+    const text = k => k === 'steps' && D.steps, component = k => k === 'bom' || text(k);
+    const keys = asked.length ? asked : [...(D.bom ? ['bom'] : []), ...(D.steps ? ['steps'] : []), ...Object.keys(D.boards ?? {})];
+    if (!keys.length || keys.some(k => k === 'bom' ? !D.bom : !text(k) && !own(D.boards, k))) { root.textContent = `Unknown guide component: guide${asked.map(k => ' ' + k).join('')}.`; return () => {}; }
     const id = `ag-tabs-${++tabSeq}`, assets = options.assets ?? root.dataset.assets;
     root.classList.add('ag-guide', 'ag-tabbed');
-    root.innerHTML = `<div class="ag-tabs" role="tablist" aria-label="Guide">${keys.map((k, i) => `<button type="button" role="tab" id="${id}-${i}" aria-controls="${id}">${esc(k === 'bom' ? 'Bill of materials' : own(D.boards, k).title || k)}</button>`).join('')}</div><div id="${id}" role="tabpanel"></div>`;
+    root.innerHTML = `<div class="ag-tabs" role="tablist" aria-label="Guide">${keys.map((k, i) => `<button type="button" role="tab" id="${id}-${i}" aria-controls="${id}">${esc(k === 'bom' ? 'Bill of materials' : text(k) ? D.steps.title || 'Steps' : own(D.boards, k).title || k)}</button>`).join('')}</div><div id="${id}" role="tabpanel"></div>`;
     const tabs = [...root.querySelectorAll('[role=tab]')], panel = root.lastElementChild;
     let active = -1, seen = new Map(), handled = null;
     const show = i => {
       active = i;
       tabs.forEach((tab, j) => { tab.setAttribute('aria-selected', String(j === i)); tab.tabIndex = j === i ? 0 : -1; });
       panel.setAttribute('aria-labelledby', tabs[i].id);
-      mount(panel, D, keys[i] === 'bom' ? {view: 'bom', assets} : {view: 'board', board: keys[i], assets});
+      mount(panel, D, component(keys[i]) ? {view: keys[i], assets} : {view: 'board', board: keys[i], assets});
     };
     // seen: the pairs and handled: the hash this component acted on last
     const sync = () => { seen = read(); handled = location.hash; };
@@ -378,9 +390,9 @@
       // a hash set from outside fires popstate and hashchange: the second finds it handled
       if (location.hash === handled) return;
       const now = read(), named = keys.indexOf(decode(now.get('guide') ?? ''));
-      const moved = keys.findIndex((k, i) => i !== active && k !== 'bom' && now.has(k) && now.get(k) !== seen.get(k));
+      const moved = keys.findIndex((k, i) => i !== active && !component(k) && now.has(k) && now.get(k) !== seen.get(k));
       const stay = pairs().some(p => !nameOf(p)) || now.has(keys[active]);
-      const target = Math.max(named >= 0 ? named : moved >= 0 ? moved : stay ? active : keys.findIndex(k => k !== 'bom' && now.has(k)), 0);
+      const target = Math.max(named >= 0 ? named : moved >= 0 ? moved : stay ? active : keys.findIndex(k => !component(k) && now.has(k)), 0);
       sync();
       if (target !== active) show(target);
     }

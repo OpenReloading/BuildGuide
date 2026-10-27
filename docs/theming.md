@@ -34,13 +34,13 @@ Every checkbox (BOM rows, wire rows, the detail's Mark checked box) is 24 x 24 p
 
 ## Done state
 
-A ticked BOM row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed. In a board drawing the number pill of a ticked connection reads `✓ <number>` on a green tint (a diode has no pill, its name label gets the check mark); the check mark is text, so it survives dark mode, forced colours and printing without background graphics, and the connection's accessible name ends with `; checked`.
+A ticked BOM row, step row or wire row stays fully legible: a tint (`--ag-done-bg`), the muted text colour and a check mark in front of the part name, step title or connection number mark it, next to the checked box. The check mark has empty alternative text; the checkbox carries the state. In forced-colours mode the system colours apply and the check mark and box remain. Printed rows are not dimmed. In a board drawing the number pill of a ticked connection reads `✓ <number>` on a green tint (a diode has no pill, its name label gets the check mark); the check mark is text, so it survives dark mode, forced colours and printing without background graphics, and the connection's accessible name ends with `; checked`.
 
 Two plain properties on `.ag-guide` restore dimming or strike-through. Both default to the plain look:
 
 | Property | Default | Meaning |
 |---|---|---|
-| `--ag-done-opacity` | `1` | opacity of a done BOM cell or wire button and its contents, the checkbox in the BOM cell included |
+| `--ag-done-opacity` | `1` | opacity of a done BOM cell, step title and text or wire button and its contents, the checkbox in the BOM cell included |
 | `--ag-done-decoration` | `none` | `text-decoration` of a done row's text |
 
 ```css
@@ -61,7 +61,7 @@ With `forced-colors: active` the browser replaces the component's colours with t
 | State | Marker in forced colours | Otherwise |
 |---|---|---|
 | Selected wire row | 3px `CanvasText` outline | tint and a bar from `--ag-row-selected` and `--ag-row-selected-bar` |
-| Done wire row or BOM row | 6px `CanvasText` start border, next to the check mark and the checked box | tint from `--ag-done-bg` |
+| Done wire row, BOM row or step | 6px `CanvasText` start border, next to the check mark and the checked box | tint from `--ag-done-bg` |
 | Current step | 3px border instead of 1px | tint and border from `--ag-step-current-bg` and `--ag-step-current-line` |
 | Caution note | 6px double start border | tint and border from `--ag-caution-bg` and `--ag-caution-line` |
 | Warning note | 8px solid start border | tint and border from `--ag-warning-bg` and `--ag-warning-line` |

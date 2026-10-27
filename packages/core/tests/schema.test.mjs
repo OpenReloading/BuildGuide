@@ -38,3 +38,16 @@ test('the schema accepts a leveled note and rejects an unknown level, a missing 
     assert.deepEqual(validate.errors.map(e => e.instancePath), ['/boards/wiring/steps/0' + path]);
   }
 });
+
+test('the schema accepts the steps and rejects a step without title, a stray key and a note that is not text', () => {
+  const guide = read('../example/guide.json');
+  assert.equal(validate(guide), true);
+  const [first] = guide.steps.items;
+  for (const [change, path] of [[s => { delete s.title; }, ''], [s => { s.image = 'x.png'; }, ''], [s => { s.note = 1; }, '/note'], [s => { s.note = { level: 'danger', text: 'x' }; }, '/note/level'], [s => { s.parts = 'psu'; }, '/parts']]) {
+    const copy = structuredClone(guide), step = copy.steps.items[0];
+    change(step);
+    assert.equal(validate(copy), false);
+    assert.deepEqual(validate.errors.map(e => e.instancePath), ['/steps/items/0' + path]);
+  }
+  assert.deepEqual(Object.keys(first).sort((x, y) => x.localeCompare(y)), ['id', 'parts', 'text', 'title']);
+});

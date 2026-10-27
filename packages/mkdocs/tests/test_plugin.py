@@ -150,6 +150,7 @@ def test_problems_in_the_data_stop_the_build(tmp_path, caplog):
         ('<div data-buildguide=""></div>', "data-buildguide has no value"),
         ('<div data-buildguide="guide" data-board="wiring nowhere"></div>', "no guide component guide wiring nowhere"),
         ('<div data-buildguide="guide" data-board="bom nowhere"></div>', "no guide component guide bom nowhere"),
+        ('<div data-buildguide="guide" data-board="steps nowhere"></div>', "no guide component guide steps nowhere"),
     ],
 )
 def test_an_unknown_component_fails_a_strict_build(tmp_path, caplog, tag, message):
@@ -158,7 +159,7 @@ def test_an_unknown_component_fails_a_strict_build(tmp_path, caplog, tag, messag
     assert f"index.md: {message}" in caplog.text
 
 
-@pytest.mark.parametrize("attributes", ["", ' data-board="wiring"', ' data-board="tubing   bom wiring"', " data-board='bom'"])
+@pytest.mark.parametrize("attributes", ["", ' data-board="wiring"', ' data-board="tubing   bom wiring"', " data-board='bom'", ' data-board="bom steps wiring"'])
 def test_the_guide_view_takes_the_bom_and_every_board_or_a_list_of_them(tmp_path, attributes):
     out = site(tmp_path, pages={"index.md": f'<div data-buildguide="guide"{attributes}></div>\n'}, strict=True)
     page = (out / "index.html").read_text(encoding="utf-8")
@@ -168,7 +169,7 @@ def test_the_guide_view_takes_the_bom_and_every_board_or_a_list_of_them(tmp_path
 
 def test_the_guide_view_without_bom_data_takes_the_boards_only(tmp_path, caplog):
     guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    del guide["bom"]
+    del guide["bom"], guide["steps"]
     site(tmp_path, guide=guide, pages={"index.md": '<div data-buildguide="guide"></div>\n'}, strict=True)
     with pytest.raises(Abort):
         site(tmp_path, guide=guide, pages={"index.md": '<div data-buildguide="guide" data-board="bom"></div>\n'}, strict=True)
@@ -180,9 +181,21 @@ def test_an_unknown_component_is_a_warning_without_strict(tmp_path, caplog):
     assert "no guide component video" in caplog.text
 
 
+def test_the_steps_view_needs_steps_data_and_a_board_may_still_be_named_steps(tmp_path, caplog):
+    out = site(tmp_path, pages={"index.md": '<div data-buildguide="steps"></div>\n'}, strict=True)
+    assert 'data-buildguide="steps"><noscript>This guide needs JavaScript.</noscript></div>' in (out / "index.html").read_text(encoding="utf-8")
+    guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    guide["boards"]["steps"] = guide["boards"].pop("tubing")
+    del guide["steps"]
+    site(tmp_path, guide=guide, pages={"index.md": '<div data-buildguide="guide" data-board="steps"></div>\n'}, strict=True)
+    with pytest.raises(Abort):
+        site(tmp_path, guide=guide, pages={"index.md": '<div data-buildguide="steps"></div>\n'}, strict=True)
+    assert "no guide component steps" in caplog.text
+
+
 def test_a_component_without_bom_data_is_unknown(tmp_path, caplog):
     guide = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    del guide["bom"]
+    del guide["bom"], guide["steps"]
     with pytest.raises(Abort):
         site(tmp_path, guide=guide, pages={"index.md": f"{BOM}\n"}, strict=True)
     assert "no guide component bom" in caplog.text

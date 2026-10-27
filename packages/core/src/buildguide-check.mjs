@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Checks a guide's data before it is published: BOM lines, and every board connection
+// Checks a guide's data before it is published: BOM lines, text steps, and every board connection
 // against its parts, terminals, colours and the board's per-terminal limit.
 // Use: node buildguide-check.mjs guide.json [...]   (exit 1 and one line per problem)
 import { readFileSync, realpathSync } from 'node:fs';
@@ -53,12 +53,22 @@ export function check(data) {
     if (!i.part) found.push(`bom.${i.id}: part missing`);
     if (i.qty === undefined || i.qty === '') found.push(`bom.${i.id}: qty missing`);
   }
+  const steps = data.steps?.items || [], bomIds = items.map((i) => i.id);
+  for (const id of repeated(steps.map((s) => s.id))) found.push(`steps: id ${id} used twice`);
+  for (const s of steps) {
+    if (!s.title) found.push(`steps.${s.id}: title missing`);
+    if (s.note && typeof s.note === 'object' && !['note', 'caution', 'warning'].includes(s.note.level)) found.push(`steps.${s.id}: note level ${s.note.level} unknown`);
+    for (const id of s.parts || []) if (!bomIds.includes(id)) found.push(`steps.${s.id}: no bom item ${id}`);
+  }
   const boards = Object.entries(data.boards || {});
   for (const [key, board] of boards) found.push(...checkBoard(key, board));
-  // tick keys start with the prefix: boards and the BOM ('bom') must not share one
+  // tick keys start with the prefix: boards, the BOM ('bom') and the text steps ('step') must not share one
   const prefixes = boards.map(([key, board]) => [key, board.prefix || key]);
   for (const prefix of repeated(prefixes.map(([, p]) => p))) found.push(`boards: prefix ${prefix} used twice`);
   for (const [key, prefix] of prefixes) if (prefix === 'bom') found.push(`${key}: prefix bom is taken by the BOM`);
+  for (const [key, prefix] of prefixes) if (prefix === 'step') found.push(`${key}: prefix step is taken by the steps`);
+  // the combined guide's tab 'steps' is the text steps, not a board
+  if (data.steps && boards.some(([key]) => key === 'steps')) found.push('boards: key steps is taken by the steps');
   return found;
 }
 
