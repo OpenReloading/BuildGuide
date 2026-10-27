@@ -78,6 +78,19 @@ A board component sets `--ag-board-ratio` on its `.ag-guide` to the size of the 
 
 On a canvas narrower than 560 px (phones) the drawing is drawn large enough for its smallest label to show at `--ag-text-small` (11 px by default, 1.29 times its natural size) or more, and the canvas pans; it opens on the selected connection. Fit shows the whole board, and zoom out stops there. In fullscreen below a component width of 900 px the canvas takes at least half the screen height (`50dvh`) and the rest of the step scrolls.
 
+## Board controls
+
+A board never traps the page scroll: a swipe or a wheel turn over a board reaches the page unless you are deliberately zooming or panning the board. The zoom stays between the whole board (Fit) and the largest size of the Zoom buttons.
+
+| | Touch | Mouse | Trackpad | Keyboard |
+|---|---|---|---|---|
+| Zoom | Pinch with two fingers, around the point between them | Ctrl or Cmd with the wheel, around the pointer; the **+** and **−** buttons | Pinch (in browsers that report it as Ctrl with the wheel) | The **+** and **−** buttons |
+| Pan a zoomed board | One finger; at the edge of the board the swipe goes on into the page. Two fingers pan while they pinch | Drag; a sideways wheel | Swipe sideways with two fingers | Not available |
+| Scroll the page | One finger on a board that shows the whole drawing | The wheel, also over a zoomed board | Swipe up or down with two fingers | Not available |
+| Show the whole board | **Fit**, which also resets the pan | **Fit** | **Fit** | **Fit** |
+| Select a connection | Tap its number | Click its number | Click its number | Tab to a connection, Enter or Space; the previous and next connection buttons |
+| Fullscreen | The **Fullscreen** button; the page behind does not scroll and returns to its position when the board closes | Same | Same | Same; Escape leaves it |
+
 ## Light and dark
 
 Which side of a `light-dark()` pair applies follows the component's `color-scheme`:

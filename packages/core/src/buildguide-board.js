@@ -18,6 +18,16 @@
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
   const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
+  // a wheel notch or a trackpad pinch (ctrl + wheel) as a zoom factor, 35 % at most
+  const wheelFactor = (delta, mode) => Math.exp(-Math.max(-30, Math.min(30, delta * [1, 16, 400][mode || 0])) * .01);
+  // what a wheel over the board scrolls instead of it: the scrolling ancestor, null when the page behind is locked (fullscreen)
+  const pageScroller = el => {
+    for (let e = el.parentElement; e; e = e.parentElement) {
+      const overflow = getComputedStyle(e).overflowY;
+      if (e === document.body) return overflow === 'hidden' ? null : document.scrollingElement;
+      if (/auto|scroll/.test(overflow) && e.scrollHeight > e.clientHeight) return e;
+    }
+  };
 
   window.BuildGuideBoard = (root, B, options) => {
     if (!window.joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
@@ -51,6 +61,7 @@
       el: holder, model: graph, width: W, height: H, cellViewNamespace: ns, interactive: false,
       background: {color: 'transparent'}, async: false,   // the canvas behind it carries the surface colour
       labelsLayer: true,   // connection numbers above the parts, never hidden under a terminal
+      preventDefaultViewAction: false, preventDefaultBlankAction: false,   // by default the paper cancels the touch that starts on it, so the board would trap the page scroll
     });
 
     // areas (frame: false = a zone title inside another area), decorative props, parts with their terminals
@@ -311,28 +322,56 @@
       paper.setDimensions(W * scale, H * scale);
       paper.scale(scale);
     }
+    // zoom to `next` (1, the whole board, up to the maximum of the buttons) and keep the board point `at` under the page point (x, y)
+    const boardPoint = (x, y) => { const r = holder.getBoundingClientRect(), k = paper.scale().sx; return {x: (x - r.left) / k, y: (y - r.top) / k}; };
+    function zoomTo(next, at, x, y) {
+      zoomFactor = Math.min(Math.max(1, next), Math.max(3, readable * 1.5)); fit();
+      const r = holder.getBoundingClientRect(), k = paper.scale().sx;
+      root.scrollLeft += r.left + at.x * k - x; root.scrollTop += r.top + at.y * k - y;
+      options.zoomed?.(zoomFactor);
+      return zoomFactor;
+    }
     const observer = new ResizeObserver(fit); observer.observe(root); fit();
     // printing: the whole board at page width
     const beforePrint = () => { const s = Math.min(700 / W, 700 / H); paper.setDimensions(W * s, H * s); paper.scale(s); };
     addEventListener('beforeprint', beforePrint); addEventListener('afterprint', fit);
-    // mouse and pen dragging pans the zoomed canvas, touch scrolling stays native
-    let drag;
+    // mouse and pen dragging pans the zoomed canvas; one finger scrolls it natively and the page takes over at its edge; two fingers pinch and pan
+    let drag, pinch;
+    const touches = new Map(), mid = () => { const [a, b] = [...touches.values()]; return [(a.x + b.x) / 2, (a.y + b.y) / 2, Math.hypot(a.x - b.x, a.y - b.y) || 1]; };
     root.addEventListener('pointerdown', event => {
-      if (event.pointerType === 'touch' || event.target.closest('.joint-link')) return;   // connections and their numbers stay clickable
+      if (event.pointerType === 'touch') {
+        touches.set(event.pointerId, {x: event.clientX, y: event.clientY});
+        if (touches.size === 2) { const [x, y, d] = mid(); pinch = {d, shown, at: boardPoint(x, y)}; }
+        return;
+      }
+      if (event.target.closest('.joint-link')) return;   // connections and their numbers stay clickable
       drag = {x: event.clientX, y: event.clientY, left: root.scrollLeft, top: root.scrollTop};
       root.setPointerCapture(event.pointerId);
     });
     root.addEventListener('pointermove', event => {
+      if (touches.has(event.pointerId)) {
+        touches.set(event.pointerId, {x: event.clientX, y: event.clientY});
+        if (pinch && touches.size === 2) { const [x, y, d] = mid(); zoomTo(pinch.shown * d / pinch.d, pinch.at, x, y); }
+      }
       if (!drag) return;
       root.scrollLeft = drag.left + drag.x - event.clientX; root.scrollTop = drag.top + drag.y - event.clientY;
     });
-    root.addEventListener('pointerup', () => { drag = null; });
-    root.addEventListener('pointercancel', () => { drag = null; });
+    const release = event => { drag = null; touches.delete(event.pointerId); if (touches.size < 2) pinch = null; };
+    root.addEventListener('pointerup', release); root.addEventListener('pointercancel', release);
+    // ctrl or cmd with the wheel (and a trackpad pinch) zooms around the pointer; a plain vertical wheel reaches the page
+    root.addEventListener('wheel', event => {
+      const {deltaX, deltaY, deltaMode, clientX, clientY} = event, page = pageScroller(root);
+      if (event.ctrlKey || event.metaKey) zoomTo(shown * wheelFactor(deltaY, deltaMode), boardPoint(clientX, clientY), clientX, clientY);
+      else if (page && Math.abs(deltaY) >= Math.abs(deltaX) && root.scrollHeight > root.clientHeight) page.scrollBy(0, deltaY * [1, 16, page.clientHeight][deltaMode]);
+      else return;
+      event.preventDefault();
+    }, {passive: false});
     return {
       destroy() { disposed = true; observer.disconnect(); removeEventListener('beforeprint', beforePrint); removeEventListener('afterprint', fit); paper.remove(); graph.clear(); },
-      zoomBy(step) { zoomFactor = Math.min(Math.max(3, readable * 1.5), Math.max(1, shown + step)); fit(); return zoomFactor; },
+      zoomBy(step) { const r = root.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2; return zoomTo(shown + step, boardPoint(x, y), x, y); },
       fit() { zoomFactor = 1; fit(); root.scrollTo(0, 0); },
       highlight,
     };
   };
+  window.BuildGuideBoard.wheelFactor = wheelFactor;   // for the unit tests
 })();

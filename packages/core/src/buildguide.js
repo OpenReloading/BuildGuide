@@ -132,7 +132,7 @@
         drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoomBy(d) { return this.inner?.zoomBy(d) ?? state.zoom; }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
-          rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, base: new URL('vendor/libavoid/', HERE).href,
+          rendered.inner = mountBoard(canvas, board, {key: boardKey, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, zoomed: value => { state.zoom = value; }, base: new URL('vendor/libavoid/', HERE).href,
             focus: focusConn, done: no => checked(connKey(steps.flatMap(s => s.connections).find(c => c.no === no))),
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(i, steps[i].connections.findIndex(c => c.no === no)); }});
         }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
@@ -281,8 +281,10 @@
     }
     function updateScreenButton() { root.querySelectorAll('[data-action=fullscreen]').forEach(b => { b.textContent = state.expanded ? '⤢ Exit fullscreen' : '⛶ Fullscreen'; b.setAttribute('aria-pressed', String(state.expanded)); }); }
     function setExpanded(value) {
+      if (value) state.pageY = scrollY;
       state.expanded = value;
       root.classList.toggle('ag-expanded', value); document.body.classList.toggle('ag-no-scroll', value); updateScreenButton();
+      if (!value && state.pageY != null) scrollTo({top: state.pageY, behavior: 'instant'});   // the page was shorter meanwhile
     }
     async function toggleScreen() {
       if (state.expanded) { if (document.fullscreenElement === root) await document.exitFullscreen(); setExpanded(false); }
