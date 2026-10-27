@@ -1,11 +1,13 @@
 name: Release
 # release-please keeps one release PR. Merging it tags each changed component (<component>-vX.Y.Z) and creates its
-# GitHub Release; the assets are built here. release-please runs as the org's release GitHub App (variable
+# GitHub Release; the assets are built here. release-weekly.yml merges the release PR every Monday and dispatches this
+# workflow after the merge; the owner can also merge the PR by hand. release-please runs as the org's release GitHub App (variable
 # RELEASE_APP_CLIENT_ID, secret RELEASE_APP_PRIVATE_KEY): PRs opened with GITHUB_TOKEN wait for a maintainer to approve
 # their workflow runs, the App's PRs run them. GitHub signs the App's API commits, which main requires.
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 permissions: {}
 concurrency:
   group: release
