@@ -4,7 +4,7 @@ Monorepo of BuildGuide components, the BOM and board views for a host's own page
 
 ## Branches
 
-`main` is the only long-lived branch. Pull requests target `main` and are squash-merged with the Conventional Commit title; release-please, release, publish, Scorecard and Pages run on `main`.
+`main` is the only long-lived branch. Pull requests target `main` and are squash-merged with the Conventional Commit title; release-please, release, publish, Scorecard and Pages run on `main`; only the owner's merge of the release pull request releases.
 
 CI (`ci.yml`) runs on pull requests and on pushes to `main`. Its job names `check`, `workflows` and `dependency-review` are required checks, as are `conventional` (`pr-title.yml`) and the SonarCloud analysis.
 
@@ -17,7 +17,7 @@ CI (`ci.yml`) runs on pull requests and on pushes to `main`. Its job names `chec
 - Docusaurus example site: `npm run build -w packages/docusaurus` (`packages/docusaurus/example/build/`), dev server `npm run start -w packages/docusaurus` (port 8080)
 - Dependency audit (CI): `node scripts/audit.mjs`. An advisory without a fix goes into its `ALLOWED` list and into `allow-ghsas` in `ci.yml`, with the user's approval.
 - Docs site into `site/`: `npm run docs`. Serve: `uv run --project packages/mkdocs mkdocs serve -a 0.0.0.0:8080`
-- Pages (`pages.yml`): builds `main` with `mkdocs build --strict` on pushes to `main` and on manual dispatch, and deploys it to https://openreloading.github.io/BuildGuide/.
+- Pages (`pages.yml`): one site, the latest release built from its tag at https://openreloading.github.io/BuildGuide/ and `main` at `/next/` (`BUILDGUIDE_EDITION=next`, `SITE_URL` with `/next/`), on pushes to `main`, published releases and manual dispatch. Releases and Pages: CONTRIBUTING.md. A local `/next/` build: `BUILDGUIDE_EDITION=next SITE_URL=http://127.0.0.1:8080/next/ uv run --project packages/mkdocs mkdocs build --strict --site-dir site/next`.
 - Release archives (core tarball, MkDocs wheel and sdist): `npm run dist`
 - Serve the core example: `npm run serve -w packages/core` (http://127.0.0.1:8080/example/)
 - Workflow changes: `podman run --rm -v "$PWD:/repo:Z" -w /repo docker.io/rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667` and `podman run --rm -v "$PWD:/repo:Z" -w /repo ghcr.io/zizmorcore/zizmor:1.31.1 --offline .github/workflows` (CI runs both).

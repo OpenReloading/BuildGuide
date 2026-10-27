@@ -19,7 +19,16 @@
 ## Branches
 
 - `main` is the only long-lived branch and the default branch: pull requests target it and are squash-merged, so history stays linear.
-- release-please opens and updates one release pull request on every push to `main`; merging it tags and publishes the released components.
+- release-please opens and updates one release pull request on every push to `main`.
+
+## Releases and Pages
+
+Nothing is released automatically. A release happens only when the owner merges the release pull request.
+
+- **Release pull request:** `release.yml` runs release-please on every push to `main` with the org's release GitHub App token, so its pull request starts the required checks without anyone approving the runs. No workflow merges it or enables auto-merge on it.
+- **Release:** merging the release pull request tags each changed component (`<component>-vX.Y.Z`) and creates its GitHub Release. The archives, wheel, sdist and packages are built and published from those tags by `release.yml`, never from a push to `main`. `npm run dist` in `ci.yml` builds without publishing.
+- **Pages:** `pages.yml` builds one site and deploys it in one deployment, on a push to `main`, when a release is published and on manual dispatch. The root of https://openreloading.github.io/BuildGuide/ is the latest release of the repository, built from its tag. `/next/` is `main`. Without a release, or with a latest release from before `docs/hooks/edition.py`, the root redirects to `/next/`.
+- **Browser storage:** both editions are on one origin and share `localStorage`. The build of `/next/` runs with `BUILDGUIDE_EDITION=next`, which `docs/hooks/edition.py` turns into the suffix `-next` on every guide's `storage` key. The root keeps the keys of the guide data, so saved ticks stay. The docs site has no service worker and no other browser data. A service worker for `/next/` would need the scope `/next/` and a cache name with the same suffix.
 
 Optional: a pre-push hook runs `npm run lint` in the dev container (start it first) before each push. Enable it with `git config core.hooksPath .githooks`. CI stays the gate.
 

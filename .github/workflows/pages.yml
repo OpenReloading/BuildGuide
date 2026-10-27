@@ -1,13 +1,20 @@
 name: Pages
-# The docs site with the live example guide, built with the MkDocs plugin from main.
+# One site, one deployment (a Pages deployment replaces the whole site): the latest release, built from its tag, at the
+# root, and main under /next/. Without a release, or with a release from before the docs hook docs/hooks/edition.py,
+# the root redirects to /next/. A release is published only when the owner merges the release pull request (release.yml);
+# that publication, a push to main and a manual run rebuild the site.
 on:
   push:
     branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
 permissions: {}
 concurrency:
   group: pages
   cancel-in-progress: false
+env:
+  SITE: https://openreloading.github.io/BuildGuide/
 jobs:
   build:
     if: github.repository == 'OpenReloading/BuildGuide'
@@ -15,19 +22,58 @@ jobs:
     permissions:
       contents: read
     steps:
+      # the latest release of the repository (three components are released together, three tags on one commit)
+      - id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if tag=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name 2>"$RUNNER_TEMP/err.txt"); then
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          elif grep -q "HTTP 404" "$RUNNER_TEMP/err.txt"; then
+            echo "tag=" >> "$GITHUB_OUTPUT" # no release yet
+          else
+            cat "$RUNNER_TEMP/err.txt"
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
+          path: next
+          persist-credentials: false
+      - if: steps.latest.outputs.tag != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.latest.outputs.tag }}
+          path: stable
           persist-credentials: false
       - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:
           version: 0.13.4
           enable-cache: false
       # the header's repository facts come from the GitHub API at build time
-      - name: Build the site
-        run: uv run --locked --no-build --project packages/mkdocs mkdocs build --strict
+      - name: Build the stable site into the root
+        if: steps.latest.outputs.tag != ''
+        working-directory: stable
+        run: |
+          if [ -f docs/hooks/edition.py ]; then
+            uv run --locked --no-build --project packages/mkdocs mkdocs build --strict --site-dir "$GITHUB_WORKSPACE/site"
+          else
+            echo "::notice::$TAG has no edition hook: the root redirects to /next/"
+          fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.latest.outputs.tag }}
+      # the next edition keeps its own browser storage names (docs/hooks/edition.py) and its own site_url
+      - name: Build main into /next/
+        working-directory: next
+        run: uv run --locked --no-build --project packages/mkdocs mkdocs build --strict --site-dir "$GITHUB_WORKSPACE/site/next"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          BUILDGUIDE_EDITION: next
+          SITE_URL: ${{ env.SITE }}next/
+      - name: Redirect the root to /next/ without a stable site
+        run: |
+          [ -f site/index.html ] || printf '<!doctype html><meta charset="utf-8"><title>BuildGuide</title><meta http-equiv="refresh" content="0; url=next/"><link rel="canonical" href="%snext/"><a href="next/">BuildGuide</a>\n' "$SITE" > site/index.html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: site
