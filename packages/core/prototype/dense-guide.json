@@ -486,8 +486,8 @@
       ]
      }
     },
-    "QPM11": {
-     "name": "QPM11 pressure switch",
+    "PS1": {
+     "name": "Pressure switch",
      "kind": "box",
      "at": [
       770,
@@ -822,7 +822,7 @@
       {
        "no": "8",
        "a": "S3:2",
-       "b": "QPM11:1",
+       "b": "PS1:1",
        "color": "WH",
        "la": "E-STOP button 2 (NC)",
        "lb": "Pressure switch 1",
@@ -831,7 +831,7 @@
       },
       {
        "no": "9",
-       "a": "QPM11:2",
+       "a": "PS1:2",
        "b": "X-EN:1",
        "color": "WH",
        "la": "Pressure switch 2",
@@ -1268,7 +1268,7 @@
    },
    "props": [
     {
-     "name": "QPM11 on the branch",
+     "name": "Pressure switch on the branch",
      "at": [
       520,
       150
@@ -1381,7 +1381,7 @@
      }
     },
     "CYL": {
-     "name": "DSNU CYLINDER",
+     "name": "CYLINDER",
      "at": [
       880,
       60

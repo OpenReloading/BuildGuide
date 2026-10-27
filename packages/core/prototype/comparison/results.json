@@ -13,6 +13,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 47,
   "crossings": 11,
   "length": 5853,
@@ -33,6 +34,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 9,
   "crossings": 0,
   "length": 950
@@ -51,6 +53,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 9,
   "crossings": 0,
   "length": 807
@@ -69,6 +72,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 15,
   "crossings": 2,
   "length": 2161
@@ -87,6 +91,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 14,
   "crossings": 4,
   "length": 1748
@@ -105,10 +110,11 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 6,
   "crossings": 0,
   "length": 1071,
-  "coldMs": 35,
+  "coldMs": 36,
   "allMs": null
  },
  {
@@ -125,6 +131,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 59,
   "crossings": 17,
   "length": 6275,
@@ -145,6 +152,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 9,
   "crossings": 0,
   "length": 988
@@ -163,6 +171,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 9,
   "crossings": 0,
   "length": 883
@@ -181,6 +190,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 17,
   "crossings": 1,
   "length": 2247
@@ -199,6 +209,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 18,
   "crossings": 2,
   "length": 1864
@@ -217,6 +228,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 6,
   "crossings": 0,
   "length": 1185,
@@ -237,11 +249,12 @@
   "badgeOnPart": 0,
   "badgeOnBend": 12,
   "noRoute": 0,
+  "outside": 0,
   "bends": 181,
   "crossings": 96,
   "length": 25484,
   "coldMs": 52,
-  "allMs": 507
+  "allMs": 506
  },
  {
   "renderer": "shipped",
@@ -257,6 +270,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 16,
   "crossings": 0,
   "length": 964
@@ -275,6 +289,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 27,
   "crossings": 5,
   "length": 3124
@@ -293,6 +308,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 26,
   "crossings": 14,
   "length": 6292
@@ -311,6 +327,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 16,
   "crossings": 3,
   "length": 2638
@@ -329,6 +346,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 1,
   "noRoute": 0,
+  "outside": 0,
   "bends": 16,
   "crossings": 0,
   "length": 2324
@@ -347,6 +365,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 6,
   "crossings": 0,
   "length": 637
@@ -365,6 +384,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 20,
   "crossings": 5,
   "length": 2871
@@ -383,6 +403,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 26,
   "crossings": 1,
   "length": 2154
@@ -401,6 +422,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 24,
   "crossings": 6,
   "length": 3082
@@ -419,10 +441,11 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 4,
   "crossings": 0,
   "length": 841,
-  "coldMs": 35,
+  "coldMs": 36,
   "allMs": null
  },
  {
@@ -432,18 +455,19 @@
   "view": "all",
   "wires": 52,
   "notOrthogonal": 0,
-  "throughPart": 2,
-  "acrossLabel": 1,
-  "tooClose": 115,
-  "badgeOverlap": 7,
+  "throughPart": 0,
+  "acrossLabel": 0,
+  "tooClose": 106,
+  "badgeOverlap": 8,
   "badgeOnPart": 0,
-  "badgeOnBend": 5,
+  "badgeOnBend": 7,
   "noRoute": 0,
-  "bends": 287,
-  "crossings": 176,
-  "length": 28913,
-  "coldMs": 16,
-  "allMs": 58
+  "outside": 0,
+  "bends": 285,
+  "crossings": 179,
+  "length": 29286,
+  "coldMs": 17,
+  "allMs": 56
  },
  {
   "renderer": "prototype",
@@ -459,6 +483,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 16,
   "crossings": 0,
   "length": 1040
@@ -477,6 +502,7 @@
   "badgeOnPart": 1,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 29,
   "crossings": 5,
   "length": 3389
@@ -495,6 +521,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 30,
   "crossings": 10,
   "length": 5695
@@ -513,6 +540,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 18,
   "crossings": 4,
   "length": 3085
@@ -531,6 +559,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 1,
   "noRoute": 0,
+  "outside": 0,
   "bends": 18,
   "crossings": 1,
   "length": 2391
@@ -549,6 +578,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 1,
   "noRoute": 0,
+  "outside": 0,
   "bends": 6,
   "crossings": 1,
   "length": 694
@@ -567,6 +597,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 20,
   "crossings": 3,
   "length": 2989
@@ -585,6 +616,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 28,
   "crossings": 5,
   "length": 2262
@@ -603,6 +635,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 24,
   "crossings": 6,
   "length": 3375
@@ -621,6 +654,7 @@
   "badgeOnPart": 0,
   "badgeOnBend": 0,
   "noRoute": 0,
+  "outside": 0,
   "bends": 4,
   "crossings": 0,
   "length": 974,

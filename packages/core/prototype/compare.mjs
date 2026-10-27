@@ -74,7 +74,7 @@ const SLACK = 1.5, OUTLINE = 3;
 
 // the checks of the browser tests as counts, plus what a reader sees: bends, crossings, length
 function measure(guide, key, g, shown) {
-  const found = { notOrthogonal: 0, throughPart: 0, acrossLabel: 0, tooClose: 0, badgeOverlap: 0, badgeOnPart: 0, badgeOnBend: 0, noRoute: 0, bends: 0, crossings: 0, length: 0 };
+  const found = { notOrthogonal: 0, throughPart: 0, acrossLabel: 0, tooClose: 0, badgeOverlap: 0, badgeOnPart: 0, badgeOnBend: 0, noRoute: 0, outside: 0, bends: 0, crossings: 0, length: 0 };
   const board = guide.boards[key], width = c => (board.colors[c.color].width || 4) + OUTLINE;
   const labels = [...Object.entries(g.parts).flatMap(([, p]) => p.labels), ...g.captions];
   const legs = new Map();
@@ -82,6 +82,7 @@ function measure(guide, key, g, shown) {
     const pts = g.connections[c.no], own = [c.a, c.b].map(e => e.slice(0, e.indexOf(':')));
     if (!pts || pts.length < 2) { found.noRoute++; continue; }
     found.bends += pts.length - 2;
+    found.outside += pts.filter(([x, y]) => x < -1 || y < -1 || x > board.size[0] + 1 || y > board.size[1] + 1).length;
     legs.set(c, segments(pts).map(([p, q], i, all) => ({ p, q, ends: [i === 0 && c.a, i === all.length - 1 && c.b] })));
     segments(pts).forEach(([p, q], i, all) => {
       found.length += Math.hypot(q[0] - p[0], q[1] - p[1]);
@@ -181,7 +182,7 @@ if (!process.env.SKIP_SPECS) {
 }
 
 const sum = (renderer, dataset, field) => rows.filter(r => r.renderer === renderer && r.dataset === dataset).reduce((t, r) => t + r[field], 0);
-const FIELDS = ['notOrthogonal', 'throughPart', 'acrossLabel', 'tooClose', 'badgeOverlap', 'badgeOnPart', 'badgeOnBend', 'noRoute', 'bends', 'crossings', 'length'];
+const FIELDS = ['notOrthogonal', 'throughPart', 'acrossLabel', 'tooClose', 'badgeOverlap', 'badgeOnPart', 'badgeOnBend', 'noRoute', 'outside', 'bends', 'crossings', 'length'];
 const md = ['| dataset | renderer | views | ' + FIELDS.join(' | ') + ' |', '|' + Array(FIELDS.length + 3).fill('---').join('|') + '|'];
 for (const dataset of ['demo', 'dense']) for (const renderer of ['shipped', 'prototype']) md.push(`| ${dataset} | ${renderer} | ${rows.filter(r => r.renderer === renderer && r.dataset === dataset).length} | ${FIELDS.map(f => sum(renderer, dataset, f)).join(' | ')} |`);
 md.push('', '| board, all connections | renderer | wires | bends | crossings | too close | cold load to drawn (ms) | all connections drawn (ms) |', '|---|---|---|---|---|---|---|---|');

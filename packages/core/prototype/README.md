@@ -27,4 +27,5 @@ The script copies the package twice per guide into `test-results/compare/`, puts
 
 - The router has no global view: crossings and bends are higher than with libavoid on dense boards (see `comparison/results.md`).
 - The nudging is one pass and does not look at bends of other groups, so a leg can pass within a few pixels of a part label.
+- Two wires of the dense board (18 and 30, from the sensors) take a long detour along the border of the board instead of the short way through the gland; the cause is not found.
 - A wire with no way round is drawn as a straight line, which is not orthogonal and shows.

@@ -64,19 +64,21 @@
 
   // the grid of the free space: the edges of every box (grown by `buffer`), the points where wires leave the terminals, the middle of wide gaps
   function attempt(obstacles, pins, wires, buffer, o) {
-    const boxes = obstacles.map(b => ({x0: b.x0 - buffer, y0: b.y0 - buffer, x1: b.x1 + buffer, y1: b.y1 + buffer}));
+    // inside the board: the fences of the glands reach far above it, and a wire must not go round their tops
+    const [W, H] = o.bounds ?? [Infinity, Infinity], inset = o.bounds ? 6 : -Infinity;
+    const boxes = obstacles.map(b => ({x0: Math.max(b.x0 - buffer, inset), y0: Math.max(b.y0 - buffer, inset), x1: Math.min(b.x1 + buffer, W - inset), y1: Math.min(b.y1 + buffer, H - inset)})).filter(b => b.x1 > b.x0 && b.y1 > b.y0);
     const stubOf = pin => {
       const b = pin.box;
       return [{x: pin.x, y: b.y0 - buffer}, {x: pin.x, y: b.y1 + buffer}, {x: b.x0 - buffer, y: pin.y}, {x: b.x1 + buffer, y: pin.y}][pin.dir];
     };
     const ends = wires.map(w => [pins[w.a], pins[w.b]]), stubs = ends.map(e => e.map(stubOf));
     const axis = (list, lo, hi) => {
-      const u = [...new Set([...list, lo - 24, hi + 24].map(q3))].sort((p, q) => p - q).map(v => v / 1000), out = [];
+      const u = [...new Set([...list, lo, hi].map(q3))].sort((p, q) => p - q).map(v => v / 1000), out = [];
       u.forEach((v, i) => { if (i && v - u[i - 1] >= 16) out.push((v + u[i - 1]) / 2); out.push(v); });
       return out;
     };
-    const xs = axis([...boxes.flatMap(b => [b.x0, b.x1]), ...stubs.flat().map(p => p.x)], Math.min(...boxes.map(b => b.x0)), Math.max(...boxes.map(b => b.x1)));
-    const ys = axis([...boxes.flatMap(b => [b.y0, b.y1]), ...stubs.flat().map(p => p.y)], Math.min(...boxes.map(b => b.y0)), Math.max(...boxes.map(b => b.y1)));
+    const xs = axis([...boxes.flatMap(b => [b.x0, b.x1]), ...stubs.flat().map(p => p.x)], o.bounds ? inset : Math.min(...boxes.map(b => b.x0)) - 24, o.bounds ? W - inset : Math.max(...boxes.map(b => b.x1)) + 24);
+    const ys = axis([...boxes.flatMap(b => [b.y0, b.y1]), ...stubs.flat().map(p => p.y)], o.bounds ? inset : Math.min(...boxes.map(b => b.y0)) - 24, o.bounds ? H - inset : Math.max(...boxes.map(b => b.y1)) + 24);
     const ix = new Map(xs.map((v, i) => [q3(v), i])), iy = new Map(ys.map((v, i) => [q3(v), i]));
     const nx = xs.length, ny = ys.length, cw = nx - 1, N = nx * ny;
     const cell = new Uint8Array(cw * (ny - 1));   // 1: inside some box
@@ -396,7 +398,7 @@
     try {
       const key = options.key + ':' + visible.map(c => c.no).join(','), t0 = performance.now();
       const diodes = visible.map(c => colorOf(c).diode), plain = visible.filter((_, i) => !diodes[i]);
-      if (!cachedRoutes.has(key)) cachedRoutes.set(key, route(boxes, plain.map(c => ({a: c.a, b: c.b}))));
+      if (!cachedRoutes.has(key)) cachedRoutes.set(key, route(boxes, plain.map(c => ({a: c.a, b: c.b})), {bounds: [W, H]}));
       window.BuildGuideBoard.routeMs = performance.now() - t0;
       const routed = cachedRoutes.get(key);
       let next = 0;
