@@ -99,7 +99,7 @@ def check(data):
     found += [f"{key}: prefix bom is taken by the BOM" for key, prefix in prefixes if prefix == "bom"]
     found += [f"{key}: prefix step is taken by the steps" for key, prefix in prefixes if prefix == "step"]
     # the combined guide's tab 'steps' is the text steps, not a board
-    if steps and any(key == "steps" for key, _ in boards):
+    if data.get("steps") is not None and any(key == "steps" for key, _ in boards):
         found.append("boards: key steps is taken by the steps")
     return found
 

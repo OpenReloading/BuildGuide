@@ -68,7 +68,7 @@ export function check(data) {
   for (const [key, prefix] of prefixes) if (prefix === 'bom') found.push(`${key}: prefix bom is taken by the BOM`);
   for (const [key, prefix] of prefixes) if (prefix === 'step') found.push(`${key}: prefix step is taken by the steps`);
   // the combined guide's tab 'steps' is the text steps, not a board
-  if (steps.length && boards.some(([key]) => key === 'steps')) found.push('boards: key steps is taken by the steps');
+  if (data.steps && boards.some(([key]) => key === 'steps')) found.push('boards: key steps is taken by the steps');
   return found;
 }
 
