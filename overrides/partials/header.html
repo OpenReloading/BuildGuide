@@ -22,8 +22,16 @@
       {% endif %}
     {% endif %}
     <ul class="md-header__links" data-md-component="header-topic">
-      <li><a href="{{ 'example/' | url }}" class="md-header__link" aria-current="{{ (section == 'example') | lower }}">Live example</a></li>
-      <li><a href="{{ 'core/' | url }}" class="md-header__link" aria-current="{{ (section == 'docs') | lower }}">Docs</a></li>
+      {% if section == "example" %}
+        <li><a href="{{ 'example/' | url }}" class="md-header__link" aria-current="true">Live example</a></li>
+      {% else %}
+        <li><a href="{{ 'example/' | url }}" class="md-header__link">Live example</a></li>
+      {% endif %}
+      {% if section == "docs" %}
+        <li><a href="{{ 'core/' | url }}" class="md-header__link" aria-current="true">Docs</a></li>
+      {% else %}
+        <li><a href="{{ 'core/' | url }}" class="md-header__link">Docs</a></li>
+      {% endif %}
       <li class="md-header__source">{% include "partials/source.html" %}</li>
     </ul>
     {% if config.theme.palette %}

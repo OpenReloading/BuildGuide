@@ -16,11 +16,6 @@
   },
   "overrides": [
     {
-      // Jinja templates of the docs site: an attribute value can be an expression
-      "includes": ["overrides/**"],
-      "linter": { "rules": { "a11y": { "useValidAriaValues": "off" } } }
-    },
-    {
       "includes": ["packages/core/src/buildguide.js", "packages/core/src/buildguide-board.js"],
       // classic browser scripts, not modules: their 'use strict' is not redundant
       "linter": { "rules": { "suspicious": { "noRedundantUseStrict": "off" } } }
