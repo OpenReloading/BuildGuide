@@ -24,7 +24,7 @@
 
 ## Releases and Pages
 
-Every merge to `main` deploys the `next` edition. A release happens when the release pull request is merged: every Monday 05:00 UTC `release-weekly.yml` merges it (auto-merge, squash) once its checks pass. The owner can run that workflow by hand (Actions, Run workflow) for another day, merge the pull request earlier, or put the label `hold` on it to skip a week.
+Every merge to `main` deploys the `next` edition. A release happens when the release pull request is merged: every Monday 14:00 Europe/Berlin `release-weekly.yml` merges it (auto-merge, squash) once its checks pass. The owner can run that workflow by hand (Actions, Run workflow) for another day, merge the pull request earlier, or put the label `hold` on it to skip a week.
 
 - **Release pull request:** `release.yml` runs release-please on every push to `main` with the org's release GitHub App token, so its pull request starts the required checks without anyone approving the runs. `release-weekly.yml` enables auto-merge on it on Mondays.
 - **Release:** merging the release pull request tags each changed component (`<component>-vX.Y.Z`) and creates its GitHub Release. The archives, wheel, sdist and packages are built and published from those tags by `release.yml`, never from a push to `main`. `npm run dist` in `ci.yml` builds without publishing.
