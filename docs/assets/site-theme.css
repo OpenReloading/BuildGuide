@@ -62,6 +62,8 @@
 .md-header{border-bottom:1px solid var(--md-default-fg-color--lightest);box-shadow:none}
 .md-header__inner{max-width:1360px;min-height:60px;padding:0 40px;gap:8px}
 .md-sidebar{top:61px}
+/* below this width the navigation is Material's fixed drawer, which stays at the top */
+@media screen and (max-width:76.234375em){.md-sidebar--primary{top:0}}
 .md-header__button{margin:0;padding:10px;min-width:44px;min-height:44px}
 .md-header .md-header__button.md-logo{display:block;padding:4px 0}
 .md-header .md-header__button.md-logo img{height:36px}
