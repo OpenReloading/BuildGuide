@@ -945,6 +945,17 @@ test('progress tools: a failed load of buildguide-progress.js is reported, and t
   await expect(page.locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
 });
 
+test('progress tools: a buildguide-progress.js that sets no function is reported, and the next click loads it again', async ({ page }) => {
+  await page.route('**/buildguide-progress.js', r => r.fulfill({ contentType: 'text/javascript', body: '' }), { times: 1 });
+  await page.goto(url('bom'));
+  await bomOf(page).locator('tbody input[type=checkbox]').first().check();
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(page.locator('.ag-message')).toHaveText('Progress tools did not load. Try again.');
+  await bomOf(page).locator('[data-action=reset-progress]').click();
+  await expect(page.locator('.ag-message')).toContainText('Progress reset.');
+  await expect(page.locator('.ag-progress')).toHaveText(`0 / ${D.bom.items.length} checked`);
+});
+
 // undo after reset and import: the status line offers it until the next tick or 10 s
 const blockStorage = page => page.addInitScript(key => {
   const real = window.localStorage, no = () => { throw Error('blocked'); };

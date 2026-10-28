@@ -22,8 +22,12 @@
   }).catch(error => { delete loaded[src]; throw error; });
   const boardRenderer = () => loadScript(new URL('vendor/joint/joint.min.js', HERE).href)
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
-  // a feature loaded on first use: buildguide-<name>.js next to this file sets window.BuildGuideModules[name]
-  const ext = name => loadScript(new URL(`buildguide-${name}.js`, HERE).href).then(() => window.BuildGuideModules[name]);
+  // a feature loaded on first use: buildguide-<name>.js next to this file sets window.BuildGuideModules[name]; a file that does not is not cached
+  const ext = (name, src = new URL(`buildguide-${name}.js`, HERE).href) => loadScript(src).then(() => {
+    const run = window.BuildGuideModules?.[name];
+    if (typeof run !== 'function') { delete loaded[src]; throw Error('no module in ' + src); }
+    return run;
+  });
 
   // the note of a step, a string or {level, text}, in a board step and in a text step
   const noteLine = note => note ? `<p class="ag-step-note" data-level="${esc(note.level)}">${note.level ? `<strong>${esc(note.level)}</strong> ` : ''}${esc(note.text ?? note)}</p>` : '';
