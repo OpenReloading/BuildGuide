@@ -1,4 +1,9 @@
-/* scrolls and anchors land below the sticky header: its repository link must not cover a component's buttons */
+/* scrolls and anchors land below the sticky header (61px, two rows on a phone): its links must not cover a component's buttons */
 html {
-  scroll-padding-top: 3rem;
+  scroll-padding-top: 72px;
+}
+@media (max-width: 480px) {
+  html {
+    scroll-padding-top: 124px;
+  }
 }

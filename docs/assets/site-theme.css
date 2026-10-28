@@ -58,8 +58,44 @@
   --md-code-hl-generic-color:#a8b2c0;
   --md-code-hl-variable-color:#a8b2c0;
 }
-.md-header,.md-tabs{border-bottom:1px solid var(--md-default-fg-color--lightest)}
+/* header and footer (overrides/partials/header.html, copyright.html) in px: Material's rem grows with the window; every control is at least 44px high */
+.md-header{border-bottom:1px solid var(--md-default-fg-color--lightest);box-shadow:none}
+.md-header__inner{max-width:1360px;min-height:60px;padding:0 40px;gap:8px}
+.md-sidebar{top:61px}
+/* below this width the navigation is Material's fixed drawer, which stays at the top */
+@media screen and (max-width:76.234375em){.md-sidebar--primary{top:0}}
+.md-header__button{margin:0;padding:10px;min-width:44px;min-height:44px}
+.md-header .md-header__button.md-logo{display:block;padding:4px 0}
+.md-header .md-header__button.md-logo img{height:36px}
+[data-md-color-scheme=default] .md-logo img.md-logo__dark,[data-md-color-scheme=slate] .md-logo img.md-logo__light{display:none}
+.md-header__links{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:0 0 0 auto;padding:0;list-style:none}
+.md-header__link{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:6px;font-size:15px;font-weight:600;color:var(--md-default-fg-color)}
+.md-header__link:hover{color:var(--md-accent-fg-color)}
+.md-header__link[aria-current=true]{background:var(--md-accent-fg-color--transparent);color:var(--md-accent-fg-color)}
+.md-header__links .md-header__source{display:block;width:auto;max-width:none;margin:0}
+.md-header__source .md-source{min-height:44px;padding-right:12px;border-radius:6px;color:var(--md-default-fg-color);font-size:13px}
+.md-header__source .md-source__repository{max-width:none}
+.md-search__icon{color:var(--md-default-fg-color--light)}
+@media screen and (min-width:60em){
+  .md-search{flex:0 1 380px;padding:0}
+  .md-search__inner,[data-md-toggle=search]:checked~.md-header .md-search__inner{width:100%;padding:0}
+  .md-search__form,.md-search__form:hover{height:44px;border-radius:8px;background:var(--md-default-bg-color)}
+}
+@media (max-width:480px){
+  .md-header__inner{flex-wrap:wrap;padding:0 20px 8px}
+  .md-header__links{order:1;width:100%;margin:0;flex-wrap:nowrap}
+  .md-header__links .md-header__source{flex:1;min-width:0}
+  .md-header__source .md-source__repository{max-width:calc(100% - 24px)}
+  .md-header .md-header__button.md-logo{margin-right:auto}
+}
 .md-footer{border-top:1px solid var(--md-default-fg-color--lightest)}
+.md-footer-meta__inner{max-width:1360px;padding:8px 40px}
+@media (max-width:480px){.md-footer-meta__inner{padding:8px 20px}}
+.md-copyright{margin:0;font-size:14px}
+.md-copyright__highlight{margin:0}
+.md-typeset ul.md-copyright__links{display:flex;flex-wrap:wrap;gap:0 16px;margin:0;padding:0;list-style:none}
+.md-typeset ul.md-copyright__links li{margin:0}
+.md-copyright__links a{display:inline-flex;align-items:center;min-height:44px}
 
 /* type and radius; :where(:not(.ag-guide *)) leaves the components to their own stylesheet */
 .md-typeset{font-size:16px;line-height:1.55}

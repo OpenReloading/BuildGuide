@@ -1,0 +1,68 @@
+{#- <!-- Derived from partials/header.html of Material for MkDocs 9.7.7, under this licence:
+
+    Copyright (c) 2016-2025 Martin Donath <martin.donath@squidfunk.com>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to
+    deal in the Software without restriction, including without limitation the
+    rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+    sell copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+    IN THE SOFTWARE.
+--> -#}
+{#- Material 9.7.7's partials/header.html with the wordmark instead of the page title and the site links before the
+    palette toggle. The links sit in data-md-component="header-topic", one of the parts that instant navigation
+    swaps, so the current section follows the page. -#}
+{% set section = "example" if page and page.url.startswith("example/") else "docs" if page and not page.is_homepage %}
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
+    <label class="md-header__button md-icon" for="__drawer">
+      {% set icon = config.theme.icon.menu or "material/menu" %}
+      {% include ".icons/" ~ icon ~ ".svg" %}
+    </label>
+    <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
+      {% include "partials/logo.html" %}
+    </a>
+    {% if "material/search" in config.plugins %}
+      {% set search = config.plugins["material/search"] | attr("config") %}
+      {% if search.enabled %}
+        <label class="md-header__button md-icon" for="__search">
+          {% set icon = config.theme.icon.search or "material/magnify" %}
+          {% include ".icons/" ~ icon ~ ".svg" %}
+        </label>
+        {% include "partials/search.html" %}
+      {% endif %}
+    {% endif %}
+    <ul class="md-header__links" data-md-component="header-topic">
+      {% if section == "example" %}
+        <li><a href="{{ 'example/' | url }}" class="md-header__link" aria-current="true">Live example</a></li>
+      {% else %}
+        <li><a href="{{ 'example/' | url }}" class="md-header__link">Live example</a></li>
+      {% endif %}
+      {% if section == "docs" %}
+        <li><a href="{{ 'core/' | url }}" class="md-header__link" aria-current="true">Docs</a></li>
+      {% else %}
+        <li><a href="{{ 'core/' | url }}" class="md-header__link">Docs</a></li>
+      {% endif %}
+      <li class="md-header__source">{% include "partials/source.html" %}</li>
+    </ul>
+    {% if config.theme.palette %}
+      {% if not config.theme.palette is mapping %}
+        {% include "partials/palette.html" %}
+      {% endif %}
+    {% endif %}
+    {% if not config.theme.palette is mapping %}
+      {% include "partials/javascripts/palette.html" %}
+    {% endif %}
+  </nav>
+</header>
