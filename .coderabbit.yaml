@@ -5,6 +5,11 @@ reviews:
   profile: chill
   high_level_summary: true
   poem: false
+  # release-please pull requests only carry the changelog and version files.
+  auto_review:
+    ignore_title_keywords:
+      - 'chore: release'
+      - 'chore(main): release'
   path_filters:
     - '!**/vendor/**'
     - '!**/package-lock.json'
