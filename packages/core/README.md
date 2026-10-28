@@ -12,7 +12,7 @@ Browser components (BOM checklist, text steps, wiring and tubing boards), JSON S
    tar -xzf buildguide-<version>.tar.gz -C assets/
    ```
 
-   Or install `@openreloading/buildguide` from GitHub Packages, which asks for a token with the `read:packages` scope even for public packages. In the project's `.npmrc`:
+   Or install an earlier version of `@openreloading/buildguide` from GitHub Packages, which asks for a token with the `read:packages` scope even for public packages. In the project's `.npmrc`:
 
    ```ini
    @openreloading:registry=https://npm.pkg.github.com

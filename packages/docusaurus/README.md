@@ -5,9 +5,9 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
 <!-- --8<-- [start:docs] -->
 ## Use
 
-1. Install the package, from GitHub Packages or from a release file.
+1. Install the package from a release file: download `openreloading-docusaurus-plugin-buildguide-<version>.tgz` from a `docusaurus-v*` [release](https://github.com/OpenReloading/BuildGuide/releases) and run `npm install ./openreloading-docusaurus-plugin-buildguide-<version>.tgz`.
 
-   GitHub Packages asks for a token with the `read:packages` scope even for public packages. In the site's `.npmrc`:
+   Earlier versions are also on GitHub Packages, which asks for a token with the `read:packages` scope even for public packages. In the site's `.npmrc`:
 
    ```ini
    @openreloading:registry=https://npm.pkg.github.com
@@ -17,8 +17,6 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
    ```sh
    npm install @openreloading/docusaurus-plugin-buildguide
    ```
-
-   Without a token: download `openreloading-docusaurus-plugin-buildguide-<version>.tgz` from a `docusaurus-v*` [release](https://github.com/OpenReloading/BuildGuide/releases) and run `npm install ./openreloading-docusaurus-plugin-buildguide-<version>.tgz`.
 
 2. Add the plugin to `docusaurus.config.js`:
 

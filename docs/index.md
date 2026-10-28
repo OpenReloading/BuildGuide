@@ -6,9 +6,9 @@ Interactive build guide components from one data file: a BOM checklist, a list o
 
 | Your site | Use | Release |
 |---|---|---|
-| [Plain HTML](core.md) | browser components, JSON Schema and check CLI for any static site | `core-v*`: `buildguide-<version>.tar.gz`, npm package on GitHub Packages |
+| [Plain HTML](core.md) | browser components, JSON Schema and check CLI for any static site | `core-v*`: `buildguide-<version>.tar.gz` (earlier versions also on GitHub Packages) |
 | [MkDocs](mkdocs.md) | `<div data-buildguide="...">` in Markdown, data checked at build time | `mkdocs-v*`: wheel and sdist |
-| [Docusaurus](docusaurus.md) | `<BuildGuide view="..."/>` component, data checked at build time | `docusaurus-v*`: npm package on GitHub Packages |
+| [Docusaurus](docusaurus.md) | `<BuildGuide view="..."/>` component, data checked at build time | `docusaurus-v*`: `.tgz` (earlier versions also on GitHub Packages) |
 
 ## Then
 
