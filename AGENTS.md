@@ -4,7 +4,7 @@ Monorepo of BuildGuide components, the BOM and board views for a host's own page
 
 ## Branches
 
-`main` is the only long-lived branch. Pull requests target `main` and are squash-merged with the Conventional Commit title; release-please, release, publish, Scorecard and Pages run on `main`; the merge of the release pull request releases: `release-weekly.yml` merges it every Monday 05:00 UTC once its checks pass (also by hand: Actions, Run workflow), the label `hold` on it skips a week, and the owner can merge it earlier.
+`main` is the only long-lived branch. Pull requests target `main` and are squash-merged with the Conventional Commit title; release-please, release, publish, Scorecard and Pages run on `main`; the merge of the release pull request releases: `release-weekly.yml` merges it every Monday 14:00 Europe/Berlin once its checks pass (also by hand: Actions, Run workflow), the label `hold` on it skips a week, and the owner can merge it earlier.
 
 CI (`ci.yml`) runs on pull requests, in the merge queue (`merge_group`) and on pushes to `main`; `pr-title.yml` runs on pull requests and `merge_group`. Its job names `check`, `workflows` and `dependency-review` are required checks, as are `conventional` (`pr-title.yml`) and the SonarCloud analysis.
 
