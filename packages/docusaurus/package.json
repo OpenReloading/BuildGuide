@@ -17,7 +17,7 @@
     "core"
   ],
   "scripts": {
-    "test": "node scripts/copy-core.mjs && node --test tests/*.test.mjs",
+    "test": "node scripts/copy-core.mjs && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
     "build": "node scripts/copy-core.mjs && docusaurus build example",
     "start": "node scripts/copy-core.mjs && docusaurus start example --host 0.0.0.0 --port 8080",
     "prepack": "node scripts/copy-core.mjs",
