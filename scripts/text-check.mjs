@@ -4,8 +4,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 
 const SKIP = /^(\.agents|\.claude)\/|\/vendor\/|\.(png|jpg|wasm|ico|woff2?)$|package-lock\.json$/;
 const BAD = /\u2014|\p{Emoji_Presentation}|\uFE0F/u;
-// Directories git ignores (.gitignore), left out when there is no git to ask (a worktree opened in the dev container).
-const IGNORED = /(^|\/)(\.git|node_modules|dist|test-results|playwright-report|\.playwright-mcp|\.venv|__pycache__|\.docusaurus)\/|^site\/|^packages\/mkdocs\/src\/mkdocs_buildguide\/core\/|^packages\/docusaurus\/(example\/build|core)\//;
+// Paths git ignores (.gitignore), left out when there is no git to ask (a worktree opened in the dev container).
+const IGNORED = /(^|\/)(\.git|node_modules|dist|test-results|playwright-report|\.playwright-mcp|\.venv|__pycache__|\.docusaurus)\/|(^|\/)(\.coverage|coverage\.xml|lcov\.info)$|^site\/|^packages\/mkdocs\/src\/mkdocs_buildguide\/core\/|^packages\/docusaurus\/(example\/build|core)\//;
 
 function listFiles() {
   try {
