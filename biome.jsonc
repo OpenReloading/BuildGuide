@@ -16,7 +16,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/core/src/buildguide.js", "packages/core/src/buildguide-board.js"],
+      "includes": ["packages/core/src/buildguide.js", "packages/core/src/buildguide-board.js", "packages/core/src/buildguide-assembly.js"],
       // classic browser scripts, not modules: their 'use strict' is not redundant
       "linter": { "rules": { "suspicious": { "noRedundantUseStrict": "off" } } }
     },

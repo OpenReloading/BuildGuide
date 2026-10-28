@@ -22,6 +22,7 @@
   }).catch(error => { delete loaded[src]; throw error; });
   const boardRenderer = () => loadScript(new URL('vendor/joint/joint.min.js', HERE).href)
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
+  const assemblyRenderer = () => loadScript(new URL('buildguide-assembly.js', HERE).href).then(() => window.BuildGuideAssembly);
 
   // the note of a step, a string or {level, text}, in a board step and in a text step
   const noteLine = note => note ? `<p class="ag-step-note" data-level="${esc(note.level)}">${note.level ? `<strong>${esc(note.level)}</strong> ` : ''}${esc(note.text ?? note)}</p>` : '';
@@ -50,7 +51,15 @@
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
     if (view === 'guide') return mountTabs(root, D, options);
     const board = view === 'board' ? own(D.boards, boardKey) : null;
-    if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
+    if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : view === 'assembly' ? !D.assembly : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
+    if (view === 'assembly') {
+      let stop, dead;
+      const destroy = () => { dead = true; stop?.(); mounted.delete(root); };
+      mounted.set(root, destroy);
+      assemblyRenderer().then(mountAssembly => { if (!dead) stop = mountAssembly(root, D.assembly, {base: new URL(root.dataset.src || location.href, location.href)}); })
+        .catch(error => { console.error(error); root.textContent = '3D assembly unavailable.'; });
+      return destroy;
+    }
     const ASSETS = new URL(options.assets ?? root.dataset.assets ?? 'assets/', location.href);
     const steps = board?.steps || [];
     const title = board?.title || boardKey;

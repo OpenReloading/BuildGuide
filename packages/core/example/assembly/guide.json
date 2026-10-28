@@ -1,0 +1,18 @@
+{
+  "assembly": {
+    "models": {"clamp-top": "clamp-top.stl", "clamp-bottom": "clamp-bottom.stl", "bolt": "bolt.stl"},
+    "parts": [
+      {"id": "bottom", "title": "Lower clamp half", "model": "clamp-bottom", "color": "#4682b4", "step": 0, "explode": [0, 0, -60]},
+      {"id": "top", "title": "Upper clamp half", "model": "clamp-top", "color": "#e08a1e", "step": 1, "explode": [0, 0, 60]}
+    ],
+    "fasteners": [
+      {"id": "clamp-bolt", "title": "Clamp bolt M6x40", "model": "bolt", "color": "#9aa3a8", "step": 2, "explode": [0, 0, 90],
+       "instances": [[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 10.392, 8, 27.2, 1], [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 25.981, 12.5, 27.2, 1]]}
+    ],
+    "steps": [
+      {"id": "bottom", "title": "Lower half", "text": "Slide the lower clamp half under the two lever struts so the struts sit in its slots."},
+      {"id": "top", "title": "Upper half", "text": "Lower the upper half onto the struts until the two halves meet at the parting plane."},
+      {"id": "bolts", "title": "Clamp bolts", "text": "Drop both M6 bolts through the holes in the V gap. Nuts and washers are not modelled in this prototype."}
+    ]
+  }
+}

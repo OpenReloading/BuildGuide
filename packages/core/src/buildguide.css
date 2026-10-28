@@ -275,3 +275,12 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-bom-table tr.is-done td:first-child{border-inline-start:6px solid CanvasText;padding-inline-start:14px}
  .ag-guide .ag-step-item.is-done{border-inline-start:6px solid CanvasText;padding-inline-start:11px}
 }
+.ag-guide .ag-assembly-canvas{display:block;width:100%;height:var(--ag-canvas-height,360px);background:var(--ag-surface);border:1px solid var(--ag-line);touch-action:none;cursor:grab}
+.ag-guide .ag-assembly-canvas:focus-visible{outline:3px solid var(--ag-focus);outline-offset:2px}
+.ag-guide .ag-assembly-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:8px 0}
+.ag-guide .ag-assembly-bar button,.ag-guide .ag-assembly-steps button{background:var(--ag-surface);border:1px solid var(--ag-control-line);border-radius:5px;padding:6px 10px}
+.ag-guide .ag-assembly-count{flex:1;min-width:12em}
+.ag-guide .ag-assembly-steps{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.ag-guide .ag-assembly-steps button{display:block;width:100%;text-align:left}
+.ag-guide .ag-assembly-steps button[aria-current]{background:var(--ag-step-current-bg);border-color:var(--ag-step-current-line)}
+.ag-guide .ag-assembly-steps small{display:block;font-size:var(--ag-text-small);color:var(--ag-muted)}
