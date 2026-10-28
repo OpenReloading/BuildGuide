@@ -11,6 +11,8 @@ packages/mkdocs/src/mkdocs_buildguide/core/
 /packages/docusaurus/example/build/
 packages/docusaurus/core/
 .coverage
+coverage.xml
+lcov.info
 
 # agent skills, installed per checkout from skills-lock.json
 /.agents/skills/
