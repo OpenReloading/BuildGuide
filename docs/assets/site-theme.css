@@ -119,3 +119,21 @@
 .md-typeset .md-button:is(:hover,:focus){border-color:var(--md-accent-fg-color);background:var(--md-accent-fg-color--transparent);color:var(--md-accent-fg-color)}
 .md-typeset .md-button--primary:is(:hover,:focus){background:var(--md-accent-fg-color);color:var(--md-accent-bg-color)}
 :is(a,button,input,select,textarea,summary,label[tabindex]):focus-visible:where(:not(.ag-guide *)){outline:2px solid var(--md-accent-fg-color);outline-offset:2px}
+
+/* home page (docs/index.md): introduction and components */
+.md-typeset .bg-intro{padding:40px 0 32px}
+.md-typeset .bg-label{margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
+.md-typeset .bg-intro h1{margin:0 0 16px}
+.md-typeset .bg-lead{max-width:720px;font-size:18px;color:var(--md-default-fg-color--light)}
+.md-typeset .bg-actions{display:flex;flex-wrap:wrap;gap:12px}
+.md-typeset .bg-actions .md-button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;margin:0}
+@media (max-width:480px){.md-typeset .bg-actions{flex-direction:column}.md-typeset .bg-actions .md-button{width:100%}}
+.md-typeset ul.bg-facts{display:flex;flex-wrap:wrap;gap:4px 24px;margin:0;padding:0;list-style:none;font-family:var(--md-code-font-family);font-size:12px;color:var(--md-default-fg-color--light)}
+.md-typeset ul.bg-facts li{margin:0}
+.md-typeset .bg-components{margin:0 0 32px;padding:48px 24px;background:var(--md-primary-fg-color);border-block:1px solid var(--md-default-fg-color--lightest)}
+.md-typeset .bg-components h2{margin:0 0 24px}
+.md-typeset .bg-grid{display:grid;gap:24px}
+@media (min-width:820px){.md-typeset .bg-grid{grid-template-columns:repeat(2,1fr)}}
+.md-typeset .bg-grid h3{margin:0 0 8px}
+.md-typeset .bg-grid h3 a{display:inline-flex;align-items:center;min-height:44px}
+.md-typeset .bg-grid p{margin:0;font-size:16px;color:var(--md-default-fg-color--light)}
