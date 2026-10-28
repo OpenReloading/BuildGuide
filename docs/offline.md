@@ -4,7 +4,7 @@ A guide works without a network once the browser holds the files below, for exam
 
 ## Files
 
-The page fetches a file when the component needs it: a BOM needs the stylesheet and `buildguide.js`, a board loads the other four on top. The sizes are generated from the files of this release.
+The page fetches a file when the component needs it: a BOM needs the stylesheet and `buildguide.js`, a board loads the board renderer and its libraries on top, and the first click on a progress button (export, import, reset, undo) loads `buildguide-progress.js`. The sizes are generated from the files of this release.
 
 <!-- generated: files -->
 

@@ -22,6 +22,12 @@
   }).catch(error => { delete loaded[src]; throw error; });
   const boardRenderer = () => loadScript(new URL('vendor/joint/joint.min.js', HERE).href)
     .then(() => loadScript(new URL('buildguide-board.js', HERE).href)).then(() => window.BuildGuideBoard);
+  // a feature loaded on first use: buildguide-<name>.js next to this file sets window.BuildGuideModules[name]; a file that does not is not cached
+  const ext = (name, src = new URL(`buildguide-${name}.js`, HERE).href) => loadScript(src).then(() => {
+    const run = window.BuildGuideModules?.[name];
+    if (typeof run !== 'function') { delete loaded[src]; throw Error('no module in ' + src); }
+    return run;
+  });
 
   // the note of a step, a string or {level, text}, in a board step and in a text step
   const noteLine = note => note ? `<p class="ag-step-note" data-level="${esc(note.level)}">${note.level ? `<strong>${esc(note.level)}</strong> ` : ''}${esc(note.text ?? note)}</p>` : '';
@@ -128,7 +134,7 @@
       root.innerHTML = `${board ? renderBoard() : view === 'steps' ? renderSteps() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
         <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status">${message ? '' : line('')}</span></div>`;
       // a live region announces text added to an existing element, not text that arrives with it
-      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && mounted.get(root) === destroy && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
+      if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && alive() && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
       bind();
       if (board) {
         const canvas = root.querySelector('.ag-board-canvas');
@@ -254,34 +260,16 @@
       if (before) undo = {before, root, timer: setTimeout(dropUndo, 1e4)};
       document.dispatchEvent(new CustomEvent('buildguide-progress', {detail: {storage: D.storage, saved: progress, before: before || {}}}));
     };
-    const store = progress => { try { localStorage.setItem(D.storage, JSON.stringify(progress)); } catch { persistent = false; } };
     listen(document, 'buildguide-progress', ({detail: d}) => { if (d?.storage === D.storage && isProgress(d.saved)) { if (d.before !== undo?.before) dropUndo(); Object.assign(d.before || {}, {...saved, ...d.before}); saved = {...d.saved}; render(); } });
     // another tab ticked, imported or reset: show what it stored (key null: storage cleared); sessionStorage events do not count
     const area = () => { try { return localStorage; } catch {} };
     listen(window, 'storage', e => { if (e.storageArea === area() && (e.key === D.storage || e.key === null)) { dropUndo(); saved = load(); render(); } });
-    function exportProgress() {
-      download(new Blob([JSON.stringify({...saved, ...load()}, null, 2)], {type: 'application/json'}), `${D.storage}.json`);
-    }
-    async function importProgress(file) {
-      let progress;
-      try { progress = file.size < 1e6 && JSON.parse(await file.text()); } catch {}
-      if (mounted.get(root) !== destroy) return;
-      if (!isProgress(progress)) { state.message = file.size < 1e6 ? 'Not imported: the file is not a progress export.' : 'Not imported: the file is larger than 1 MB.'; render(); return; }
-      const before = {...saved, ...load()};
-      store(progress);
-      shareProgress(progress, persistent ? 'Progress imported.' : 'Imported, but storage is unavailable: progress is not saved.', before);
-    }
-    function resetProgress() {
-      const before = {...saved, ...load()};
-      try { localStorage.removeItem(D.storage); } catch { persistent = false; }
-      shareProgress({}, persistent ? 'Progress reset.' : 'Reset for this visit: storage is unavailable.', before);
-    }
-    function undoProgress() {
-      const {before} = undo;
-      store(before);
-      root.querySelector('[data-action=reset-progress]').focus();
-      shareProgress(before, persistent ? 'Progress restored.' : 'Restored for this visit: storage is unavailable.');
-    }
+    const alive = () => mounted.get(root) === destroy;
+    const say = m => { state.message = m; render(); };
+    // export, import, reset and undo: buildguide-progress.js, with the state of this component through accessors
+    const tools = (...a) => ext('progress').then(run => alive() && run({D, root, download, isProgress, alive, say, share: shareProgress,
+      saved: () => ({...saved, ...load()}), ok: () => persistent, fail() { persistent = false; }}, ...a),
+    () => alive() && say('Progress tools did not load. Try again.'));
     function moveWire(dir) {
       let i = state.step, j = state.wire + dir;
       if (j < 0) { i--; if (i < 0) return; j = steps[i].connections.length - 1; }
@@ -318,7 +306,7 @@
       for (const b of root.querySelectorAll('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, steps[i].connections.findIndex(c => c.no === b.dataset.goto)); };
       bindChecks(root);
-      const file = root.querySelector('[data-role=import-file]'); file.onchange = () => { if (file.files[0]) importProgress(file.files[0]).catch(ignore); };
+      const file = root.querySelector('[data-role=import-file]'); file.onchange = () => { if (file.files[0]) tools('import', file.files[0]); };
       const search = root.querySelector('[data-role=search]'); if (search) search.oninput = () => { state.search = search.value; const results = root.querySelector('.ag-bom-results'); results.innerHTML = bomRows(); bindChecks(results); };
       for (const b of root.querySelectorAll('[data-action]')) b.onclick = () => {
         switch (b.dataset.action) {
@@ -330,10 +318,10 @@
           case 'prev-wire': moveWire(-1); break;
           case 'export': exportCSV(); break;
           case 'print': window.print(); break;
-          case 'export-progress': exportProgress(); break;
+          case 'export-progress': tools('export'); break;
           case 'import-progress': file.click(); break;
-          case 'reset-progress': resetProgress(); break;
-          case 'undo-progress': undoProgress(); break;
+          case 'reset-progress': tools('reset'); break;
+          case 'undo-progress': tools('undo', undo.before); break;
         }
       };
     }
