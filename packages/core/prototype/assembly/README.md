@@ -36,7 +36,7 @@ The STL files are unindexed (50 bytes per triangle). Whether a host compresses `
 
 ## Checked
 
-Headless Chromium in the dev container (software WebGL, no flags): the four tests in `tests/assembly.spec.mjs` pass, with no request outside the test server, no console error and no failed response; the whole core browser suite passes (177 passed, 6 skipped); `npm run lint` and `npm test` pass.
+Headless Chromium in the dev container (software WebGL, no flags): the five tests in `tests/assembly.spec.mjs` pass (a page without an assembly block requests neither the renderer nor a model), with no request outside the test server, no console error and no failed response; the whole core browser suite passes (177 passed, 6 skipped); `npm run lint` and `npm test` pass.
 
 ## Not checked
 

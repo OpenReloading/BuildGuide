@@ -77,3 +77,11 @@ test('reduced motion draws the final position at once', async ({ page }) => {
   const first = await drawn(page);
   expect(await drawn(page)).toBe(first);
 });
+
+test('a page without an assembly block never requests the renderer or a model', async ({ page }) => {
+  const seen = [];
+  page.on('request', r => /buildguide-assembly\.js|\.stl$/.test(r.url()) && seen.push(r.url()));
+  for (const path of ['steps', 'wiring']) await page.goto(`${ORIGIN}/example/${path}/`);
+  await expect(page.locator('.ag-guide')).toBeVisible();
+  expect(seen).toEqual([]);
+});
