@@ -128,7 +128,7 @@ extra_css:
   - stylesheets/buildguide-material.css
 ```
 
-Material's `--md-primary-fg-color` (the header) and `--md-accent-fg-color` do not make safe text colours: with the palette of this site (`blue grey`, `deep orange`) the primary is 2.94:1 on the dark background and the accent 2.78:1 on the light one. `--md-typeset-a-color` is the colour of the links in the page, which Material keeps readable in both schemes. Names and values: [Changing the colors](https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/); check the variables against your version.
+Material's `--md-primary-fg-color` (the header) and `--md-accent-fg-color` do not make safe text colours: with Material's `blue grey` primary and `deep orange` accent the primary is 2.94:1 on the dark background and the accent 2.78:1 on the light one. `--md-typeset-a-color` is the colour of the links in the page, which Material keeps readable in both schemes. Names and values: [Changing the colors](https://squidfunk.github.io/mkdocs-material/setup/changing-the-colors/); check the variables against your version.
 
 ### Docusaurus
 
@@ -150,12 +150,12 @@ Measured in Chromium by the browser test, against the background the recipe sets
 
 | Host and scheme | Brand on background, background on brand (4.5) | Background on primary hover (4.5) | Brand on done row (4.5) | Body text (4.5) | Control border (3) | Focus ring (3) |
 |---|---|---|---|---|---|---|
-| Material, light | 6.86 | 9.11 | 5.75 | 13.08 | 3.61 | 4.21 |
-| Material, dark | 4.77 | 6.27 | 4.93 | 13.28 | 4.63 | 9.13 |
+| Material, light | 6.14 | 8.26 | 5.56 | 11.97 | 3.30 | 3.85 |
+| Material, dark | 7.66 | 9.38 | 5.97 | 15.73 | 5.49 | 10.82 |
 | Docusaurus, light | 5.64 | 7.72 | 4.73 | 13.08 | 3.61 | 4.21 |
 | Docusaurus, dark | 6.80 | 7.92 | 7.06 | 12.67 | 4.42 | 8.71 |
 
-The bracketed numbers are the WCAG 2.2 AA minimum for the pair. Material is measured with the `blue grey` palette of this site and Docusaurus with the brand colours above (versions: Docusaurus 3.10.2, Material 9.7.7).
+The bracketed numbers are the WCAG 2.2 AA minimum for the pair. Material is measured with the colours of this site (`docs/assets/site-theme.css`, which sets Material's variables) and Docusaurus with the brand colours above (versions: Docusaurus 3.10.2, Material 9.7.7). Below the recipe, the site's copy also sets `--ag-done-bg` to the site's soft accent and `--ag-glow` to its accent, so the done row of the Material rows is that tint.
 
 The host's variables follow the host's colour mode, not the component's: on a light host, `data-ag-scheme="dark"` would put a dark component's light text on the host's white background, so leave `--ag-page` and `--ag-surface` out of a site that forces the scheme.
 

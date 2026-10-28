@@ -14,19 +14,20 @@ theme:
     - navigation.instant   # pages swap without a reload: the components must follow
   palette:
     - scheme: default
-      primary: blue grey
-      accent: deep orange
+      primary: custom   # colours in assets/site-theme.css
+      accent: custom
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
     - scheme: slate
-      primary: blue grey
-      accent: deep orange
+      primary: custom   # colours in assets/site-theme.css
+      accent: custom
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
 
 extra_css:
+  - assets/site-theme.css
   - assets/repo-widget.css
   - assets/buildguide-material.css   # the Material recipe of docs/theming.md
 
