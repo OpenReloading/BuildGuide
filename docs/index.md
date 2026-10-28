@@ -1,6 +1,36 @@
-# BuildGuide
-
-Interactive build guide components from one data file: a BOM checklist, a list of text steps, and wiring and tubing boards with a tick per connection, to place in your own documentation pages. Plain JavaScript and CSS, no requests outside the site. Source and releases: [OpenReloading/BuildGuide](https://github.com/OpenReloading/BuildGuide).
+<section class="bg-intro">
+<p class="bg-label">OpenReloading BuildGuide</p>
+<h1>BuildGuide</h1>
+<p class="bg-lead">A parts checklist plus wiring and tubing diagrams for your build documentation, from one data file. Readers tick off each part and connection as they build, and the ticks stay in their browser.</p>
+<p class="bg-actions"><a class="md-button md-button--primary" href="example/">Open the live example</a> <a class="md-button" href="#getting-started">Read the docs</a></p>
+<p>For people who document a hardware build on a MkDocs, Docusaurus or plain HTML site.</p>
+<ul class="bg-facts">
+<li>MIT license</li>
+<li>Plain JavaScript and CSS</li>
+<li>No requests outside the site</li>
+</ul>
+</section>
+<section class="bg-components" aria-labelledby="components">
+<h2 id="components">Components</h2>
+<div class="bg-grid">
+<div>
+<h3><a href="example/bom/">BOM checklist</a></h3>
+<p>The items with groups (each header shows how many of its items are ticked), a search box, an <code>All / Missing / Done</code> filter and the CSV export.</p>
+</div>
+<div>
+<h3><a href="example/steps/">Text steps</a></h3>
+<p>The steps in order with a tick each, the names of their parts, a progress bar and a <code>Print</code> button.</p>
+</div>
+<div>
+<h3><a href="example/wiring/">Wiring board</a></h3>
+<p>Parts with terminals on their sides and a tick per connection, from <code>PART:terminal</code> to <code>PART:terminal</code> with a colour code. Routes are computed, not drawn.</p>
+</div>
+<div>
+<h3><a href="example/tubing/">Tubing board</a></h3>
+<p>A board with a tick per connection, step by step, the same as the wiring board.</p>
+</div>
+</div>
+</section>
 
 ## Getting started
 
