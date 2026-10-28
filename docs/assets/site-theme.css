@@ -1,0 +1,80 @@
+/* The site's colours for both schemes (palette `custom` in mkdocs.yml), set as Material's own variables; buildguide-material.css hands them on to the components.
+   Surface (header, cards, tables, footer) is --md-primary-fg-color, the header colour, and the rules below reuse it. */
+[data-md-color-scheme=default]{
+  --md-default-bg-color:#f3f5f8;
+  --md-primary-fg-color:#fff;
+  --md-default-fg-color:#0b0f14;
+  --md-default-fg-color--light:#47515f;
+  --md-default-fg-color--lighter:#47515f;
+  --md-default-fg-color--lightest:#d5dae1;
+  --md-accent-fg-color:#1d4ed8;
+  --md-accent-bg-color:#fff;
+  --md-accent-fg-color--transparent:#e3eafb;
+  --md-code-bg-color:#0f141b;
+}
+[data-md-color-scheme=slate]{
+  --md-default-bg-color:#0c1016;
+  --md-primary-fg-color:#151b24;
+  --md-default-fg-color:#f1f4f8;
+  --md-default-fg-color--light:#a8b2c0;
+  --md-default-fg-color--lighter:#a8b2c0;
+  --md-default-fg-color--lightest:#2a3340;
+  --md-accent-fg-color:#7aa2ff;
+  --md-accent-bg-color:#0c1016;
+  --md-accent-fg-color--transparent:#1c2740;
+  --md-code-bg-color:#0a0d12;
+}
+/* the rest derives from the values above; code is dark in both schemes, so both take Material's slate highlight colours */
+[data-md-color-scheme]{
+  --md-primary-fg-color--light:var(--md-primary-fg-color);
+  --md-primary-fg-color--dark:var(--md-primary-fg-color);
+  --md-primary-bg-color:var(--md-default-fg-color);
+  --md-primary-bg-color--light:var(--md-default-fg-color--light);
+  --md-typeset-color:var(--md-default-fg-color);
+  --md-typeset-a-color:var(--md-accent-fg-color);
+  --md-typeset-table-color:var(--md-default-fg-color--lightest);
+  --md-typeset-table-color--light:var(--md-accent-fg-color--transparent);
+  --md-admonition-bg-color:var(--md-primary-fg-color);
+  --md-footer-bg-color:var(--md-primary-fg-color);
+  --md-footer-bg-color--dark:var(--md-primary-fg-color);
+  --md-footer-fg-color:var(--md-default-fg-color);
+  --md-footer-fg-color--light:var(--md-default-fg-color--light);
+  --md-footer-fg-color--lighter:var(--md-default-fg-color--light);
+  --md-code-fg-color:#e6ebf2;
+  --md-code-bg-color--light:var(--md-code-bg-color);
+  --md-code-bg-color--lighter:var(--md-code-bg-color);
+  --md-code-hl-color:#2977ff;
+  --md-code-hl-color--light:#2977ff1a;
+  --md-code-hl-number-color:#e6695b;
+  --md-code-hl-special-color:#f06090;
+  --md-code-hl-function-color:#c973d9;
+  --md-code-hl-constant-color:#9383e2;
+  --md-code-hl-keyword-color:#6791e0;
+  --md-code-hl-string-color:#2fb170;
+  --md-code-hl-name-color:var(--md-code-fg-color);
+  --md-code-hl-operator-color:#a8b2c0;
+  --md-code-hl-punctuation-color:#a8b2c0;
+  --md-code-hl-comment-color:#a8b2c0;
+  --md-code-hl-generic-color:#a8b2c0;
+  --md-code-hl-variable-color:#a8b2c0;
+}
+.md-header,.md-tabs{border-bottom:1px solid var(--md-default-fg-color--lightest)}
+.md-footer{border-top:1px solid var(--md-default-fg-color--lightest)}
+
+/* type and radius; :where(:not(.ag-guide *)) leaves the components to their own stylesheet */
+.md-typeset{font-size:16px;line-height:1.55}
+.md-typeset :is(h1,h2,h3):where(:not(.ag-guide *)){color:var(--md-default-fg-color);font-weight:600}
+.md-typeset h1:where(:not(.ag-guide *)){font-size:44px;letter-spacing:-.02em}
+.md-typeset h2:where(:not(.ag-guide *)){font-size:28px}
+.md-typeset h3:where(:not(.ag-guide *)){font-size:19px}
+@media (max-width:480px){.md-typeset h1:where(:not(.ag-guide *)){font-size:38px}}
+.md-nav__link{border-radius:6px}
+.md-typeset pre>code{border-radius:10px}
+.md-typeset table:not([class]){background:var(--md-primary-fg-color);border:1px solid var(--md-default-fg-color--lightest);border-radius:12px}
+.md-typeset .admonition,.md-typeset details{border-radius:12px}
+.md-search__input{border:1.5px solid var(--md-default-fg-color--light);border-radius:8px;min-height:44px}
+.md-typeset .md-button{min-height:44px;border:1.5px solid var(--md-accent-fg-color);border-radius:8px;background:transparent;color:var(--md-accent-fg-color);font-size:16px;font-weight:600}
+.md-typeset .md-button--primary{background:var(--md-accent-fg-color);color:var(--md-accent-bg-color)}
+.md-typeset .md-button:is(:hover,:focus){border-color:var(--md-accent-fg-color);background:var(--md-accent-fg-color--transparent);color:var(--md-accent-fg-color)}
+.md-typeset .md-button--primary:is(:hover,:focus){background:var(--md-accent-fg-color);color:var(--md-accent-bg-color)}
+:is(a,button,input,select,textarea,summary,label[tabindex]):focus-visible:where(:not(.ag-guide *)){outline:2px solid var(--md-accent-fg-color);outline-offset:2px}

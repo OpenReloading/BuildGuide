@@ -10,3 +10,8 @@
   --ag-done-bg:color-mix(in srgb,var(--md-default-bg-color),#000 8%);
 }
 /* --8<-- [end:recipe] */
+/* this site only: a ticked row takes the soft accent of site-theme.css, the glow of a selected connection the accent (the default green glow is below 3:1 on the site's page) */
+.ag-guide{
+  --ag-done-bg:var(--md-accent-fg-color--transparent);
+  --ag-glow:var(--md-accent-fg-color);
+}
