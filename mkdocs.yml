@@ -4,7 +4,7 @@ site_url: !ENV [SITE_URL, 'https://openreloading.github.io/BuildGuide/']
 site_description: Interactive build guides from one data file, with the MkDocs plugin and the core browser library.
 repo_url: https://github.com/OpenReloading/BuildGuide
 repo_name: OpenReloading/BuildGuide
-copyright: MIT license
+copyright: MIT license. Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified.   # the footer line; keep it in step with the third-party notice in packages/core/src
 
 theme:
   name: material

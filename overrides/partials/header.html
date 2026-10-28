@@ -1,0 +1,38 @@
+{#- Material 9.7.7's partials/header.html with the wordmark instead of the page title and the site links before the
+    palette toggle. The links sit in data-md-component="header-topic", one of the parts that instant navigation
+    swaps, so the current section follows the page. -#}
+{% set section = "example" if page and page.url.startswith("example/") else "docs" if page and not page.is_homepage %}
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
+    <label class="md-header__button md-icon" for="__drawer">
+      {% set icon = config.theme.icon.menu or "material/menu" %}
+      {% include ".icons/" ~ icon ~ ".svg" %}
+    </label>
+    <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
+      {% include "partials/logo.html" %}
+    </a>
+    {% if "material/search" in config.plugins %}
+      {% set search = config.plugins["material/search"] | attr("config") %}
+      {% if search.enabled %}
+        <label class="md-header__button md-icon" for="__search">
+          {% set icon = config.theme.icon.search or "material/magnify" %}
+          {% include ".icons/" ~ icon ~ ".svg" %}
+        </label>
+        {% include "partials/search.html" %}
+      {% endif %}
+    {% endif %}
+    <ul class="md-header__links" data-md-component="header-topic">
+      <li><a href="{{ 'example/' | url }}" class="md-header__link" aria-current="{{ (section == 'example') | lower }}">Live example</a></li>
+      <li><a href="{{ 'core/' | url }}" class="md-header__link" aria-current="{{ (section == 'docs') | lower }}">Docs</a></li>
+      <li class="md-header__source">{% include "partials/source.html" %}</li>
+    </ul>
+    {% if config.theme.palette %}
+      {% if not config.theme.palette is mapping %}
+        {% include "partials/palette.html" %}
+      {% endif %}
+    {% endif %}
+    {% if not config.theme.palette is mapping %}
+      {% include "partials/javascripts/palette.html" %}
+    {% endif %}
+  </nav>
+</header>
