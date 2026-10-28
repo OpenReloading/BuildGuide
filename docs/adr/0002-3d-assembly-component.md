@@ -17,8 +17,10 @@ Item 2 is the branch `ESchuderer/q-buildguide-130-prototype`, commit [`9bc055d`]
 
 1. Go, with a reduced scope: write the renderer in this repository (WebGL, binary STL, no third-party code), as the classic script `buildguide-assembly.js` next to `buildguide.js`. Core loads it with `loadScript` when a `data-buildguide="assembly"` block mounts, so other pages never request it.
 2. Its own budget in `size.test.mjs` (4600 bytes gzipped for the prototype, which measures 4187).
-3. First version: one `assembly` object, STL models, steps that move parts and fasteners into place, an orbit camera on pointer and keyboard, a step list, reduced motion, progress ticks in the shared `storage`. No explode slider, no section cut, no transparency, no glTF.
+3. First version: one `assembly` object, STL models, steps that move parts and fasteners into place, a "play all" that runs the steps in sequence (not in the prototype: it is the same tween over every step, so no new technique), an orbit camera on pointer and keyboard, a step list, reduced motion, progress ticks in the shared `storage`. No explode slider, no section cut, no transparency, no glTF.
 4. Do not bundle three.js or `<model-viewer>`. Revisit only if a consumer needs lit physically based materials, glTF animation or skinning. AutoLever does not; the Feeder viewer uses a standard material (see "Not decided here").
+
+This changes the line of #47 that reads "three.js bundled or pinned" to "no third-party code"; the offline requirement (no request outside the site) stays.
 
 ## Options
 
@@ -102,7 +104,7 @@ Done in the prototype and tested unless marked:
 Drafted, not filed.
 
 1. **Assembly data format**: `assembly` in the schema, both checkers and a fixture. Done when: the schema and both checkers accept the example and reject a missing step reference, a duplicate id, a matrix of the wrong length, a non-finite number and an unknown model key; `docs/data-format.md` describes the keys; `example/guide.json` has an `assembly`.
-2. **Assembly component in core**: the renderer as `buildguide-assembly.js` with its budget, the loader call site, the biome override and the file list. Done when: `<div data-buildguide="assembly">` mounts from the example guide, ticks use the `storage` key with a new reserved prefix (named in `AGENTS.md`), the hash holds the step (`#<key>=<step>`), a browser test mounts it with no request outside the site, and a page without a block requests neither script nor model. Blocked by 1 and, for the module contract, by ADR 0001.
+2. **Assembly component in core**: the renderer as `buildguide-assembly.js` with its budget, the loader call site, the biome override and the file list. Done when: `<div data-buildguide="assembly">` mounts from the example guide, with a "play all" over the steps, ticks use the `storage` key with a new reserved prefix (named in `AGENTS.md`), the hash holds the step (`#<key>=<step>`), a browser test mounts it with no request outside the site, and a page without a block requests neither script nor model. Blocked by 1 and, for the module contract, by ADR 0001.
 3. **Assembly in the MkDocs and Docusaurus wrappers**: markup, model files copied next to the data, the offline page lists them. Done when: the docs site and the Docusaurus example host `/example/assembly/` and the browser tests pass for both. Blocked by 2.
 4. **Assembly renderer extras**: transparency for ghost parts, tool parts visible in one step, a rotating motion, a section cut, each measured in gzip bytes. Done when: the Feeder's current page can be expressed in the data, or the missing feature is named. Blocked by 2.
 5. **Assembly accessibility pass**: touch scrolling, no-WebGL fallback test, forced colours and dark theme, axe, a screen reader pass, step text shared with #72. Blocked by 2.
