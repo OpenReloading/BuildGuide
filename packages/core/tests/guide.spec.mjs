@@ -326,6 +326,28 @@ test('keyboard: focus follows a connection chosen from another step', async ({ p
   await expect(page.locator(`.ag-wire-row [data-conn="${no}"][data-wire]`)).toBeFocused();
 });
 
+// Tab follows the drawing without CSS order: on a phone the toolbar sits above the board, on a wide component beside it
+for (const [key, b] of boards) for (const width of [390, 1440]) {
+  test(`${key} at ${width} px: Tab goes from the steps through the toolbar, the board and the connection panel to Previous and Next`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    const s = b.steps[1];
+    await page.goto(`${url(key)}#${at(key, s, s.connections[0])}`); await ready(page);
+    const drawn = (b.scope || 'step') === 'all' ? b.steps.flatMap(x => x.connections).length : s.connections.length;
+    const want = ['fullscreen', 'zoom-out', 'zoom-fit', 'zoom-in', 'scope', 'canvas', ...Array(drawn).fill('connection'), 'check', 'prev-wire', 'next-wire'];
+    await page.locator('[data-step]').last().focus();
+    const seen = [];
+    while (seen.length < want.length) {
+      await page.keyboard.press('Tab');
+      seen.push(await page.evaluate(() => { const el = document.activeElement; return el.dataset.action || el.dataset.role || (el.dataset.connection ? 'connection' : el.dataset.check ? 'check' : el.classList.contains('ag-board-canvas') ? 'canvas' : el.className); }));
+    }
+    expect(seen).toEqual(want);
+    const [tool, canvas] = await Promise.all(['.ag-board-toolbar', '.ag-board-canvas'].map(sel => page.locator(sel).boundingBox()));
+    // the stylesheet's breakpoint is the component's width, which a host page with side columns makes narrower than the window
+    if (await page.locator('.ag-guide').evaluate(el => el.clientWidth) < 900) expect(tool.y + tool.height).toBeLessThanOrEqual(canvas.y);
+    else expect(tool.x).toBeGreaterThanOrEqual(canvas.x + canvas.width);
+  });
+}
+
 test('colour: --ag-page paints the component', async ({ page }) => {
   await page.goto(url('bom'));
   await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(1, 2, 3)'));

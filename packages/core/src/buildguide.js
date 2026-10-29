@@ -165,7 +165,7 @@
         frame = requestAnimationFrame(() => {
           if (state.expanded) return;
           // the same breakpoint as the stylesheet's container query
-          const below = root.querySelectorAll(root.clientWidth >= 900 ? '.ag-board-legend' : '.ag-board-legend, .ag-board-toolbar, .ag-connection-detail, .ag-wire-navigation');
+          const below = root.querySelectorAll(root.clientWidth >= 900 ? '.ag-board-legend' : '.ag-board-legend, .ag-connection-detail, .ag-wire-navigation');
           const reserved = [...below].reduce((sum, el) => {
             const style = getComputedStyle(el);
             return sum + el.getBoundingClientRect().height + Number.parseFloat(style.marginTop) + Number.parseFloat(style.marginBottom);
@@ -189,7 +189,7 @@
       }).join('')}</nav>`;
     }
     function toolbar() {
-      return `<div class="ag-board-toolbar"><label>Show <select data-role="scope" aria-label="Visible connections"><option value="step">This step</option>${board.single ? '<option value="single">Selected connection</option>' : ''}<option value="all">All connections</option></select></label><div class="ag-board-controls">${button('−', 'zoom-out', 'aria-label="Zoom out"')}${button('Fit', 'zoom-fit')}${button('+', 'zoom-in', 'aria-label="Zoom in"')}${button('⛶ Fullscreen', 'fullscreen', 'class="ag-fullscreen-button"')}</div></div>`;
+      return `<div class="ag-board-toolbar"><div class="ag-board-controls">${button('⛶ Fullscreen', 'fullscreen', 'class="ag-fullscreen-button"')}${button('−', 'zoom-out', 'aria-label="Zoom out"')}${button('Fit', 'zoom-fit')}${button('+', 'zoom-in', 'aria-label="Zoom in"')}</div><label>Show <select data-role="scope" aria-label="Visible connections"><option value="step">This step</option>${board.single ? '<option value="single">Selected connection</option>' : ''}<option value="all">All connections</option></select></label></div>`;
     }
     function connectionSummary(c) {
       const diode = color(c).diode, key = connKey(c), cable = diode ? '' : [c.cable, c.size].filter(Boolean).join(' · ');
@@ -207,8 +207,8 @@
       const next = state.wire === s.connections.length - 1 ? 'Next step →' : 'Next connection →';
       const listed = board.listAll ? all : s.connections;
       return `<section class="ag-workspace"><div class="ag-head">${progress()}</div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
-      <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(board.label || title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(board.legend || []).map(legendItem).join('')}</div></div>
       ${toolbar()}
+      <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(board.label || title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(board.legend || []).map(legendItem).join('')}</div></div>
       ${connectionSummary(c)}
       <div class="ag-wire-navigation">${button('← Previous', 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? 'Last connection' : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
       ${noteLine(s.note)}
