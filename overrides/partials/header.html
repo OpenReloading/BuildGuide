@@ -22,15 +22,16 @@
 --> -#}
 {#- Material 9.7.7's partials/header.html with the wordmark instead of the page title and the site links before the
     palette toggle. The links sit in data-md-component="header-topic", one of the parts that instant navigation
-    swaps, so the current section follows the page. The menu button takes focus: Enter opens and closes the drawer. -#}
+    swaps, so the current section follows the page. -#}
 {% set section = "example" if page and page.url.startswith("example/") else "docs" if page and not page.is_homepage %}
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="{{ lang.t('header') }}">
-    <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Material's script opens a focused drawer label with Enter, as on its own nav labels -->
-    <label class="md-header__button md-icon" for="__drawer" tabindex="0" aria-label="{{ lang.t('nav') }}">
+    <label class="md-header__button md-icon" for="__drawer">
       {% set icon = config.theme.icon.menu or "material/menu" %}
       {% include ".icons/" ~ icon ~ ".svg" %}
     </label>
+    {#- the drawer's checkbox takes keyboard focus (site-theme.css) and toggles with Space; Enter toggles it as well, and it is named like the menu -#}
+    <script>(d => { d.setAttribute("aria-label", "{{ lang.t('nav') }}"); d.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); d.click(); } }); })(document.getElementById("__drawer"));</script>
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
     </a>
