@@ -30,6 +30,23 @@
       {% set icon = config.theme.icon.menu or "material/menu" %}
       {% include ".icons/" ~ icon ~ ".svg" %}
     </label>
+    {#- The drawer's checkbox takes keyboard focus (site-theme.css) and acts as the menu button: Space toggles it, Enter
+        too, and aria-expanded follows it, also when instant navigation closes the drawer (document$). -#}
+    <script>
+      (d => {
+        const sync = () => d.setAttribute("aria-expanded", d.checked);
+        d.setAttribute("role", "button");
+        d.setAttribute("aria-label", "{{ lang.t('nav') }}");
+        d.addEventListener("change", sync);
+        addEventListener("DOMContentLoaded", () => window.document$?.subscribe(sync));
+        d.addEventListener("keydown", e => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            d.click();
+          }
+        });
+      })(document.getElementById("__drawer"));
+    </script>
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
     </a>

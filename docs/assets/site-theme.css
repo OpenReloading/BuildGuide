@@ -101,6 +101,7 @@
 .md-typeset{font-size:16px;line-height:1.55}
 .md-typeset :is(h1,h2,h3):where(:not(.ag-guide *)){color:var(--md-default-fg-color);font-weight:600}
 .md-typeset h1:where(:not(.ag-guide *)){font-size:44px;letter-spacing:-.02em}
+.md-typeset>h1{margin:0 0 16px}
 .md-typeset h2:where(:not(.ag-guide *)){font-size:28px}
 .md-typeset h3:where(:not(.ag-guide *)){font-size:19px}
 @media (max-width:480px){.md-typeset h1:where(:not(.ag-guide *)){font-size:38px}}
@@ -122,9 +123,11 @@
 
 /* home page (docs/index.md): introduction and components */
 .md-typeset .bg-intro{padding:40px 0 32px}
-.md-typeset .bg-label{margin:0 0 8px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
+/* the uppercase label style, also the table header row and the sidebar group headings (docs pages below) */
+:is(.md-typeset .bg-label,.md-typeset table:not([class]) th){font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
+.md-typeset .bg-label{margin:0 0 8px}
 .md-typeset .bg-intro h1{margin:0 0 16px}
-.md-typeset :is(.bg-lead,.bg-label+h1+p){max-width:720px;font-size:18px;color:var(--md-default-fg-color--light)}
+.md-typeset :is(.bg-lead,.bg-label+h1+p),.md-typeset>h1+p{max-width:720px;font-size:18px;color:var(--md-default-fg-color--light)}
 .md-typeset .bg-actions{display:flex;flex-wrap:wrap;gap:12px}
 .md-typeset .bg-actions .md-button{display:inline-flex;align-items:center;justify-content:center;min-height:48px;margin:0}
 @media (max-width:480px){.md-typeset .bg-actions{flex-direction:column}.md-typeset .bg-actions .md-button{width:100%}}
@@ -182,3 +185,39 @@
 .md-typeset .admonition.warning{border-color:var(--bg-warning-line);background:var(--bg-warning-bg)}
 .md-typeset .warning>.admonition-title{background:var(--bg-warning-bg)}
 .md-typeset .warning>.admonition-title::before{background-color:var(--bg-warning-line)}
+
+/* docs pages: sidebar, path, text column, on this page, previous and next; below 76.25em the sidebars are Material's drawer */
+.md-footer__inner{flex-wrap:wrap;gap:0 24px;padding:8px .8rem}
+@media screen and (min-width:1360px){
+  .md-main__inner,.md-footer__inner{max-width:1360px;padding-inline:40px}
+  .md-sidebar--primary{width:260px}
+  .md-sidebar--secondary{width:200px}
+  [dir] .md-sidebar:not([hidden])~.md-content>.md-content__inner{margin:0 40px 24px}
+  .md-content .md-path{margin:0 40px}
+}
+@media screen and (min-width:76.25em){
+  .md-nav__item--section>.md-nav__link{min-height:0;margin:24px 0 4px;padding:0 12px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
+}
+.md-typeset>:is(p,ul,ol,dl,blockquote,h1,h2,h3,h4,.admonition,details){max-width:720px}
+/* a table wider than the column scrolls inside its own box; print keeps Material's table layout, so no row is clipped */
+@media screen{.md-typeset__table{max-width:100%}.md-typeset__table table:not([class]){display:inline-block;max-width:100%;overflow:auto}}
+.md-nav__link{display:flex;align-items:center;min-height:44px;margin-top:0;padding:0 12px;font-size:15px}
+.md-nav--primary .md-nav__link--active:not(.md-nav--secondary *){background:var(--md-accent-fg-color);color:var(--md-accent-bg-color);font-weight:600}
+.md-path{font-family:var(--md-code-font-family);font-size:13px}
+.md-path__item{display:inline-flex;align-items:center}
+.md-path__link{display:inline-flex;align-items:center;min-height:44px;color:var(--md-default-fg-color--light)}
+.md-path__item:not(:first-child)::before{content:"/";width:auto;height:auto;margin:0 8px;background:none;-webkit-mask:none;mask:none;color:var(--md-default-fg-color--light)}
+.md-footer__link{flex:0 1 auto;align-items:center;max-width:100%;min-height:44px;margin:0;padding:0;color:var(--md-accent-fg-color);font-size:15px;font-weight:600}
+.md-footer__link--next{margin-left:auto}
+.md-footer__button{display:none}
+.md-footer .md-footer__title{display:flex;max-width:100%;padding:0;font-size:inherit;line-height:inherit}
+.md-footer__direction{position:static;padding:0;font-size:inherit;opacity:1}
+.md-footer__title .md-ellipsis::before{content:":"}
+/* note levels on docs pages with the component's markup (data-format.md); the component's own notes keep buildguide.css */
+.md-typeset>.ag-step-note{max-width:720px;padding:12px 16px;border:1px solid var(--md-default-fg-color--lightest);border-radius:12px;background:var(--md-primary-fg-color)}
+.md-typeset>.ag-step-note[data-level=caution]{border:1.5px dashed var(--md-default-fg-color--light)}
+.md-typeset>.ag-step-note[data-level=warning]{border:2px solid var(--md-accent-fg-color);background:var(--md-accent-fg-color--transparent)}
+.md-typeset>.ag-step-note strong{margin-right:.4em;text-transform:uppercase;letter-spacing:.08em}
+/* the drawer's own checkbox takes keyboard focus while the menu button shows (Material hides it with display:none); the button shows its focus ring */
+@media screen and (max-width:76.234375em){.md-toggle[data-md-toggle=drawer]{display:block;position:fixed;top:0;left:0;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}}
+#__drawer:focus-visible~.md-header label[for=__drawer]{outline:2px solid var(--md-accent-fg-color);outline-offset:-2px}

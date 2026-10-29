@@ -12,6 +12,9 @@ theme:
   font: false   # system fonts: no requests outside the site
   features:
     - navigation.instant   # pages swap without a reload: the components must follow
+    - navigation.sections   # the nav groups as headings in the sidebar
+    - navigation.path   # the groups above the page title
+    - navigation.footer   # previous and next in nav order
   palette:
     - scheme: default
       primary: custom   # colours in assets/site-theme.css
@@ -73,12 +76,13 @@ nav:
       - Plain HTML: core.md
       - MkDocs: mkdocs.md
       - Docusaurus: docusaurus.md
-  - Examples: examples.md
-  - Data format: data-format.md
-  - Theming and dark mode: theming.md
-  - Reference: reference.md
-  - Testing your site: testing.md
-  - Offline use: offline.md
+  - Guides:
+      - Examples: examples.md
+      - Data format: data-format.md
+      - Theming and dark mode: theming.md
+      - Reference: reference.md
+      - Testing your site: testing.md
+      - Offline use: offline.md
   - Example guide:
       - Introduction: example/index.md
       - BOM: example/bom.md
