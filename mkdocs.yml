@@ -37,6 +37,7 @@ plugins:
       data: packages/core/example/guide.json
       guides:
         minimal: packages/core/example/minimal/all.json   # example/second.md
+        home: packages/core/example/minimal/wiring.json   # index.md: a storage key of its own, ticking there leaves the example guides alone
 
 markdown_extensions:
   - admonition
