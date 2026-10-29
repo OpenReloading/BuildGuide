@@ -170,7 +170,9 @@
 
 /* example pages (docs/example/): the label and lead of the home page above the title and introduction, each component in a card */
 .md-typeset .bg-label+h1{margin:0 0 16px}
-.md-typeset>.bg-card{margin:0 0 32px}
+/* the card is a frame: the component keeps the recipe's page colour, and nothing clips it, so its sticky step navigation stays on screen */
+.md-typeset>.bg-card{margin:0 0 32px;overflow:visible}
+.md-typeset>.bg-card>.ag-guide{overflow:visible;border-radius:11px;--ag-page:var(--md-default-bg-color)}
 /* a warning notice takes the warning colours of the component's notes (--ag-warning-bg, --ag-warning-line in packages/core/src/buildguide.css), which exist only inside .ag-guide */
 [data-md-color-scheme=default]{--bg-warning-bg:#fde8e4;--bg-warning-line:#b3261e}
 [data-md-color-scheme=slate]{--bg-warning-bg:#4a2420;--bg-warning-line:#ff8a80}
