@@ -156,7 +156,8 @@
 
 /* home page: data format and install, their code and text come from the docs and READMEs through snippets */
 .md-typeset :is(.bg-data,.bg-install) pre>code{font-size:13px;line-height:1.6}
-.md-typeset .bg-data p:last-child a{display:inline-flex;align-items:center;min-height:44px}
+/* links on a line or in a list item of their own; links inside a running sentence stay inline (WCAG 2.2 target size exception) */
+.md-typeset :is(.bg-data p:last-child,.bg-install li) a{display:inline-flex;align-items:center;min-height:44px}
 .md-typeset .bg-install{margin:0 0 32px}
 .md-typeset .bg-install ol{margin-left:0;list-style:none}
 .md-typeset .bg-install ol>li{margin-left:0}

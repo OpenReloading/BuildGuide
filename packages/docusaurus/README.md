@@ -22,9 +22,9 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
    npm install @openreloading/docusaurus-plugin-buildguide
    ```
 
+<!-- --8<-- [start:snippet] -->
 2. Add the plugin to `docusaurus.config.js`:
 
-   <!-- --8<-- [start:snippet] -->
    ```js
    plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
    ```

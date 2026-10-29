@@ -15,9 +15,9 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist, text steps or a wiri
    ```
    <!-- --8<-- [end:release] -->
 
+<!-- --8<-- [start:snippet] -->
 2. Configure the plugin in `mkdocs.yml`. Paths are relative to `mkdocs.yml`:
 
-   <!-- --8<-- [start:snippet] -->
    ```yaml
    plugins:
      - search
