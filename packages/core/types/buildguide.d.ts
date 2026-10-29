@@ -1,7 +1,7 @@
 // Types for `tsc --checkJs` over src/ (npm run typecheck). Kept outside src/ so the shipped files and their gzip size do not change.
 
 // The guide data, as in schema/buildguide.schema.json
-type Point = number[];
+type Point = [number, number];
 type Note = string | { level: 'note' | 'caution' | 'warning'; text: string };
 
 interface BomItem { id: string; group: string; part: string; spec?: string; qty: number | string; image?: string; link?: string }
@@ -38,12 +38,12 @@ interface Guide {
   $schema?: string;
   storage: string;
   bom?: { note?: string; export?: string; linkLabel?: string; items: BomItem[] };
-  steps?: { note?: string; items: TextStep[] };
+  steps?: { title?: string; note?: string; items: TextStep[] };
   boards?: Record<string, Board>;
 }
 
 // The globals that buildguide.js and its on-demand files set, and the ones they read from the host page
-interface MountOptions { view?: string; board?: string; assets?: string }
+interface MountOptions { view?: 'bom' | 'steps' | 'board' | 'guide'; board?: string; assets?: string }
 interface BoardOptions {
   key: string; name: string; step: number; wire: number; scope: string; zoom: number; base: string; focus?: string;
   label(connection: Connection, end: string): string; zoomed?(zoom: number): void; done?(no: string): boolean; select(no: string): void;
