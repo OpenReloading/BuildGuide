@@ -1175,6 +1175,13 @@ test('phones: no sideways scrolling, the next action stays on screen', async ({ 
     await page.goto(url(key)); await ready(page);
     await page.waitForFunction(() => { const r = document.querySelector('.ag-wire-navigation').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
   }
+  // a board behind a tab of the combined guide (a guide inside the guide): its navigation follows the page as it scrolls
+  await page.goto(url('guide'));
+  for (const [, b] of boards) {
+    await tabOf(page, b.title).click(); await ready(panelOf(page));
+    await page.evaluate(() => scrollTo(0, 300));
+    await page.waitForFunction(() => { const r = document.querySelector('.ag-wire-navigation').getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; });
+  }
 });
 
 // a host token set before the component mounts: .ag-guide.ag-guide outranks the stylesheet wherever it sits in the page
