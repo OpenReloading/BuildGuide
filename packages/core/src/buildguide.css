@@ -215,7 +215,7 @@ body.ag-no-scroll{overflow:hidden}
 }
 }
 /* From a component width of 900 px (also in fullscreen) the board takes the left column at full height; step title, board controls,
-   wire detail, navigation and the step's connection list sit beside it. Below 900 px the controls follow the board. */
+   wire detail, navigation and the step's connection list sit beside it. Below 900 px the controls sit above the board. */
 @container (min-width:900px){
  .ag-guide .ag-work,.ag-guide.ag-expanded .ag-work{display:grid;grid-template-columns:minmax(0,1fr) clamp(320px,30vw,440px);column-gap:20px;
   grid-template-rows:auto auto auto auto auto auto auto 1fr;
