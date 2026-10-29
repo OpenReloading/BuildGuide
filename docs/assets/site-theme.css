@@ -137,3 +137,17 @@
 .md-typeset .bg-grid h3{margin:0 0 8px}
 .md-typeset .bg-grid h3 a{display:inline-flex;align-items:center;min-height:44px}
 .md-typeset .bg-grid p{margin:0;font-size:16px;color:var(--md-default-fg-color--light)}
+
+/* home page: the live wiring board in a card, the progress text beside it from 820 px */
+.md-typeset .bg-live{display:grid;gap:32px;margin:0 0 32px}
+@media (min-width:820px){.md-typeset .bg-live{grid-template-columns:minmax(0,3fr) minmax(0,2fr);align-items:start}}
+.md-typeset .bg-live h2{margin:0 0 16px}
+.md-typeset .bg-card{position:relative;overflow:hidden;background:var(--md-primary-fg-color);border:1px solid var(--md-default-fg-color--lightest);border-radius:12px}
+/* the title shares the row of the component's own progress count */
+.md-typeset .bg-card h2.bg-card-title{position:absolute;top:0;left:16px;margin:0;font-size:16px;line-height:48px}
+.md-typeset .bg-card .ag-guide{overflow-x:auto;--ag-page:var(--md-primary-fg-color)}
+.md-typeset .bg-card .ag-workspace>.ag-head{min-height:48px;margin:-12px -12px 14px;padding:0 16px;border-bottom:1px solid var(--md-default-fg-color--lightest)}
+.md-typeset .bg-card .ag-progress{font-family:var(--md-code-font-family);font-size:12px}
+.md-typeset .bg-card .ag-wire-row{min-height:56px}
+.md-typeset .bg-card .ag-progress-tools button{min-height:44px}
+.md-typeset .bg-source{margin:8px 0 0;font-family:var(--md-code-font-family);font-size:12px;color:var(--md-default-fg-color--light)}

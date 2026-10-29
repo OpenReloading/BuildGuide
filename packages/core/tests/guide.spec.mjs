@@ -594,6 +594,40 @@ test('Docusaurus: a second guide is a file, no page holds it, each guide is fetc
   expect(fetched.sort()).toEqual([`${PREFIX}/assets/buildguide/guide.json`, `${PREFIX}/assets/buildguide/guides/minimal.json`]);
 });
 
+// the MkDocs docs site shows the minimal wiring board (`guides.home`) on its home page, with a storage key of its own
+test('MkDocs: the home page ticks a connection of its own guide, kept over a reload, and fits a phone in either scheme', async ({ page }, info) => {
+  const HOME = JSON.parse(readFileSync(new URL('../example/minimal/wiring.json', import.meta.url)));
+  const home = `${ORIGIN}${PREFIX}/`;
+  test.skip(!(await (await page.request.get(home)).text()).includes('data-guide="home"'), 'only the MkDocs docs site has a board on its home page');
+  const [c] = HOME.boards.wiring.steps[0].connections, box = page.getByRole('checkbox', { name: `Connection ${c.no}`, exact: true });
+  await page.goto(home); await settled(page);
+  await box.check();
+  await expect(page.locator('.ag-wire-row.is-done .ag-wire-number')).toHaveText(c.no);
+  const stored = key => page.evaluate(k => localStorage.getItem(k), key);
+  expect(JSON.parse(await stored(HOME.storage))).toEqual({ [`wiring-${c.no}:${c.a}:${c.b}`]: true });
+  for (const other of [D.storage, MINIMAL.storage]) expect(await stored(other)).toBeNull();
+  await page.reload(); await settled(page);
+  await expect(box).toBeChecked();
+  // the progress tools of the board: export the tick, reset and undo, import it back
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export progress' }).click();
+  expect((await download).suggestedFilename()).toBe(`${HOME.storage}.json`);
+  await page.getByRole('button', { name: 'Reset progress' }).click();
+  await expect(box).not.toBeChecked();
+  await page.getByRole('button', { name: 'Undo' }).click();
+  await expect(box).toBeChecked();
+  await page.getByRole('button', { name: 'Reset progress' }).click();
+  await importFile(page, { [`wiring-${c.no}:${c.a}:${c.b}`]: true });
+  await expect(box).toBeChecked();
+  // 360 px: the card scrolls sideways inside itself, the page does not
+  await page.setViewportSize({ width: 360, height: 800 });
+  for (const scheme of ['light', 'dark']) {
+    await signal(page, scheme);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), scheme).toBeLessThanOrEqual(360);
+    await page.locator('.bg-live').screenshot({ path: info.outputPath(`home-${scheme}.png`) });
+  }
+});
+
 // the tick keys of every item of a component, in order
 const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`), steps: D.steps.items.map(i => `step-${i.id}`) };
 for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));

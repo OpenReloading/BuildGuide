@@ -31,6 +31,19 @@
 </div>
 </div>
 </section>
+<section class="bg-live" aria-label="Live example">
+<div>
+<div class="bg-card">
+<h2 class="bg-card-title" id="wiring-board">Wiring board</h2>
+<div data-buildguide="board" data-board="wiring" data-guide="home"></div>
+</div>
+<p class="bg-source">The <a href="examples/#wiring-board">wiring board example</a>, <code>packages/core/example/minimal/wiring.json</code></p>
+</div>
+<div>
+<h2 id="progress">Progress stays in the browser</h2>
+<p>Ticks are saved in <code>localStorage</code> under the <code>storage</code> key of the guide. A tick belongs to one exact connection (number and both ends): changing an end clears it. Export downloads <code>&lt;storage&gt;.json</code>, Import replaces the saved progress from such a file and Reset removes it. Import and reset act at once: the status line of the component says what happened and offers <code>Undo</code>.</p>
+</div>
+</section>
 
 ## Getting started
 
