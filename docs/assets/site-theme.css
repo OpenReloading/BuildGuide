@@ -161,7 +161,7 @@
 /* home page: data format and install, their code and text come from the docs and READMEs through snippets */
 .md-typeset :is(.bg-data,.bg-install) pre>code{font-size:13px;line-height:1.6}
 /* links on a line, in a list item or in a table cell of their own; links inside a running sentence stay inline (WCAG 2.2 target size exception) */
-.md-typeset :is(.bg-data p:last-child,.bg-install li) a,.md-typeset td>a:only-child{display:inline-flex;align-items:center;min-height:44px}
+.md-typeset :is(.bg-data p:last-child,.bg-install li) a,.md-typeset td:not(.ag-guide *)>a:only-child{display:inline-flex;align-items:center;min-height:44px}
 .md-typeset .bg-install{margin:0 0 32px}
 .md-typeset .bg-install ol{margin-left:0;list-style:none}
 .md-typeset .bg-install ol>li{margin-left:0}
