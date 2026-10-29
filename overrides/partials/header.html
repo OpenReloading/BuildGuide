@@ -30,8 +30,33 @@
       {% set icon = config.theme.icon.menu or "material/menu" %}
       {% include ".icons/" ~ icon ~ ".svg" %}
     </label>
-    {#- the drawer's checkbox takes keyboard focus (site-theme.css) and toggles with Space; Enter toggles it as well, and it is named like the menu -#}
-    <script>(d => { d.setAttribute("aria-label", "{{ lang.t('nav') }}"); d.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); d.click(); } }); })(document.getElementById("__drawer"));</script>
+    {#- The drawer's checkbox takes keyboard focus (site-theme.css) and acts as the menu button: Space toggles it, Enter
+        too, and aria-expanded follows it. In the drawer the group headings and the pane titles take focus and open and
+        close their pane; Material clicks a focused label on Enter, Space does the same here. The sidebar is new after
+        each instant navigation (document$). -#}
+    <script>
+      (d => {
+        const drawer = matchMedia("(max-width: 76.234375em)");
+        const sync = () => {
+          d.setAttribute("aria-expanded", d.checked);
+          for (const label of document.querySelectorAll(".md-nav__item--section > label.md-nav__link, label.md-nav__title[for^=__nav_]")) {
+            if (drawer.matches) label.setAttribute("tabindex", "0");
+            else label.removeAttribute("tabindex");
+          }
+        };
+        d.setAttribute("role", "button");
+        d.setAttribute("aria-label", "{{ lang.t('nav') }}");
+        d.addEventListener("change", sync);
+        drawer.addEventListener("change", sync);
+        addEventListener("DOMContentLoaded", () => window.document$?.subscribe(sync));
+        addEventListener("keydown", e => {
+          if ((e.key === "Enter" && e.target === d) || (e.key === " " && e.target instanceof HTMLLabelElement)) {
+            e.preventDefault();
+            e.target.click();
+          }
+        });
+      })(document.getElementById("__drawer"));
+    </script>
     <a href="{{ config.extra.homepage | d(nav.homepage.url, true) | url }}" title="{{ config.site_name | e }}" class="md-header__button md-logo" aria-label="{{ config.site_name }}" data-md-component="logo">
       {% include "partials/logo.html" %}
     </a>

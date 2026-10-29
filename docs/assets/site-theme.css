@@ -199,9 +199,8 @@
   .md-nav__item--section>.md-nav__link{min-height:0;margin:24px 0 4px;padding:0 12px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
 }
 .md-typeset>:is(p,ul,ol,dl,blockquote,h1,h2,h3,h4,.admonition,details){max-width:720px}
-/* a table wider than the column scrolls inside its own box */
-.md-typeset__table{max-width:100%}
-.md-typeset__table table:not([class]){display:inline-block;max-width:100%;overflow:auto}
+/* a table wider than the column scrolls inside its own box; print keeps Material's table layout, so no row is clipped */
+@media screen{.md-typeset__table{max-width:100%}.md-typeset__table table:not([class]){display:inline-block;max-width:100%;overflow:auto}}
 .md-nav__link{display:flex;align-items:center;min-height:44px;margin-top:0;padding:0 12px;font-size:15px}
 .md-nav--primary .md-nav__link--active:not(.md-nav--secondary *){background:var(--md-accent-fg-color);color:var(--md-accent-bg-color);font-weight:600}
 .md-path{font-family:var(--md-code-font-family);font-size:13px}
