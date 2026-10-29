@@ -123,8 +123,8 @@
 
 /* home page (docs/index.md): introduction and components */
 .md-typeset .bg-intro{padding:40px 0 32px}
-/* the uppercase label style, also the nav group headings and the table header row (docs pages below) */
-:is(.md-typeset .bg-label,.md-nav__item--section>.md-nav__link,.md-typeset table:not([class]) th){font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
+/* the uppercase label style, also the table header row and the sidebar group headings (docs pages below) */
+:is(.md-typeset .bg-label,.md-typeset table:not([class]) th){font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
 .md-typeset .bg-label{margin:0 0 8px}
 .md-typeset .bg-intro h1{margin:0 0 16px}
 .md-typeset :is(.bg-lead,.bg-label+h1+p),.md-typeset>h1+p{max-width:720px;font-size:18px;color:var(--md-default-fg-color--light)}
@@ -196,7 +196,7 @@
   .md-content .md-path{margin:0 40px}
 }
 @media screen and (min-width:76.25em){
-  .md-nav__item--section>.md-nav__link{min-height:0;margin:24px 0 4px;padding:0 12px}
+  .md-nav__item--section>.md-nav__link{min-height:0;margin:24px 0 4px;padding:0 12px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--md-default-fg-color--light)}
 }
 .md-typeset>:is(p,ul,ol,dl,blockquote,h1,h2,h3,h4,.admonition,details){max-width:720px}
 /* a table wider than the column scrolls inside its own box */
