@@ -647,6 +647,36 @@ test('MkDocs: the home page ticks a connection of its own guide, kept over a rel
   }
 });
 
+// the docs site on a phone and a tablet: the page never scrolls sideways, every control is a 44 px target
+test('MkDocs: the home page, an example page and a docs page fit 360, 390 and 820 px with 44 px targets', async ({ page }) => {
+  const html = await (await page.request.get(`${ORIGIN}${PREFIX}/`)).text();
+  test.skip(!/<meta name="generator" content="mkdocs-/.test(html), 'only the MkDocs docs site has these pages');
+  for (const width of [360, 390, 820]) for (const path of ['', 'example/wiring/', 'data-format/']) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(`${ORIGIN}${PREFIX}/${path}`); await settled(page);
+    const where = `${path || 'home'} at ${width} px`;
+    expect(await page.evaluate(() => document.documentElement.scrollWidth), where).toBeLessThanOrEqual(width);
+    const small = await page.evaluate(() => {
+      const shown = e => e.checkVisibility({ opacityProperty: true, visibilityProperty: true }) && e.getBoundingClientRect().width > 0;
+      // a link inside running text is exempt (WCAG 2.5.8); one alone in its paragraph, list item or table cell is not
+      const inline = a => { const text = a.parentElement.closest(':is(p, li, td, th, dd)'); return getComputedStyle(a).display === 'inline' && !!text && text.textContent.trim() !== a.textContent.trim(); };
+      const out = [];
+      for (const e of document.querySelectorAll('a[href], button, input, select, label[for], [role=tab]')) {
+        if (!shown(e) || e.matches('a') && inline(e)) continue;
+        // a tick box of the component toggles with its label, or alone where it has none (the wire rows): that target stays at the WCAG 2.2 minimum of 24 px
+        const tick = e.matches('.ag-guide input[type=checkbox]'), box = tick ? e.closest('label') ?? e : e, min = tick ? 24 : 44;
+        const r = box.getBoundingClientRect();
+        if (r.height < min || r.width < min) out.push(`${e.outerHTML.slice(0, 80)}: ${Math.round(r.width)} x ${Math.round(r.height)}`);
+        // and the row that holds a tick box is 44 px high
+        const row = tick && e.closest(':is(tr, li, .ag-wire-row, .ag-connection-detail)');
+        if (tick && !(row?.getBoundingClientRect().height >= 44)) out.push(`row of ${e.outerHTML.slice(0, 80)}: ${row ? Math.round(row.getBoundingClientRect().height) : 'none'}`);
+      }
+      return out;
+    });
+    expect(small, where).toEqual([]);
+  }
+});
+
 // the tick keys of every item of a component, in order
 const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`), steps: D.steps.items.map(i => `step-${i.id}`) };
 for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));

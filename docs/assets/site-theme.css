@@ -95,7 +95,7 @@
 .md-copyright__highlight{margin:0}
 .md-typeset ul.md-copyright__links{display:flex;flex-wrap:wrap;gap:0 16px;margin:0;padding:0;list-style:none}
 .md-typeset ul.md-copyright__links li{margin:0}
-.md-copyright__links a{display:inline-flex;align-items:center;min-height:44px}
+.md-copyright__links a{display:inline-flex;align-items:center;min-width:44px;min-height:44px}
 
 /* type and radius; :where(:not(.ag-guide *)) leaves the components to their own stylesheet */
 .md-typeset{font-size:16px;line-height:1.55}
@@ -160,8 +160,8 @@
 
 /* home page: data format and install, their code and text come from the docs and READMEs through snippets */
 .md-typeset :is(.bg-data,.bg-install) pre>code{font-size:13px;line-height:1.6}
-/* links on a line or in a list item of their own; links inside a running sentence stay inline (WCAG 2.2 target size exception) */
-.md-typeset :is(.bg-data p:last-child,.bg-install li) a{display:inline-flex;align-items:center;min-height:44px}
+/* links on a line, in a list item or in a table cell of their own; links inside a running sentence stay inline (WCAG 2.2 target size exception) */
+.md-typeset :is(.bg-data p:last-child,.bg-install li) a,.md-typeset td:not(.ag-guide *)>a:only-child{display:inline-flex;align-items:center;min-height:44px}
 .md-typeset .bg-install{margin:0 0 32px}
 .md-typeset .bg-install ol{margin-left:0;list-style:none}
 .md-typeset .bg-install ol>li{margin-left:0}
@@ -205,7 +205,7 @@
 .md-nav--primary .md-nav__link--active:not(.md-nav--secondary *){background:var(--md-accent-fg-color);color:var(--md-accent-bg-color);font-weight:600}
 .md-path{font-family:var(--md-code-font-family);font-size:13px}
 .md-path__item{display:inline-flex;align-items:center}
-.md-path__link{display:inline-flex;align-items:center;min-height:44px;color:var(--md-default-fg-color--light)}
+.md-path__link{display:inline-flex;align-items:center;min-width:44px;min-height:44px;color:var(--md-default-fg-color--light)}
 .md-path__item:not(:first-child)::before{content:"/";width:auto;height:auto;margin:0 8px;background:none;-webkit-mask:none;mask:none;color:var(--md-default-fg-color--light)}
 .md-footer__link{flex:0 1 auto;align-items:center;max-width:100%;min-height:44px;margin:0;padding:0;color:var(--md-accent-fg-color);font-size:15px;font-weight:600}
 .md-footer__link--next{margin-left:auto}
