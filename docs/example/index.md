@@ -1,10 +1,12 @@
+<p class="bg-label">Example guide</p>
+
 # Introduction
 
-!!! danger "Pre-release"
+A 12 V control box that moves an air cylinder when START is pressed or the sensor sees a part. The pages of this example embed the guide components in normal Markdown pages: the page owns its title, notices and text, a component only draws the BOM or a board.
+
+!!! warning "Warning: Pre-release"
 
     Example data. The parts and values are not a tested build.
-
-A 12 V control box that moves an air cylinder when START is pressed or the sensor sees a part. The pages of this example embed the guide components in normal Markdown pages: the page owns its title, notices and text, a component only draws the BOM or a board.
 
 ## Features
 
