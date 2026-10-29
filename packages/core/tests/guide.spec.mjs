@@ -667,6 +667,9 @@ test('MkDocs: the home page, an example page and a docs page fit 360, 390 and 82
         const tick = e.matches('.ag-guide input[type=checkbox]'), box = tick ? e.closest('label') ?? e : e, min = tick ? 24 : 44;
         const r = box.getBoundingClientRect();
         if (r.height < min || r.width < min) out.push(`${e.outerHTML.slice(0, 80)}: ${Math.round(r.width)} x ${Math.round(r.height)}`);
+        // and the row that holds a tick box is 44 px high
+        const row = tick && e.closest(':is(tr, li, .ag-wire-row, .ag-connection-detail)');
+        if (tick && !(row?.getBoundingClientRect().height >= 44)) out.push(`row of ${e.outerHTML.slice(0, 80)}: ${row ? Math.round(row.getBoundingClientRect().height) : 'none'}`);
       }
       return out;
     });
