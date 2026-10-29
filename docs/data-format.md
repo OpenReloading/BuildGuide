@@ -1,6 +1,8 @@
 # Data format
 
+<!-- --8<-- [start:intro] -->
 A guide is one JSON or YAML object that every component reads: the BOM checklist, the text steps and each board. `buildguide.schema.json` (JSON Schema 2020-12, shipped in the core package under `schema/`) is the formal definition. The core check (`buildguide-check.mjs`, ported in the MkDocs plugin) covers what a schema cannot: ids, numbers and terminal names, ends that name an existing part and terminal, defined colours and the per-terminal limit, see [the check CLI](reference.md#check-cli). [Examples](examples.md) show one small guide per component, the [example pages](example/index.md) use every part of the format.
+<!-- --8<-- [end:intro] -->
 
 ## What the keys do
 

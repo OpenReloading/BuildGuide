@@ -1,16 +1,21 @@
 # BuildGuide for MkDocs
 
+<!-- --8<-- [start:about] -->
 MkDocs plugin: put a BuildGuide component (a BOM checklist, text steps or a wiring or tubing board) anywhere in a Markdown page. The plugin checks the data at build time and bundles the core browser files. Your pages, notices and navigation stay your own.
+<!-- --8<-- [end:about] -->
 
 <!-- --8<-- [start:docs] -->
 ## Use
 
+<!-- --8<-- [start:release] -->
 1. Download the wheel from an `mkdocs-v*` [release](https://github.com/OpenReloading/BuildGuide/releases) and install it next to MkDocs 1.6:
 
    ```sh
    pip install mkdocs_buildguide-<version>-py3-none-any.whl
    ```
+   <!-- --8<-- [end:release] -->
 
+<!-- --8<-- [start:snippet] -->
 2. Configure the plugin in `mkdocs.yml`. Paths are relative to `mkdocs.yml`:
 
    ```yaml
@@ -20,6 +25,7 @@ MkDocs plugin: put a BuildGuide component (a BOM checklist, text steps or a wiri
          data: guide.yaml
          assets: assets/
    ```
+   <!-- --8<-- [end:snippet] -->
 
    | Option | Meaning | Default |
    |---|---|---|

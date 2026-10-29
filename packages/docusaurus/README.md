@@ -1,11 +1,15 @@
 # BuildGuide for Docusaurus
 
+<!-- --8<-- [start:about] -->
 Docusaurus 3 plugin: validates and checks the guide data at build time, serves the core browser files and provides the `<BuildGuide />` component for a BOM checklist, text steps or a wiring or tubing board. Your pages, notices and navigation stay your own.
+<!-- --8<-- [end:about] -->
 
 <!-- --8<-- [start:docs] -->
 ## Use
 
+<!-- --8<-- [start:release] -->
 1. Install the package from a release file: download `openreloading-docusaurus-plugin-buildguide-<version>.tgz` from a `docusaurus-v*` [release](https://github.com/OpenReloading/BuildGuide/releases) and run `npm install ./openreloading-docusaurus-plugin-buildguide-<version>.tgz`.
+   <!-- --8<-- [end:release] -->
 
    Earlier versions are also on GitHub Packages, which asks for a token with the `read:packages` scope even for public packages. In the site's `.npmrc`:
 
@@ -18,11 +22,13 @@ Docusaurus 3 plugin: validates and checks the guide data at build time, serves t
    npm install @openreloading/docusaurus-plugin-buildguide
    ```
 
+<!-- --8<-- [start:snippet] -->
 2. Add the plugin to `docusaurus.config.js`:
 
    ```js
    plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
    ```
+   <!-- --8<-- [end:snippet] -->
 
    | Option | Meaning | Default |
    |---|---|---|
