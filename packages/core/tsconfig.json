@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "target": "es2023",
+    "lib": [
+      "es2023",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/buildguide*.js",
+    "src/buildguide-check.mjs",
+    "types/*.d.ts"
+  ]
+}
