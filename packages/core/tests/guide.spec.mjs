@@ -598,7 +598,9 @@ test('Docusaurus: a second guide is a file, no page holds it, each guide is fetc
 test('MkDocs: the home page ticks a connection of its own guide, kept over a reload, and fits a phone in either scheme', async ({ page }, info) => {
   const HOME = JSON.parse(readFileSync(new URL('../example/minimal/wiring.json', import.meta.url)));
   const home = `${ORIGIN}${PREFIX}/`;
-  test.skip(!(await (await page.request.get(home)).text()).includes('data-guide="home"'), 'only the MkDocs docs site has a board on its home page');
+  const html = await (await page.request.get(home)).text();
+  test.skip(!/<meta name="generator" content="mkdocs-/.test(html), 'only the MkDocs docs site has a board on its home page');
+  expect(html).toContain('data-guide="home"');
   const [c] = HOME.boards.wiring.steps[0].connections, box = page.getByRole('checkbox', { name: `Connection ${c.no}`, exact: true });
   await page.goto(home); await settled(page);
   await box.check();
@@ -619,11 +621,28 @@ test('MkDocs: the home page ticks a connection of its own guide, kept over a rel
   await page.getByRole('button', { name: 'Reset progress' }).click();
   await importFile(page, { [`wiring-${c.no}:${c.a}:${c.b}`]: true });
   await expect(box).toBeChecked();
-  // 360 px: the card scrolls sideways inside itself, the page does not
+  // 360 px with every connection ticked: the card scrolls sideways inside itself, the page does not, the title and the count do not overlap
+  await tickAll(page.locator('.ag-guide'));
+  await expect(page.locator('.ag-guide')).toHaveAttribute('data-complete', /.*/);
   await page.setViewportSize({ width: 360, height: 800 });
+  const rect = l => l.evaluate(e => e.getBoundingClientRect().toJSON());
+  const [title, count] = [await rect(page.locator('.bg-card-title')), await rect(page.locator('.ag-head .ag-progress'))];
+  expect(title.right <= count.left || title.bottom <= count.top, 'title and count overlap').toBe(true);
+  // every control of the card is a 44 px target
+  const small = await page.locator('.bg-card').evaluate(card => [...card.querySelectorAll('button, select')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect()).filter(r => r.width < 44 || r.height < 44).length);
+  expect(small).toBe(0);
+  // the site accent replaces the component's green: every pair keeps its contrast in both schemes
+  const names = [...new Set([...TEXT, ...GRAPHICS].flat())];
   for (const scheme of ['light', 'dark']) {
     await signal(page, scheme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth), scheme).toBeLessThanOrEqual(360);
+    const c = await colours(page, ['var(--md-accent-fg-color)', ...names.map(n => `var(--ag-${n})`)]), at = n => c[`var(--ag-${n})`];
+    expect(at('done'), scheme).toEqual(c['var(--md-accent-fg-color)']);
+    const low = [];
+    for (const [pairs, min] of [[TEXT, 4.5], [GRAPHICS, 3]]) for (const [a, b] of pairs) { const r = contrast(at(a), at(b)); if (r < min) low.push(`${a} on ${b}: ${r.toFixed(2)}`); }
+    expect(low, scheme).toEqual([]);
+    const { violations } = await new AxeBuilder({ page }).include('.bg-card').withRules(['color-contrast']).analyze();
+    expect(violations.map(v => v.id), scheme).toEqual([]);
     await page.locator('.bg-live').screenshot({ path: info.outputPath(`home-${scheme}.png`) });
   }
 });
