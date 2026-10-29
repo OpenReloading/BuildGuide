@@ -41,6 +41,7 @@ plugins:
 
 markdown_extensions:
   - admonition
+  - md_in_html   # index.md: Markdown and snippets inside the home page sections
   - tables
   - pymdownx.highlight
   - pymdownx.superfences
@@ -48,6 +49,7 @@ markdown_extensions:
       alternate_style: true
   - pymdownx.snippets:
       check_paths: true
+      dedent_subsections: true   # index.md takes sections from inside the README lists
 
 validation:
   links:

@@ -1,16 +1,21 @@
 # BuildGuide core
 
-Browser components (BOM checklist, text steps, wiring and tubing boards), JSON Schema and check CLI for any static site. Plain JavaScript and CSS, no build step. Docs: https://openreloading.github.io/BuildGuide/
+<!-- --8<-- [start:about] -->
+Browser components (BOM checklist, text steps, wiring and tubing boards), JSON Schema and check CLI for any static site. Plain JavaScript and CSS, no build step.
+<!-- --8<-- [end:about] -->
+Docs: https://openreloading.github.io/BuildGuide/
 
 <!-- --8<-- [start:docs] -->
 ## Use
 
+<!-- --8<-- [start:release] -->
 1. Install. Download `buildguide-<version>.tar.gz` and `SHA256SUMS` from a `core-v*` [release](https://github.com/OpenReloading/BuildGuide/releases), check the archive and unpack it into the site's assets:
 
    ```sh
    sha256sum -c SHA256SUMS
    tar -xzf buildguide-<version>.tar.gz -C assets/
    ```
+   <!-- --8<-- [end:release] -->
 
    Or install an earlier version of `@openreloading/buildguide` from GitHub Packages, which asks for a token with the `read:packages` scope even for public packages. In the project's `.npmrc`:
 
@@ -23,12 +28,14 @@ Browser components (BOM checklist, text steps, wiring and tubing boards), JSON S
 
 2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist, the text steps or one board (wiring or tubing). Use as many as you like on one page, each board once:
 
+   <!-- --8<-- [start:snippet] -->
    ```html
    <link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
    <div data-buildguide="bom" data-src="guide.json"></div>
    <div data-buildguide="board" data-board="wiring" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
    <script src="assets/buildguide-<version>/buildguide.js" defer></script>
    ```
+   <!-- --8<-- [end:snippet] -->
 
    | Attribute | Meaning | Default |
    |---|---|---|

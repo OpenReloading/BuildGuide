@@ -60,3 +60,47 @@
 - [Theming and dark mode](theming.md): colour tokens, the dark theme, print, browser support.
 - [Reference](reference.md): the markup, hash, storage and script surface a site can rely on, the check CLI and the plugin options.
 - [Example guide](example/index.md): the components on pages of this site, from `packages/core/example/guide.json`. [All components](example/all.md) shows three on one page, [Combined](example/guide.md) the BOM, the steps and both boards behind tabs.
+
+<section class="bg-data" markdown>
+
+## One JSON or YAML object
+
+--8<-- "docs/data-format.md:intro"
+
+```json
+--8<-- "packages/core/example/guide.json:1:9"
+```
+
+[Data format reference](data-format.md)
+
+</section>
+
+<section class="bg-install" markdown>
+
+## Install for your site
+
+=== "Plain HTML"
+
+    --8<-- "packages/core/README.md:about"
+
+    --8<-- "packages/core/README.md:release"
+
+    --8<-- "packages/core/README.md:snippet"
+
+=== "MkDocs"
+
+    --8<-- "packages/mkdocs/README.md:about"
+
+    --8<-- "packages/mkdocs/README.md:release"
+
+    --8<-- "packages/mkdocs/README.md:snippet"
+
+=== "Docusaurus"
+
+    --8<-- "packages/docusaurus/README.md:about"
+
+    --8<-- "packages/docusaurus/README.md:release"
+
+    --8<-- "packages/docusaurus/README.md:snippet"
+
+</section>
