@@ -4,9 +4,9 @@ Monorepo of BuildGuide components, the BOM and board views for a host's own page
 
 ## Branches
 
-`main` is the only long-lived branch. Pull requests target `main` and are squash-merged with the Conventional Commit title; release-please, release, publish, Scorecard and Pages run on `main`; the merge of the release pull request releases: `release-weekly.yml` merges it every Monday 14:00 Europe/Berlin once its checks pass (also by hand: Actions, Run workflow), the label `hold` on it skips a week, and the owner can merge it earlier.
+`main` is the only long-lived branch. Pull requests target `main` and are squash-merged with the Conventional Commit title. Merging the release pull request releases; the weekly merge and the `hold` label: CONTRIBUTING.md.
 
-CI (`ci.yml`) runs on pull requests, in the merge queue (`merge_group`) and on pushes to `main`; `pr-title.yml` runs on pull requests and `merge_group`. Its job names `check`, `workflows` and `dependency-review` are required checks, as are `conventional` (`pr-title.yml`) and the SonarCloud analysis.
+Required checks: `check`, `workflows` and `dependency-review` (`ci.yml`), `conventional` (`pr-title.yml`) and the SonarCloud analysis.
 
 ## Commands
 
@@ -17,7 +17,7 @@ CI (`ci.yml`) runs on pull requests, in the merge queue (`merge_group`) and on p
 - Docusaurus example site: `npm run build -w packages/docusaurus` (`packages/docusaurus/example/build/`), dev server `npm run start -w packages/docusaurus` (port 8080)
 - Dependency audit (CI): `node scripts/audit.mjs`. An advisory without a fix goes into its `ALLOWED` list and into `allow-ghsas` in `ci.yml`, with the user's approval.
 - Docs site into `site/`: `npm run docs`. Serve: `uv run --project packages/mkdocs mkdocs serve -a 0.0.0.0:8080`
-- Pages (`pages.yml`): one site, the latest release built from its tag at https://openreloading.github.io/BuildGuide/ and `main` at `/next/` (`BUILDGUIDE_EDITION=next`, `SITE_URL` with `/next/`), on pushes to `main`, published releases and manual dispatch. Releases and Pages: CONTRIBUTING.md. A local `/next/` build: `BUILDGUIDE_EDITION=next SITE_URL=http://127.0.0.1:8080/next/ uv run --project packages/mkdocs mkdocs build --strict --site-dir site/next`.
+- Pages: the latest release at the root, `main` at `/next/` (CONTRIBUTING.md). A local `/next/` build: `BUILDGUIDE_EDITION=next SITE_URL=http://127.0.0.1:8080/next/ uv run --project packages/mkdocs mkdocs build --strict --site-dir site/next`.
 - Release archives (core tarball, MkDocs wheel and sdist): `npm run dist`
 - Serve the core example: `npm run serve -w packages/core` (http://127.0.0.1:8080/example/)
 - Workflow changes: `podman run --rm -v "$PWD:/repo:Z" -w /repo docker.io/rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667` and `podman run --rm -v "$PWD:/repo:Z" -w /repo ghcr.io/zizmorcore/zizmor:1.31.1 --offline .github/workflows` (CI runs both).
@@ -29,21 +29,12 @@ CI (`ci.yml`) runs on pull requests, in the merge queue (`merge_group`) and on p
 - A data format change updates `packages/core/schema/buildguide.schema.json`, `src/buildguide-check.mjs`, `types/buildguide.d.ts`, `example/guide.json` and the tests together. The type check (`packages/core/tsconfig.json`, non-strict) takes its globals and data types from `types/buildguide.d.ts`, outside `src/`, so the shipped files do not change.
 - `packages/mkdocs/` is Python, managed with uv (`uv.lock` committed). Its build copies `packages/core/src` and the schema into `src/mkdocs_buildguide/core/` (git-ignored). `check.py` is a port of `buildguide-check.mjs`: a check change updates both, with a case in `packages/core/tests/fixtures/` (both test suites run them).
 - `packages/docusaurus/` copies `packages/core/src` into `core/` (git-ignored) before its tests, builds and `npm pack` (`scripts/copy-core.mjs`); it has no npm dependency on core until #7.
-- Stable for sites that style or test against it: the `ag-*` component classes (the root is `.ag-guide`), the attributes `data-buildguide` (values `bom`, `steps`, `board`, `guide`), `data-board`, `data-guide` (MkDocs plugin markup; the Docusaurus component's `guide` prop names the same ids), `data-src`, `data-assets`, `data-step`, `data-wire`, `data-conn`, `data-connection`, `data-role` and the `data-action` values, the `data-role` values `scope`, `search`, `filter`, `import-file`, the BOM's CSV columns (the last is `Done`), `data-complete` (set on the root while everything is ticked), `data-level` (on `.ag-step-note`: `note`, `caution`, `warning` or empty for a plain note, with the level word as its first `<strong>`), the tokens `--ag-caution-bg`, `--ag-caution-line`, `--ag-warning-bg`, `--ag-warning-line`, the `✓ ` prefix of a ticked connection's number in the drawing and the `; checked` end of its accessible name, `data-ag-scheme` (values `light`, `dark`, `auto`), `--ag-font`, `--ag-text-small` (the smallest text, 11px by default), `--ag-board-filter`, `--ag-board-ratio` (set by the component), `--ag-done-opacity`, `--ag-done-decoration`, the hash pairs `#<board key>=<step>/<no>`, the tick keys `<prefix>-<no>:<a>:<b>`, `bom-<id>:<part>` and `step-<id>` (the board prefixes `bom` and `step` are reserved), and the single `storage` key. A change to a tick key or the storage key drops saved ticks. The components-only release removed `#assembly-guide`, `data-page`, `data-site`, the shell classes (`ag-top`, `ag-nav`, `ag-main`, `ag-footer`, `ag-notice*`, `ag-intro*`, `ag-diagram-page`), renamed `ag-page-heading` to `ag-head`, and changed the hash from `#<step>/<no>` to `#<board key>=<step>/<no>`. Tick keys and the storage key did not change.
+- Stable for sites that style or test against it: the `ag-*` component classes (the root is `.ag-guide`), the attributes `data-buildguide` (values `bom`, `steps`, `board`, `guide`), `data-board`, `data-guide` (MkDocs plugin markup; the Docusaurus component's `guide` prop names the same ids), `data-src`, `data-assets`, `data-step`, `data-wire`, `data-conn`, `data-connection`, `data-role` and the `data-action` values, the `data-role` values `scope`, `search`, `filter`, `import-file`, the BOM's CSV columns (the last is `Done`), `data-complete` (set on the root while everything is ticked), `data-level` (on `.ag-step-note`: `note`, `caution`, `warning` or empty for a plain note, with the level word as its first `<strong>`), the tokens `--ag-caution-bg`, `--ag-caution-line`, `--ag-warning-bg`, `--ag-warning-line`, the `✓ ` prefix of a ticked connection's number in the drawing and the `; checked` end of its accessible name, `data-ag-scheme` (values `light`, `dark`, `auto`), `--ag-font`, `--ag-text-small` (the smallest text, 11px by default), `--ag-board-filter`, `--ag-board-ratio` (set by the component), `--ag-done-opacity`, `--ag-done-decoration`, the hash pairs `#<board key>=<step>/<no>`, the tick keys `<prefix>-<no>:<a>:<b>`, `bom-<id>:<part>` and `step-<id>` (the board prefixes `bom` and `step` are reserved), and the single `storage` key. A change to a tick key or the storage key drops saved ticks.
 - Browser test expectations come from `example/guide.json`, not from literals.
 - Versions and changelogs come from release-please (`release-please-config.json`): never edit a component's `version` or `CHANGELOG.md` by hand. PR titles are Conventional Commits with the component as scope (CONTRIBUTING.md).
 - Actions pinned by commit SHA with the version as comment, images by digest.
 
-## Agent skills
+## Issues and domain
 
-### Issue tracker
-
-Issues live in GitHub Issues of `OpenReloading/BuildGuide` (`gh` CLI). See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five default labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+- Issues: GitHub Issues of `OpenReloading/BuildGuide` (`gh` CLI), `docs/agents/issue-tracker.md`; triage labels: `docs/agents/triage-labels.md`.
+- Domain: `GLOSSARY.md` and `docs/adr/`, `docs/agents/domain.md`.
