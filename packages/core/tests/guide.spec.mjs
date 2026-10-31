@@ -699,6 +699,84 @@ test('MkDocs: the home page, an example page and a docs page fit 360, 390 and 82
   }
 });
 
+// the docs site's navigation drawer by keyboard alone: Tab reaches each toggle, Enter and Space operate it, only what is in view takes focus
+test('MkDocs: the navigation drawer works by keyboard at 360, 390 and 820 px', async ({ page }) => {
+  const html = await (await page.request.get(`${ORIGIN}${PREFIX}/`)).text();
+  test.skip(!/<meta name="generator" content="mkdocs-/.test(html), 'only the MkDocs docs site has the drawer');
+  const drawer = page.locator('.md-sidebar--primary');
+  const toggle = name => drawer.getByRole('button', { name, exact: true });
+  const press = async (name, key) => { await toggle(name).focus(); await page.keyboard.press(key); };
+  // Tab from the menu button until the page text: the drawer's stops, each with a 2 px focus ring on what shows it
+  const stops = async () => {
+    await page.locator('#__drawer').focus();
+    const out = [];
+    for (let i = 0; i < 80; i++) {
+      await page.keyboard.press('Tab');
+      const f = await page.evaluate(() => {
+        const e = document.activeElement, open = e.getAttribute('aria-expanded') === 'true';
+        // a toggle button shows its focus on the label, or on the title of its open pane
+        const shown = e.matches('.bg-nav-toggle') ? e.parentElement.querySelector(open ? ':scope > .md-nav > .md-nav__title' : ':scope > label.md-nav__link') : e;
+        const o = getComputedStyle(shown);
+        return { text: e.textContent.trim(), main: !!e.closest('.md-content'), drawer: !!e.closest('.md-sidebar--primary'), ring: shown.checkVisibility() && o.outlineStyle !== 'none' && parseFloat(o.outlineWidth) >= 2 };
+      });
+      if (f.main) return out;
+      if (f.drawer) { expect(f.ring, f.text).toBe(true); out.push(f.text); }
+    }
+    throw new Error('Tab never reached the page text');
+  };
+  const want = { guides: ['Examples', 'Data format', 'Reference'], top: ['Home', 'Getting started', 'Guides', 'Example guide'], toc: ['What the keys do'] };
+  for (const width of [360, 390, 820]) {
+    const where = `${width} px`;
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto(`${ORIGIN}${PREFIX}/data-format/`);
+    // closed: nothing in the drawer takes focus
+    expect(await stops(), `${where} closed`).toEqual([]);
+    await page.locator('#__drawer').focus();
+    await page.keyboard.press('Space');
+    await expect(page.locator('#__drawer')).toBeChecked();
+    // the page's own section is open: its toggle, its links and the table of contents toggle, nothing of the level under it or of a closed pane
+    let s = await stops();
+    expect(s[0], where).toBe('Guides');
+    expect(s, where).toEqual(expect.arrayContaining(want.guides));
+    for (const t of [...want.top.filter(t => t !== 'Guides'), 'Plain HTML', ...want.toc]) expect(s, where).not.toContain(t);
+    await expect(toggle('Guides')).toHaveAttribute('aria-expanded', 'true');
+    const { violations } = await new AxeBuilder({ page }).include('.md-sidebar--primary').withRules(['aria-allowed-role', 'aria-allowed-attr', 'button-name', 'nested-interactive']).analyze();
+    expect(violations.flatMap(v => v.nodes.map(n => `${v.id}: ${n.html.slice(0, 80)}`)), where).toEqual([]);
+    // the table of contents: Enter opens it, Space closes it, the focus stays on the toggle
+    await press('Data format', 'Enter');
+    await expect(toggle('Data format')).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle('Data format')).toBeFocused();
+    s = await stops();
+    expect(s, `${where} toc`).toEqual(expect.arrayContaining(['Data format', ...want.toc]));
+    for (const t of want.guides.filter(t => t !== 'Data format')) expect(s, `${where} toc`).not.toContain(t);
+    await press('Data format', 'Space');
+    await expect(toggle('Data format')).toHaveAttribute('aria-expanded', 'false');
+    // back to the top level: the section toggles take focus, their links do not
+    await press('Guides', 'Space');
+    await expect(toggle('Guides')).toHaveAttribute('aria-expanded', 'false');
+    await expect(toggle('Guides')).toBeFocused();
+    s = await stops();
+    expect(s, `${where} top`).toEqual(expect.arrayContaining(want.top));
+    for (const t of [...want.guides, 'Plain HTML']) expect(s, `${where} top`).not.toContain(t);
+    await press('Getting started', 'Enter');
+    await expect(toggle('Getting started')).toHaveAttribute('aria-expanded', 'true');
+    expect(await stops(), `${where} getting started`).toEqual(expect.arrayContaining(['Getting started', 'Plain HTML', 'MkDocs']));
+    // instant navigation renders a new drawer: it closes, and opened again it works the same
+    await drawer.getByRole('link', { name: 'MkDocs', exact: true }).click();
+    await expect(page).toHaveURL(/\/mkdocs\/$/);
+    await expect(page.locator('#__drawer')).not.toBeChecked();
+    expect(await stops(), `${where} after navigation`).toEqual([]);
+    await page.locator('#__drawer').focus();
+    await page.keyboard.press('Space');
+    expect((await stops())[0], `${where} after navigation`).toBe('Getting started');
+    await expect(toggle('Getting started')).toHaveAttribute('aria-expanded', 'true');
+  }
+  // on a wide screen the sections are headings: no toggle buttons, and the sidebar stays in the tab order
+  await page.setViewportSize({ width: 1440, height: 900 });
+  // the media query's change event runs on a later frame
+  await expect.poll(() => drawer.evaluate(d => [d.inert, d.querySelectorAll('[inert]').length, [...d.querySelectorAll('.bg-nav-toggle')].filter(b => b.checkVisibility()).length])).toEqual([false, 0, 0]);
+});
+
 // the tick keys of every item of a component, in order
 const tickKeys = { bom: D.bom.items.map(i => `bom-${i.id}:${i.part}`), steps: D.steps.items.map(i => `step-${i.id}`) };
 for (const [key, b] of boards) tickKeys[key] = b.steps.flatMap(s => s.connections.map(c => `${b.prefix || key}-${c.no}:${c.a}:${c.b}`));
