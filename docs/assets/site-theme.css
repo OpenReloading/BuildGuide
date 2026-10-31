@@ -221,3 +221,9 @@
 /* the drawer's own checkbox takes keyboard focus while the menu button shows (Material hides it with display:none); the button shows its focus ring */
 @media screen and (max-width:76.234375em){.md-toggle[data-md-toggle=drawer]{display:block;position:fixed;top:0;left:0;width:1px;height:1px;margin:0;opacity:0;pointer-events:none}}
 #__drawer:focus-visible~.md-header label[for=__drawer]{outline:2px solid var(--md-accent-fg-color);outline-offset:-2px}
+/* the drawer's toggle buttons (assets/drawer.js) take keyboard focus where Material's labels are, and the labels show their focus ring */
+.bg-nav-toggle{display:none}
+@media screen and (max-width:76.234375em){
+  .bg-nav-toggle{display:block;position:absolute;width:1px;height:1px;margin:0;padding:0;border:0;opacity:0;pointer-events:none}
+  .bg-nav-toggle[aria-expanded=false]:focus-visible~label.md-nav__link,.bg-nav-toggle[aria-expanded=true]:focus-visible~.md-nav>.md-nav__title,.md-sidebar--primary a:focus-visible{outline:2px solid var(--md-accent-fg-color);outline-offset:-2px}
+}
