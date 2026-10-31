@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.5.0...docusaurus-v1.5.1) (2026-10-31)
+
+
+### Documentation
+
+* data format and install on the home page ([#179](https://github.com/OpenReloading/BuildGuide/issues/179)) ([3edf9f7](https://github.com/OpenReloading/BuildGuide/commit/3edf9f725d8c3a5ddc1f1dd8a7104770b7e85100))
+
 ## [1.5.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.4.0...docusaurus-v1.5.0) (2026-10-27)
 
 
