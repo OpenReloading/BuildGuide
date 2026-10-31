@@ -62,7 +62,7 @@ Contract for a module: a classic script that adds one function to `window.BuildG
 
 No source in TypeScript:
 
-- Browsers do not run it, so it needs a build step, against the rule in `AGENTS.md` ("plain browser JavaScript and CSS, no build step"). The example pages, the dist script, the MkDocs build hook and `copy-core.mjs` all take `src/` as it is.
+- Browsers do not run it, so it needs a build step, against the project rule of plain browser JavaScript and CSS with no build step. The example pages, the dist script, the MkDocs build hook and `copy-core.mjs` all take `src/` as it is.
 - The published `buildguide-check` command runs from `node_modules`, where Node refuses to run TypeScript files ([Node.js, TypeScript](https://nodejs.org/api/typescript.html)).
 
 JSDoc with `tsc --checkJs` as a check only keeps the rule. Measured with TypeScript 7.0.2 over `buildguide.js` and `buildguide-board.js` (`--allowJs --checkJs --noEmit --lib es2023,dom,dom.iterable`):
