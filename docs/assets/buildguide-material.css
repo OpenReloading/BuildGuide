@@ -15,3 +15,10 @@
   --ag-done-bg:var(--md-accent-fg-color--transparent);
   --ag-glow:var(--md-accent-fg-color);
 }
+/* this site only: the selected terminal and connection of a board take the light accent in both schemes, since the board filter darkens the drawing as a whole */
+.ag-guide{
+  --ag-board-terminal:#1d4ed8;
+  --ag-board-terminal-bg:#e3eafb;
+  --ag-board-terminal-ink:#1e3a8a;
+  --ag-board-outline:#1d4ed8;
+}

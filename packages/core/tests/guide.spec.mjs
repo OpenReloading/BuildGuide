@@ -401,6 +401,44 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
   });
 }
 
+// the selected terminal and the selected connection's outline take the --ag-board-* tokens, defaults in buildguide.css, the docs site its accent.
+// The drawing is light and --ag-board-filter darkens it in dark: the measured colour is filtered (sRGB matrices of invert(.9) and hue-rotate(180deg))
+// and needs 3:1 against the canvas in both schemes
+const BOARD = { 'board-terminal': '#237b33', 'board-terminal-bg': '#e1f7df', 'board-terminal-ink': '#173d23', 'board-outline': '#198b47' };
+const filtered = (colour, dark) => {
+  const c = colour.match(/[\d.]+/g).slice(0, 3).map(v => v / 255);
+  if (!dark) return colour;
+  const v = c.map(x => 0.9 - 0.8 * x), m = [[-0.574, 1.43, 0.144], [0.426, 0.43, 0.144], [0.426, 1.43, -0.856]];
+  return `rgb(${m.map(r => Math.round(255 * Math.min(1, Math.max(0, r[0] * v[0] + r[1] * v[1] + r[2] * v[2])))).join(', ')})`;
+};
+test('board: the selected terminal and outline take the --ag-board-* tokens and keep 3:1 on the canvas in light and dark', async ({ page }) => {
+  await page.goto(url('wiring')); await ready(page);
+  const material = await page.evaluate(() => document.body.hasAttribute('data-md-color-scheme'));
+  const look = () => page.locator('.ag-guide').evaluate(el => {
+    const canvas = el.querySelector('.ag-board-canvas'), of = s => [...canvas.querySelectorAll(s)].map(e => getComputedStyle(e));
+    return { terminal: of('circle.ag-terminal').map(s => s.stroke), fill: of('circle.ag-terminal').map(s => s.fill), ink: of('text.ag-terminal').map(s => s.fill),
+      outline: of('.ag-hot').map(s => s.stroke), canvas: getComputedStyle(canvas).backgroundColor, dark: getComputedStyle(el).colorScheme === 'dark' };
+  });
+  const want = material ? { terminal: '#1d4ed8', outline: '#1d4ed8' } : { terminal: BOARD['board-terminal'], outline: BOARD['board-outline'] };
+  let m = await look();
+  expect(m.terminal).toEqual([rgb(want.terminal), rgb(want.terminal)]);
+  expect(m.outline).toEqual([rgb(want.outline)]);
+  if (!material) { expect(m.fill).toEqual([rgb(BOARD['board-terminal-bg']), rgb(BOARD['board-terminal-bg'])]); expect(m.ink.every(c => c === rgb(BOARD['board-terminal-ink']))).toBe(true); }
+  // each scheme on a fresh page: Material answers a change of the browser preference by setting its own scheme again
+  for (const scheme of ['dark', 'light']) {
+    await page.emulateMedia({ colorScheme: scheme });
+    await page.goto(url('wiring')); await ready(page); await signal(page, scheme);
+    m = await look();
+    expect(m.dark, scheme).toBe(scheme === 'dark');
+    for (const c of [...m.terminal, ...m.outline]) expect(contrast(filtered(c, m.dark), m.canvas), `${scheme}: ${c} on ${m.canvas}`).toBeGreaterThanOrEqual(3);
+  }
+  // a site's value reaches the drawing without a redraw
+  await page.locator('.ag-guide').evaluate(el => { el.style.setProperty('--ag-board-terminal', 'rgb(1, 2, 3)'); el.style.setProperty('--ag-board-outline', 'rgb(4, 5, 6)'); });
+  m = await look();
+  expect(m.terminal).toEqual(['rgb(1, 2, 3)', 'rgb(1, 2, 3)']);
+  expect(m.outline).toEqual(['rgb(4, 5, 6)']);
+});
+
 // data-ag-scheme on the component or an ancestor; a light host signal still wins over dark
 const schemeOf = page => page.locator('.ag-guide').evaluate(el => ({ scheme: getComputedStyle(el).colorScheme, background: getComputedStyle(el).backgroundColor, color: getComputedStyle(el).color,
   filter: getComputedStyle(el.querySelector('.ag-board-canvas > div')).filter }));

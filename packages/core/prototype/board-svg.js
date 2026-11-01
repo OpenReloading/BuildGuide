@@ -327,8 +327,8 @@
     for (const id of Object.keys(parts)) partEls[id].setAttribute('opacity', used.has(id) ? 1 : .65);
     for (const t of terms) {
       const [pb, pt] = portEls[t];
-      for (const [k, v] of Object.entries({fill: '#e1f7df', stroke: '#237b33', 'stroke-width': 3})) pb.setAttribute(k, v);
-      pt.setAttribute('fill', '#173d23');
+      pb.setAttribute('stroke-width', 3);   // colours from --ag-board-terminal, -bg and -ink (buildguide.css)
+      pb.classList.add('ag-terminal'); pt.classList.add('ag-terminal');
     }
 
     const label = options.label, links = {}, labelOf = {};
@@ -337,7 +337,8 @@
       const l = links[no];
       if (!l) return;
       l.outline.setAttribute('stroke-width', hot ? 11 : widthOf(l.c));
-      l.outline.setAttribute('stroke', hot ? '#198b47' : (colorOf(l.c).diode ? '#4b5563' : colorOf(l.c).outline));
+      l.outline.setAttribute('stroke', colorOf(l.c).diode ? '#4b5563' : colorOf(l.c).outline);
+      l.outline.classList.toggle('ag-hot', hot);   // --ag-board-outline
     }
     function link(c, pts) {
       const col = colorOf(c), diode = col.diode, done = options.done?.(c.no), mark = done ? '✓ ' : '', [pa, a] = end(c.a);

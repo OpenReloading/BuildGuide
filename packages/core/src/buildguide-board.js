@@ -236,8 +236,9 @@
       el.attr('root/opacity', used.has(id) ? 1 : .65);
       for (const port of el.getPorts()) {
         if (terms.has(id + ':' + port.id)) {
-          el.portProp(port.id, 'attrs/pb', {fill: '#e1f7df', stroke: '#237b33', strokeWidth: 3});
-          el.portProp(port.id, 'attrs/pt/fill', '#173d23');
+          // colours from --ag-board-terminal, -bg and -ink (buildguide.css): a rule outranks the attribute
+          el.portProp(port.id, 'attrs/pb', {class: 'ag-terminal', strokeWidth: 3});
+          el.portProp(port.id, 'attrs/pt/class', 'ag-terminal');
         }
       }
     }
@@ -246,7 +247,7 @@
       const l = links[no];
       if (!l) return;
       l.attr('outline/strokeWidth', hot ? 11 : l.get('outlineWidth'));
-      l.attr('outline/stroke', hot ? '#198b47' : l.get('outlineColor'));
+      l.attr('outline/class', hot ? 'ag-hot' : '');   // --ag-board-outline
     }
     const label = options.label;
     const key = options.key + ':' + visible.map(c => c.no).join(',');

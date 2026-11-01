@@ -78,6 +78,24 @@ A board component sets `--ag-board-ratio` on its `.ag-guide` to the size of the 
 
 On a canvas narrower than 560 px (phones) the drawing is drawn large enough for its smallest label to show at `--ag-text-small` (11 px by default, 1.29 times its natural size) or more, and the canvas pans; it opens on the selected connection. Fit shows the whole board, and zoom out stops there. In fullscreen below a component width of 900 px the canvas takes at least half the screen height (`50dvh`) and the rest of the step scrolls.
 
+## Board selection
+
+Four plain properties on `.ag-guide` colour the selected connection in the board drawing. They are single colours, not `light-dark()` pairs: the drawing is light, and in dark `--ag-board-filter` darkens it as a whole, these colours included.
+
+| Property | Default | Meaning |
+|---|---|---|
+| `--ag-board-terminal` | `#237b33` | ring of the two terminals of the selected connection |
+| `--ag-board-terminal-bg` | `#e1f7df` | fill of those terminals |
+| `--ag-board-terminal-ink` | `#173d23` | terminal name on that fill |
+| `--ag-board-outline` | `#198b47` | outline of the selected connection, and of a connection under the pointer |
+
+```css
+/* this docs site: the light accent in both schemes */
+.ag-guide{--ag-board-terminal:#1d4ed8;--ag-board-terminal-bg:#e3eafb;--ag-board-terminal-ink:#1e3a8a;--ag-board-outline:#1d4ed8}
+```
+
+Give the light-scheme value in both schemes, not a host variable that changes with the colour mode: the filter would turn a light dark-mode accent dark again. Keep 3:1 for `--ag-board-terminal` and `--ag-board-outline` against `--ag-surface`, and for the filtered colour against the dark surface; `tests/guide.spec.mjs` measures both on the three example sites.
+
 ## Board controls
 
 A board never traps the page scroll: a swipe or a wheel turn over a board reaches the page unless you are deliberately zooming or panning the board. The zoom stays between the whole board (Fit) and the largest size of the Zoom buttons.

@@ -21,6 +21,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `data-ag-scheme` | `dark` forces the dark tokens and board filter, `light` opts out of the browser's dark preference (it wins over `dark`), `auto` follows the host's scheme when it has a signal and otherwise the browser; set on the component or an ancestor, see [Light and dark](theming.md#light-and-dark) |
 | `--ag-font`, `--ag-text-small` | font family (default the system sans-serif stack) and the smallest font size (default `11px`) of the component, the board drawing included, see [Font and size](theming.md#font-and-size) |
 | `--ag-board-filter` | filter applied to the board drawing |
+| `--ag-board-terminal`, `--ag-board-terminal-bg`, `--ag-board-terminal-ink`, `--ag-board-outline` | ring, fill and name of the selected connection's terminals and the outline of the selected connection in the board drawing, single colours that the board filter darkens, see [Board selection](theming.md#board-selection) |
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.md#board-size) |
 | `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM, step or wire row's text, see [Done state](theming.md#done-state) |
 
