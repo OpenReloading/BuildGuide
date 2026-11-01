@@ -1619,9 +1619,67 @@ test('untrusted data: script URLs become #, ids with spaces and slashes reach th
   await expect(page.locator('tbody a').first()).toHaveAttribute('href', '#');
   expect(await page.evaluate(() => window.hit)).toBeUndefined();
   const download = page.waitForEvent('download');
-  await page.locator('[data-action=export]').click();
+  await bomOf(page).locator('[data-action=export]').click();
   expect(readFileSync(await (await download).path(), 'utf8').split('\r\n')[1]).toContain(`"'=1+1"`);
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+});
+
+// a board prints every connection grouped by step and exports them as CSV (buildguide-export.js)
+const connectionCells = (b, c, done = 'No') => [c.no, label(b, c, 'a'), label(b, c, 'b'), c.color ?? '', c.cable ?? '', c.size ?? '', done];
+for (const [key, b] of boards) {
+  const all = b.steps.flatMap(s => s.connections);
+  test(`${key}: print shows every connection grouped by step, the screen does not`, async ({ page }) => {
+    await page.goto(url(key)); await ready(page);
+    const rows = page.locator('.ag-print-list tbody tr:not(.ag-group)');
+    await expect(rows).toHaveCount(all.length);
+    await expect(rows.first()).toBeHidden();
+    await page.emulateMedia({ media: 'print' });
+    await expect(page.locator('.ag-wire-list')).toBeHidden();
+    await expect(page.locator('.ag-print-list .ag-group th')).toHaveText(b.steps.map(s => s.title));
+    for (const r of await rows.all()) await expect(r).toBeVisible();
+    await expect(rows.first().locator('td')).toHaveText(connectionCells(b, all[0]));
+  });
+  test(`${key}: Export CSV writes every connection with its tick`, async ({ page }) => {
+    await page.goto(url(key)); await ready(page);
+    const csvOf = async () => {
+      const download = page.waitForEvent('download');
+      await page.locator('[data-action=export]').click();
+      const file = await download;
+      expect(file.suggestedFilename()).toBe(`${key}.csv`);
+      return readFileSync(await file.path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
+    };
+    let csv = await csvOf();
+    expect(csv[0]).toBe('"No","From","To","Colour","Cable","Size","Done"');
+    expect(csv.length).toBe(all.length + 1);
+    expect(csv[1]).toBe(connectionCells(b, all[0]).map(v => `"${v}"`).join(','));
+    await page.locator('.ag-wire-row [data-check]').first().check();
+    csv = await csvOf();
+    expect(csv.filter(r => r.endsWith(',"Yes"')).length).toBe(1);
+    // the print list follows the tick
+    await expect(page.locator('.ag-print-list td:last-child', { hasText: 'Yes' })).toHaveCount(1);
+  });
+}
+
+test('untrusted data: connection CSV cells that start with a formula character stay text', async ({ page }) => {
+  const d = structuredClone(D), c = d.boards.wiring.steps[0].connections[0];
+  Object.assign(c, { la: '=1+1', lb: '+2', cable: '-3', size: '@4' });
+  await inlinePage(page, 'odd-csv/', d, '<div data-buildguide="board" data-board="wiring"></div>');
+  await page.goto(`${BASE}odd-csv/`); await ready(page);
+  const download = page.waitForEvent('download');
+  await page.locator('[data-action=export]').click();
+  const row = readFileSync(await (await download).path(), 'utf8').split('\r\n')[1];
+  expect(row).toContain(`"'=1+1","'+2"`);
+  expect(row).toContain(`"'-3","'@4"`);
+});
+
+test('export: a failed load of buildguide-export.js is reported on Export CSV, and the next click loads it', async ({ page }) => {
+  await page.route('**/buildguide-export.js', r => r.abort(), { times: 1 });
+  await page.goto(url('bom'));
+  await page.locator('[data-action=export]').click();
+  await expect(page.locator('.ag-message')).toContainText('Export did not load. Try again.');
+  const download = page.waitForEvent('download');
+  await page.locator('[data-action=export]').click();
+  expect((await download).suggestedFilename()).toBe(D.bom.export || 'bom.csv');
 });
 
 test('a foreign hash fragment keeps the boards where they are and stays in the hash', async ({ page }) => {
