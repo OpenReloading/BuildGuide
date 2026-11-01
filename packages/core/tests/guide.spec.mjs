@@ -419,11 +419,15 @@ test('board: the selected terminal and outline take the --ag-board-* tokens and 
     return { terminal: of('circle.ag-terminal').map(s => s.stroke), fill: of('circle.ag-terminal').map(s => s.fill), ink: of('text.ag-terminal').map(s => s.fill),
       outline: of('.ag-hot').map(s => s.stroke), canvas: getComputedStyle(canvas).backgroundColor, dark: getComputedStyle(el).colorScheme === 'dark' };
   });
-  const want = material ? { terminal: '#1d4ed8', outline: '#1d4ed8' } : { terminal: BOARD['board-terminal'], outline: BOARD['board-outline'] };
+  // the docs site's values are the ones in docs/assets/buildguide-material.css
+  const want = material ? { terminal: '#1d4ed8', fill: '#e3eafb', ink: '#1e3a8a', outline: '#1d4ed8' }
+    : { terminal: BOARD['board-terminal'], fill: BOARD['board-terminal-bg'], ink: BOARD['board-terminal-ink'], outline: BOARD['board-outline'] };
   let m = await look();
   expect(m.terminal).toEqual([rgb(want.terminal), rgb(want.terminal)]);
+  expect(m.fill).toEqual([rgb(want.fill), rgb(want.fill)]);
+  expect(m.ink.length).toBeGreaterThan(0);
+  expect(m.ink.every(c => c === rgb(want.ink))).toBe(true);
   expect(m.outline).toEqual([rgb(want.outline)]);
-  if (!material) { expect(m.fill).toEqual([rgb(BOARD['board-terminal-bg']), rgb(BOARD['board-terminal-bg'])]); expect(m.ink.every(c => c === rgb(BOARD['board-terminal-ink']))).toBe(true); }
   // each scheme on a fresh page: Material answers a change of the browser preference by setting its own scheme again
   for (const scheme of ['dark', 'light']) {
     await page.emulateMedia({ colorScheme: scheme });
