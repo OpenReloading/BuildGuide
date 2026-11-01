@@ -1488,7 +1488,7 @@ test('inline data in #guide-data works like data-src', async ({ page }) => {
   await expect(page.locator('tbody tr:not(.ag-group)')).toHaveCount(D.bom.items.length);
 });
 
-test('BOM images are decorative: empty alt, the part name sits in the same cell', async ({ page }) => {
+test('BOM images are decorative by default: empty alt, the part name sits in the same cell and names the zoom button', async ({ page }) => {
   const data = structuredClone(D);
   data.bom.items[0].image = 'part.gif';
   await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
@@ -1498,6 +1498,94 @@ test('BOM images are decorative: empty alt, the part name sits in the same cell'
   await expect(cell).toHaveCount(1);
   await expect(cell.locator('img')).toHaveAttribute('alt', '');
   await expect(cell).toContainText(data.bom.items[0].part);
+  await expect(cell.getByRole('button', { name: `Enlarge image: ${data.bom.items[0].part}` })).toBeVisible();
+});
+
+test('BOM image zoom: a dialog with the image and its imageAlt, Escape and Close return the focus, the tick stays', async ({ page }) => {
+  const data = structuredClone(D), item = data.bom.items[0], alt = 'Top view: the screw terminals sit on the left edge';
+  Object.assign(item, { image: 'part.gif', imageAlt: alt });
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await inlinePage(page, 'bom-zoom/', data, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'bom-zoom/');
+  const opener = page.getByRole('button', { name: `Enlarge image: ${alt}` }), dialog = page.getByRole('dialog', { name: item.part });
+  await expect(opener.locator('img')).toHaveAttribute('alt', alt);
+  await opener.click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('img', { name: alt })).toBeVisible();
+  await expect(dialog.locator('figcaption')).toHaveText(alt);
+  // the click opened the dialog and did not tick the row
+  await expect(page.getByRole('checkbox', { name: item.part, exact: true })).not.toBeChecked();
+  const { violations } = await new AxeBuilder({ page }).include('.ag-zoom-dialog').analyze();
+  expect(violations.map(v => v.id)).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(opener).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(dialog).toBeVisible();
+  // a render of the component meanwhile (a tick in another component of the page) keeps the dialog; Close returns the focus to the new button
+  await page.evaluate(() => document.querySelector('.ag-guide [data-check]').click());
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(opener).toBeFocused();
+  expect(await page.evaluate(() => document.querySelectorAll('dialog').length)).toBe(0);
+});
+
+test('BOM image zoom: the dialog takes the tokens and scheme of the component, one dialog per activation, the filter takes the focus when the row is gone', async ({ page }) => {
+  const data = structuredClone(D), item = data.bom.items[0];
+  item.image = 'part.gif';
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  // a slow first load: two clicks before it arrives open one dialog
+  await page.route('**/buildguide-zoom.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); }, { times: 1 });
+  await inlinePage(page, 'bom-zoom-look/', data, '<div data-ag-scheme="dark"><div data-buildguide="bom" style="--ag-page: rgb(1, 2, 3)"></div></div>');
+  await page.goto(BASE + 'bom-zoom-look/');
+  const opener = page.locator('.ag-zoom');
+  await opener.click(); await opener.click({ force: true });
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => document.querySelectorAll('dialog').length)).toBe(1);
+  expect(await dialog.evaluate(d => [getComputedStyle(d).backgroundColor, getComputedStyle(d).colorScheme])).toEqual(['rgb(1, 2, 3)', 'dark']);
+  // a render meanwhile hides the row (filter Missing, the item ticked): Close puts the focus on the filter
+  await page.evaluate(() => { const f = document.querySelector('[data-role=filter]'); f.value = 'Missing'; f.dispatchEvent(new Event('change')); document.querySelector('.ag-guide [data-check]').click(); });
+  await expect(page.locator('.ag-zoom')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('[data-role=filter]')).toBeFocused();
+});
+
+test('BOM image zoom: each image opens its own item by id, and a row hidden while the file loads opens nothing', async ({ page }) => {
+  const data = structuredClone(D), [a, b] = data.bom.items;
+  // the two progress keys are the same (bom-cap:usb:adapter), the ids differ
+  Object.assign(a, { id: 'cap:usb', part: 'adapter', image: 'part.gif' });
+  Object.assign(b, { id: 'cap', part: 'usb:adapter', image: 'part.gif', imageAlt: 'the second item' });
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await page.route('**/buildguide-zoom.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); }, { times: 1 });
+  await inlinePage(page, 'bom-zoom-ids/', data, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'bom-zoom-ids/');
+  // the first activation: the search hides the row before the file arrives
+  await page.locator('.ag-zoom').first().click();
+  await page.locator('[data-role=search]').fill('nothing matches this');
+  await page.waitForTimeout(500);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.locator('[data-role=search]').fill('');
+  await page.getByRole('button', { name: 'Enlarge image: the second item' }).click();
+  await expect(page.getByRole('dialog', { name: 'usb:adapter' })).toBeVisible();
+  await expect(page.getByRole('dialog').locator('figcaption')).toHaveText('the second item');
+});
+
+test('BOM image zoom: a failed load of buildguide-zoom.js is reported, and the next click loads it', async ({ page }) => {
+  const data = structuredClone(D);
+  data.bom.items[0].image = 'part.gif';
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await page.route('**/buildguide-zoom.js', r => r.abort(), { times: 1 });
+  await inlinePage(page, 'bom-zoom-fail/', data, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'bom-zoom-fail/');
+  await page.locator('.ag-zoom').click();
+  await expect(page.locator('.ag-message')).toContainText('Image zoom did not load. Try again.');
+  await expect(page.locator('.ag-zoom')).toBeFocused();
+  await page.locator('.ag-zoom').click();
+  await expect(page.getByRole('dialog')).toBeVisible();
 });
 
 // the small examples of the docs, one component each: they mount and show what the docs say

@@ -80,7 +80,7 @@
 .ag-guide .ag-board-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 8px}
 .ag-guide .ag-board-toolbar label{display:flex;align-items:center;gap:8px;font-size:var(--ag-text-small);color:var(--ag-muted)}
 .ag-guide .ag-board-controls{display:flex;gap:6px;align-items:center}
-.ag-guide .ag-board-toolbar select,.ag-guide .ag-bom-tools select,.ag-guide .ag-board-controls button{background:var(--ag-surface);border:1px solid var(--ag-control-line);border-radius:5px;padding:7px 11px;color:var(--ag-control-ink);font-size:12px;min-width:34px}
+.ag-guide .ag-board-toolbar select,.ag-guide .ag-bom-tools select,.ag-guide .ag-board-controls button,.ag-guide.ag-zoom-dialog>button{background:var(--ag-surface);border:1px solid var(--ag-control-line);border-radius:5px;padding:7px 11px;color:var(--ag-control-ink);font-size:12px;min-width:34px}
 .ag-guide .ag-board-controls button:hover{background:var(--ag-control-hover)}
 .ag-guide .ag-panel{background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:10px;overflow:hidden}
 .ag-guide .ag-board-canvas{position:relative;display:flex;height:var(--ag-canvas-height,240px);overflow:auto;background:var(--ag-surface);font-size:var(--ag-text-small);cursor:grab;overscroll-behavior:auto;touch-action:pan-x pan-y}
@@ -133,7 +133,16 @@
 .ag-guide .ag-bom-table th:nth-child(3){width:55%}
 .ag-guide .ag-bom-table tr:hover{background:var(--ag-bom-hover);box-shadow:none}
 .ag-guide .ag-part-cell{display:flex;align-items:center;gap:13px;min-width:240px}
+.ag-guide .ag-zoom{flex-shrink:0;padding:0;border:0;background:none;cursor:zoom-in}
+.ag-guide .ag-zoom img{display:block}
 .ag-guide .ag-part-cell img{width:48px;height:48px;object-fit:contain;flex-shrink:0;background:var(--ag-surface);border:1px solid var(--ag-line);border-radius:6px}
+/* the enlarged image (buildguide-zoom.js): the dialog is .ag-guide itself, in the body */
+.ag-guide.ag-zoom-dialog{container-type:normal;max-width:min(92vw,960px);border:1px solid var(--ag-line);border-radius:8px}
+.ag-guide.ag-zoom-dialog::backdrop{background:#000b}
+.ag-guide.ag-zoom-dialog>button{display:block;margin-left:auto}
+.ag-guide.ag-zoom-dialog figure{margin:10px 0 0}
+.ag-guide.ag-zoom-dialog figure img{display:block;max-width:100%;max-height:75vh;margin:auto}
+.ag-guide.ag-zoom-dialog figcaption{margin-top:8px;color:var(--ag-text)}
 .ag-guide .ag-part-cell strong{display:block;font-size:13px;font-weight:600;color:var(--ag-ink);margin-top:2px}
 .ag-guide .ag-qty{white-space:nowrap;font-weight:650}
 .ag-guide .ag-bom-table tr.ag-group th{text-align:left;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ag-muted);padding:18px 10px 6px;border-bottom:1px solid var(--ag-line);background:transparent}
