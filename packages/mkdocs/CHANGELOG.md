@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.5](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.4...mkdocs-v0.1.5) (2026-11-01)
+
+
+### Features
+
+* **core:** load the progress tools on demand from buildguide-progress.js ([#172](https://github.com/OpenReloading/BuildGuide/issues/172)) ([d3c34fd](https://github.com/OpenReloading/BuildGuide/commit/d3c34fd8b67ab6d942081e14f724b1a5b27b5d8f))
+* **core:** print every connection by step and export boards as CSV ([#196](https://github.com/OpenReloading/BuildGuide/issues/196)) ([77a0a78](https://github.com/OpenReloading/BuildGuide/commit/77a0a788f04da12792b142c8a9d8177c1acec95c))
+
+
+### Documentation
+
+* data format and install on the home page ([#179](https://github.com/OpenReloading/BuildGuide/issues/179)) ([3edf9f7](https://github.com/OpenReloading/BuildGuide/commit/3edf9f725d8c3a5ddc1f1dd8a7104770b7e85100))
+
 ## [0.1.4](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.3...mkdocs-v0.1.4) (2026-10-27)
 
 
