@@ -1638,6 +1638,10 @@ for (const [key, b] of boards) {
     await expect(page.locator('.ag-print-list .ag-group th')).toHaveText(b.steps.map(s => s.title));
     for (const r of await rows.all()) await expect(r).toBeVisible();
     await expect(rows.first().locator('td')).toHaveText(connectionCells(b, all[0]));
+    // a wide component prints the table across both columns of its grid, not in the side column
+    await page.setViewportSize({ width: 1400, height: 900 });
+    const [list, work] = await Promise.all(['.ag-print-list', '.ag-work'].map(s => page.locator(s).evaluate(e => e.getBoundingClientRect().width)));
+    expect(list).toBeGreaterThan(work - 2);
   });
   test(`${key}: Export CSV writes every connection with its tick`, async ({ page }) => {
     await page.goto(url(key)); await ready(page);

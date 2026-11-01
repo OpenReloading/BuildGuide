@@ -262,7 +262,7 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-bom-table th,.ag-guide .ag-bom-table td{padding:8px}
  .ag-guide .ag-panel,.ag-guide tr,.ag-guide .ag-step-note,.ag-guide .ag-step-item{break-inside:avoid}
  .ag-guide .ag-wire-list,.ag-guide .ag-list-heading{display:none}
- .ag-guide .ag-print-list{display:block}
+ .ag-guide .ag-print-list{display:block;grid-column:1/-1}   /* across both columns of a wide component */
  .ag-guide .ag-print-list th:nth-child(n){width:auto}
  .ag-guide .ag-print-list .ag-group{break-after:avoid}
  .ag-guide .is-done td,.ag-guide .is-done button,.ag-guide .is-done .ag-step-title,.ag-guide .is-done .ag-step-text{opacity:1}
