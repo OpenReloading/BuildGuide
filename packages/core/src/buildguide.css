@@ -42,6 +42,9 @@
  --ag-diode-body:light-dark(#202d28, #cfd6d1);
  --ag-diode-band:light-dark(#c4cdd0, #4a554e);
 }
+/* the selected terminal and the outline of the selected connection in the board drawing: plain colours, since the drawing is light
+   and --ag-board-filter darkens it as a whole in dark */
+.ag-guide{--ag-board-terminal:#237b33;--ag-board-terminal-bg:#e1f7df;--ag-board-terminal-ink:#173d23;--ag-board-outline:#198b47}
 .ag-guide{--ag-done-opacity:1;--ag-done-decoration:none;--ag-font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--ag-text-small:11px}
 .ag-guide{container-type:inline-size;padding:12px;background:var(--ag-page);color:var(--ag-ink);font:14px/1.55 var(--ag-font)}
 .ag-guide *{box-sizing:border-box}
@@ -84,6 +87,9 @@
 .ag-guide .ag-board-canvas:active{cursor:grabbing}
 .ag-guide .ag-board-canvas>div{margin:auto;flex-shrink:0;filter:var(--ag-board-filter,none)}
 .ag-guide .ag-board-canvas svg{display:block;width:100%;height:100%;max-width:none;font-family:inherit}
+.ag-guide .ag-board-canvas circle.ag-terminal{fill:var(--ag-board-terminal-bg);stroke:var(--ag-board-terminal)}
+.ag-guide .ag-board-canvas text.ag-terminal{fill:var(--ag-board-terminal-ink)}
+.ag-guide .ag-board-canvas .ag-hot{stroke:var(--ag-board-outline)}
 .ag-guide .ag-board-canvas [data-connection],.ag-guide .ag-board-canvas .joint-labels-layer{cursor:pointer}
 .ag-guide .ag-board-canvas [data-connection]:focus{outline:none;filter:drop-shadow(0 0 3px var(--ag-glow))}
 .ag-guide .ag-board-loading{position:absolute;top:45%;left:40%;font-size:13px}
