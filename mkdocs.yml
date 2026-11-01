@@ -34,6 +34,9 @@ extra_css:
   - assets/repo-widget.css
   - assets/buildguide-material.css   # the Material recipe of docs/theming.md
 
+extra_javascript:
+  - assets/drawer.js   # keyboard use of the mobile navigation drawer
+
 plugins:
   - search
   - buildguide:
