@@ -1,8 +1,9 @@
 /* BuildGuide image zoom: a BOM image enlarged in a modal dialog, with its alt text below it. buildguide.js loads this file on the
-   first click on an image and calls the function with the component's context and the image's data-zoom key; it returns a function
+   first click on an image and calls the function with the component's context and the image's data-zoom key (the item id); it returns a function
    that closes the dialog. */
 window.BuildGuideModules = {...window.BuildGuideModules, zoom: (c, key) => {
-  const {root} = c, find = () => root.querySelector(`[data-zoom="${CSS.escape(key)}"]`), small = find().querySelector('img');
+  const {root} = c, find = () => root.querySelector(`[data-zoom="${CSS.escape(key)}"]`), small = find()?.querySelector('img');
+  if (!small) return () => {};   // a render hid the row while this file loaded
   const dialog = document.createElement('dialog'), close = document.createElement('button'), figure = document.createElement('figure'), image = new Image();
   // in the body, so a render of the component keeps it; .ag-guide, the component's own token values and colour scheme give it the component's look
   dialog.className = 'ag-guide ag-zoom-dialog';

@@ -1554,6 +1554,26 @@ test('BOM image zoom: the dialog takes the tokens and scheme of the component, o
   await expect(page.locator('[data-role=filter]')).toBeFocused();
 });
 
+test('BOM image zoom: each image opens its own item by id, and a row hidden while the file loads opens nothing', async ({ page }) => {
+  const data = structuredClone(D), [a, b] = data.bom.items;
+  // the two progress keys are the same (bom-cap:usb:adapter), the ids differ
+  Object.assign(a, { id: 'cap:usb', part: 'adapter', image: 'part.gif' });
+  Object.assign(b, { id: 'cap', part: 'usb:adapter', image: 'part.gif', imageAlt: 'the second item' });
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  await page.route('**/buildguide-zoom.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); }, { times: 1 });
+  await inlinePage(page, 'bom-zoom-ids/', data, '<div data-buildguide="bom"></div>');
+  await page.goto(BASE + 'bom-zoom-ids/');
+  // the first activation: the search hides the row before the file arrives
+  await page.locator('.ag-zoom').first().click();
+  await page.locator('[data-role=search]').fill('nothing matches this');
+  await page.waitForTimeout(500);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.locator('[data-role=search]').fill('');
+  await page.getByRole('button', { name: 'Enlarge image: the second item' }).click();
+  await expect(page.getByRole('dialog', { name: 'usb:adapter' })).toBeVisible();
+  await expect(page.getByRole('dialog').locator('figcaption')).toHaveText('the second item');
+});
+
 test('BOM image zoom: a failed load of buildguide-zoom.js is reported, and the next click loads it', async ({ page }) => {
   const data = structuredClone(D);
   data.bom.items[0].image = 'part.gif';
