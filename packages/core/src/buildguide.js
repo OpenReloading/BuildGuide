@@ -111,7 +111,7 @@
     function focusSelector() {
       const el = document.activeElement;
       if (!root.contains(el)) return null;
-      for (const name of ['data-action', 'data-step', 'data-conn', 'data-role']) if (el.hasAttribute(name)) return `[${name}="${CSS.escape(el.getAttribute(name))}"]`;
+      for (const name of ['data-action', 'data-step', 'data-conn', 'data-role', 'data-zoom']) if (el.hasAttribute(name)) return `[${name}="${CSS.escape(el.getAttribute(name))}"]`;
       return null;
     }
     let drawing, stopSizing;
@@ -270,8 +270,9 @@
     const tools = (...a) => ext('progress').then(run => alive() && run({D, root, download, isProgress, alive, say, share: shareProgress,
       saved: () => ({...saved, ...load()}), ok: () => persistent, fail() { persistent = false; }}, ...a),
     () => alive() && say('Progress tools did not load. Try again.'));
-    // a BOM image in a dialog: buildguide-zoom.js, which returns a function that closes it
-    const zoom = b => ext('zoom').then(run => alive() && cleanups.push(run(root, b)), () => alive() && say('Image zoom did not load. Try again.'));
+    // a BOM image in a dialog: buildguide-zoom.js, which returns a function that closes it. A second click while the file loads does nothing
+    let zooming;
+    const zoom = b => { if (!zooming) zooming = ext('zoom').then(run => alive() && cleanups.push(run({root}, b.dataset.zoom)), () => alive() && say('Image zoom did not load. Try again.')).finally(() => { zooming = null; }); };
     function moveWire(dir) {
       let i = state.step, j = state.wire + dir;
       if (j < 0) { i--; if (i < 0) return; j = steps[i].connections.length - 1; }

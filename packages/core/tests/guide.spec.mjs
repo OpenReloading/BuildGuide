@@ -1531,6 +1531,29 @@ test('BOM image zoom: a dialog with the image and its imageAlt, Escape and Close
   expect(await page.evaluate(() => document.querySelectorAll('dialog').length)).toBe(0);
 });
 
+test('BOM image zoom: the dialog takes the tokens and scheme of the component, one dialog per activation, the filter takes the focus when the row is gone', async ({ page }) => {
+  const data = structuredClone(D), item = data.bom.items[0];
+  item.image = 'part.gif';
+  await page.route(`${BASE}assets/part.gif`, r => r.fulfill({ contentType: 'image/gif', body: Buffer.from('R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==', 'base64') }));
+  // a slow first load: two clicks before it arrives open one dialog
+  await page.route('**/buildguide-zoom.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); }, { times: 1 });
+  await inlinePage(page, 'bom-zoom-look/', data, '<div data-ag-scheme="dark"><div data-buildguide="bom" style="--ag-page: rgb(1, 2, 3)"></div></div>');
+  await page.goto(BASE + 'bom-zoom-look/');
+  const opener = page.locator('.ag-zoom');
+  await opener.click(); await opener.click({ force: true });
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await page.waitForTimeout(100);
+  expect(await page.evaluate(() => document.querySelectorAll('dialog').length)).toBe(1);
+  expect(await dialog.evaluate(d => [getComputedStyle(d).backgroundColor, getComputedStyle(d).colorScheme])).toEqual(['rgb(1, 2, 3)', 'dark']);
+  // a render meanwhile hides the row (filter Missing, the item ticked): Close puts the focus on the filter
+  await page.evaluate(() => { const f = document.querySelector('[data-role=filter]'); f.value = 'Missing'; f.dispatchEvent(new Event('change')); document.querySelector('.ag-guide [data-check]').click(); });
+  await expect(page.locator('.ag-zoom')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('[data-role=filter]')).toBeFocused();
+});
+
 test('BOM image zoom: a failed load of buildguide-zoom.js is reported, and the next click loads it', async ({ page }) => {
   const data = structuredClone(D);
   data.bom.items[0].image = 'part.gif';
@@ -1540,6 +1563,7 @@ test('BOM image zoom: a failed load of buildguide-zoom.js is reported, and the n
   await page.goto(BASE + 'bom-zoom-fail/');
   await page.locator('.ag-zoom').click();
   await expect(page.locator('.ag-message')).toContainText('Image zoom did not load. Try again.');
+  await expect(page.locator('.ag-zoom')).toBeFocused();
   await page.locator('.ag-zoom').click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
