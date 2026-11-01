@@ -64,7 +64,9 @@ def test_files_table_lists_the_shipped_files_with_sizes(tmp_path):
     assert [row[0] for row in rows] == ["buildguide.css", "buildguide.js", "buildguide-board.js", "buildguide-progress.js", "libs/lib/a.wasm"]  # no licence or note
     assert rows[0][1] == "100" and int(rows[0][2]) < 100
     real = [row[0] for row in table_rows(reference.files_table(reference.SRC))]
-    assert any(name.endswith("/libavoid.wasm") for name in real) and real[:4] == ["buildguide.css", "buildguide.js", "buildguide-board.js", "buildguide-progress.js"]
+    assert any(name.endswith("/libavoid.wasm") for name in real) and real[:3] == ["buildguide.css", "buildguide.js", "buildguide-board.js"]
+    modules = [name for name in real if "/" not in name][3:]  # every buildguide-<name>.js on demand, sorted, after the core files
+    assert "buildguide-progress.js" in modules and modules == sorted(modules)
 
 
 def test_markers_are_replaced_and_unknown_ones_fail():
