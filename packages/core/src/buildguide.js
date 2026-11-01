@@ -241,7 +241,7 @@
         const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)} · ${groupTally(p.group)}</th></tr>` : ''; group = p.group;
         const link = p.link ? ` <a class="ag-source-link" href="${esc(safeURL(p.link, location.href))}" target="_blank" rel="noopener">${esc(bom.linkLabel || 'Link')} ↗</a>` : '';
         const done = checked(bomKey(p));
-        return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)}" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<img src="${esc(safeURL(p.image, ASSETS))}" alt="" loading="lazy">` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
+        return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)}" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<button type="button" class="ag-zoom" data-zoom="${esc(bomKey(p))}" aria-label="Enlarge image: ${esc(p.imageAlt || p.part)}"><img src="${esc(safeURL(p.image, ASSETS))}" alt="${esc(p.imageAlt)}" loading="lazy"></button>` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
       };
       return `<div class="ag-bom-table"><table class="ag-table"><caption class="ag-sr">Bill of materials</caption><thead><tr><th scope="col">Qty</th><th scope="col">Component</th><th scope="col">Specification</th></tr></thead><tbody>${parts.map(row).join('')}</tbody></table></div><p class="ag-result-count">${parts.length} / ${items.length} components</p>`;
     }
@@ -270,6 +270,8 @@
     const tools = (...a) => ext('progress').then(run => alive() && run({D, root, download, isProgress, alive, say, share: shareProgress,
       saved: () => ({...saved, ...load()}), ok: () => persistent, fail() { persistent = false; }}, ...a),
     () => alive() && say('Progress tools did not load. Try again.'));
+    // a BOM image in a dialog: buildguide-zoom.js, which returns a function that closes it
+    const zoom = b => ext('zoom').then(run => alive() && cleanups.push(run(root, b)), () => alive() && say('Image zoom did not load. Try again.'));
     function moveWire(dir) {
       let i = state.step, j = state.wire + dir;
       if (j < 0) { i--; if (i < 0) return; j = steps[i].connections.length - 1; }
@@ -292,7 +294,8 @@
     listen(document, 'keydown', e => { if (e.key === 'Escape' && state.expanded && document.fullscreenElement !== root) toggleScreen().catch(ignore); });
     function bindChecks(scope) {
       // a BOM row toggles its tick wherever you click it (the box, its label and links keep their own click)
-      for (const box of scope.querySelectorAll('.ag-bom-table [data-check]')) box.closest('tr').onclick = e => { if (!e.target.closest('input,label,a')) box.click(); };
+      for (const box of scope.querySelectorAll('.ag-bom-table [data-check]')) box.closest('tr').onclick = e => { if (!e.target.closest('input,label,a,button')) box.click(); };
+      for (const b of scope.querySelectorAll('[data-zoom]')) b.onclick = () => zoom(b);
       for (const box of scope.querySelectorAll('[data-check]')) box.onchange = () => {
         const key = box.dataset.check, sel = `[data-check="${CSS.escape(key)}"]`, index = [...root.querySelectorAll(sel)].indexOf(box);
         save(key, box.checked); render();

@@ -99,8 +99,11 @@ def token_table(css):
 
 def fetched(src):
     """The files a page fetches, own files first (size.test.mjs lists the same set)."""
-    return ["buildguide.css", "buildguide.js", "buildguide-board.js", "buildguide-progress.js"] + sorted(
-        path.relative_to(src).as_posix() for path in src.rglob("*") if path.is_file() and path.parent != src and path.name not in ("LICENSE", "README.txt")
+    own = ["buildguide.css", "buildguide.js", "buildguide-board.js"]
+    return (
+        own
+        + sorted(path.name for path in src.glob("buildguide-*.js") if path.name not in own)
+        + sorted(path.relative_to(src).as_posix() for path in src.rglob("*") if path.is_file() and path.parent != src and path.name not in ("LICENSE", "README.txt"))
     )
 
 
