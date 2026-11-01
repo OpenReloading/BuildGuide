@@ -18,5 +18,5 @@ reviews:
   path_instructions:
     - path: '**'
       instructions: >-
-        Follow AGENTS.md. Guide data comes from third-party site authors: flag any data value that reaches
+        Guide data comes from third-party site authors: flag any data value that reaches
         innerHTML, an attribute, a URL or a style without escaping or a scheme check.
