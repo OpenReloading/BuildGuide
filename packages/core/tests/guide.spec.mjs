@@ -1,5 +1,5 @@
 // Browser checks of the example guide components. Every expectation is derived from example/guide.json.
-// The example pages exist in the core example, the MkDocs docs site and the Docusaurus example: /example/{bom,steps,wiring,tubing,all,guide}/.
+// The example pages exist in the core example, the MkDocs example and the Docusaurus example: /example/{bom,steps,wiring,tubing,all,guide}/.
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
@@ -374,7 +374,7 @@ test('host styles do not restyle the components', async ({ page }) => {
 const css = readFileSync(new URL('../src/buildguide.css', import.meta.url), 'utf8');
 const rgb = hex => { const full = hex.length === 4 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex, n = parseInt(full.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
 const token = (name, scheme) => rgb(css.match(new RegExp(`--ag-${name}:light-dark\\((#[0-9a-f]+), (#[0-9a-f]+)\\)`))[scheme === 'dark' ? 2 : 1]);
-// the docs site and the Docusaurus example load a host recipe (below) that replaces accent, primary, page and surface: those defaults hold only where there is no recipe
+// the MkDocs and Docusaurus examples load a host recipe (below) that replaces accent, primary, page and surface: those defaults hold only where there is no recipe
 const hasRecipe = page => page.evaluate(() => document.body.hasAttribute('data-md-color-scheme') || document.documentElement.hasAttribute('data-theme'));
 // the signal of the host under test: Material's body attribute, Docusaurus' html attribute, or only the browser preference (core example)
 const signal = (page, want) => page.evaluate(scheme => {
@@ -401,7 +401,7 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
   });
 }
 
-// the selected terminal and the selected connection's outline take the --ag-board-* tokens, defaults in buildguide.css, the docs site its accent.
+// the selected terminal and the selected connection's outline take the --ag-board-* tokens, defaults in buildguide.css, the MkDocs example its accent.
 // The drawing is light and --ag-board-filter darkens it in dark: the measured colour is filtered (sRGB matrices of invert(.9) and hue-rotate(180deg))
 // and needs 3:1 against the canvas in both schemes
 const BOARD = { 'board-terminal': '#237b33', 'board-terminal-bg': '#e1f7df', 'board-terminal-ink': '#173d23', 'board-outline': '#198b47' };
@@ -419,7 +419,7 @@ test('board: the selected terminal and outline take the --ag-board-* tokens and 
     return { terminal: of('circle.ag-terminal').map(s => s.stroke), fill: of('circle.ag-terminal').map(s => s.fill), ink: of('text.ag-terminal').map(s => s.fill),
       outline: of('.ag-hot').map(s => s.stroke), canvas: getComputedStyle(canvas).backgroundColor, dark: getComputedStyle(el).colorScheme === 'dark' };
   });
-  // the docs site's values are the ones in docs/assets/buildguide-material.css
+  // the MkDocs example's values are the ones in packages/mkdocs/example/docs/assets/buildguide-material.css
   const want = material ? { terminal: '#1d4ed8', fill: '#e3eafb', ink: '#1e3a8a', outline: '#1d4ed8' }
     : { terminal: BOARD['board-terminal'], fill: BOARD['board-terminal-bg'], ink: BOARD['board-terminal-ink'], outline: BOARD['board-outline'] };
   let m = await look();
@@ -506,8 +506,8 @@ test('colour scheme: a host sets a token itself in both schemes', async ({ page 
   expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(9, 8, 7)');
 });
 
-// the host recipes of docs/theming.md (docs/assets/buildguide-material.css, packages/docusaurus/example/src/css/custom.css) are loaded by the docs site
-// and the Docusaurus example: the component takes the host's font, brand colour and background, and every pair keeps its contrast in both schemes
+// the host recipes of the theming page (packages/mkdocs/example/docs/assets/buildguide-material.css, packages/docusaurus/example/src/css/custom.css) are
+// loaded by the MkDocs and the Docusaurus example: the component takes the host's font, brand colour and background, and every pair keeps its contrast in both schemes
 const RECIPE = { material: { brand: '--md-typeset-a-color', background: '--md-default-bg-color' },
   docusaurus: { brand: '--ifm-color-primary', background: '--ifm-background-surface-color' } };
 // the colours of CSS values (var(), light-dark(), color-mix()) as rgba() strings, resolved on the component through a canvas
@@ -551,15 +551,15 @@ test('MkDocs: the component stylesheets come before extra_css, so a plain site r
   await page.goto(url('bom'));
   const sheets = await page.evaluate(() => [...document.querySelectorAll('link[rel=stylesheet]')].map(l => l.getAttribute('href')));
   const at = name => sheets.findIndex(href => href.endsWith(name));
-  test.skip(at('buildguide-material.css') < 0, 'only the MkDocs docs site lists the recipe in extra_css');
+  test.skip(at('buildguide-material.css') < 0, 'only the MkDocs example lists the recipe in extra_css');
   expect(at('buildguide.css')).toBeGreaterThanOrEqual(0);
   expect(at('buildguide.css')).toBeLessThan(at('buildguide-mkdocs.css'));
-  expect(at('buildguide-mkdocs.css')).toBeLessThan(at('repo-widget.css'));
-  expect(at('repo-widget.css')).toBeLessThan(at('buildguide-material.css'));
+  expect(at('buildguide-mkdocs.css')).toBeLessThan(at('site-colours.css'));
+  expect(at('site-colours.css')).toBeLessThan(at('buildguide-material.css'));
   const size = () => page.locator('.ag-guide').first().evaluate(el => getComputedStyle(el).getPropertyValue('--ag-text-small'));
   expect(await size()).toBe('11px');
   // the rule sits where the site's extra_css links are
-  await page.evaluate(() => document.querySelector('link[href$="repo-widget.css"]').before(Object.assign(document.createElement('style'), { textContent: '.ag-guide{--ag-text-small:15px}' })));
+  await page.evaluate(() => document.querySelector('link[href$="site-colours.css"]').before(Object.assign(document.createElement('style'), { textContent: '.ag-guide{--ag-text-small:15px}' })));
   expect(await size()).toBe('15px');
 });
 
@@ -606,11 +606,11 @@ const tickTwoGuides = async page => {
   }
 };
 
-// the MkDocs docs site has a second guide (`guides.minimal`) on example/second/ next to the BOM of the example guide:
+// the MkDocs example has a second guide (`guides.minimal`) on example/second/ next to the BOM of the example guide:
 // the page holds only the data of the example guide, the second one is a file that its component fetches once
 test('MkDocs: a second guide is a file, a page holds only the data it uses, each guide ticks its own key', async ({ page }) => {
   await page.goto(BASE);
-  test.skip(await isDocusaurus(page) || !(await page.request.get(url('second'))).ok(), 'only the MkDocs docs site has the page with two guides');
+  test.skip(await isDocusaurus(page) || !(await page.request.get(url('second'))).ok(), 'only the MkDocs example has the page with two guides');
   const file = `${ORIGIN}${PREFIX}/assets/buildguide/guides/minimal.json`;
   expect(await (await page.request.get(file)).json()).toEqual(MINIMAL);
   const second = await (await page.request.get(url('second'))).text();
@@ -656,167 +656,6 @@ test('Docusaurus: a second guide is a file, no page holds it, each guide is fetc
   fetched.length = 0;
   await page.goto(url('second')); await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
   expect(fetched.sort()).toEqual([`${PREFIX}/assets/buildguide/guide.json`, `${PREFIX}/assets/buildguide/guides/minimal.json`]);
-});
-
-// the MkDocs docs site shows the minimal wiring board (`guides.home`) on its home page, with a storage key of its own
-test('MkDocs: the home page ticks a connection of its own guide, kept over a reload, and fits a phone in either scheme', async ({ page }, info) => {
-  const HOME = JSON.parse(readFileSync(new URL('../example/minimal/wiring.json', import.meta.url)));
-  const home = `${ORIGIN}${PREFIX}/`;
-  const html = await (await page.request.get(home)).text();
-  test.skip(!/<meta name="generator" content="mkdocs-/.test(html), 'only the MkDocs docs site has a board on its home page');
-  expect(html).toContain('data-guide="home"');
-  const [c] = HOME.boards.wiring.steps[0].connections, box = page.getByRole('checkbox', { name: `Connection ${c.no}`, exact: true });
-  await page.goto(home); await settled(page);
-  await box.check();
-  await expect(page.locator('.ag-wire-row.is-done .ag-wire-number')).toHaveText(c.no);
-  const stored = key => page.evaluate(k => localStorage.getItem(k), key);
-  expect(JSON.parse(await stored(HOME.storage))).toEqual({ [`wiring-${c.no}:${c.a}:${c.b}`]: true });
-  for (const other of [D.storage, MINIMAL.storage]) expect(await stored(other)).toBeNull();
-  await page.reload(); await settled(page);
-  await expect(box).toBeChecked();
-  // the progress tools of the board: export the tick, reset and undo, import it back
-  const download = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Export progress' }).click();
-  expect((await download).suggestedFilename()).toBe(`${HOME.storage}.json`);
-  await page.getByRole('button', { name: 'Reset progress' }).click();
-  await expect(box).not.toBeChecked();
-  await page.getByRole('button', { name: 'Undo' }).click();
-  await expect(box).toBeChecked();
-  await page.getByRole('button', { name: 'Reset progress' }).click();
-  await importFile(page, { [`wiring-${c.no}:${c.a}:${c.b}`]: true });
-  await expect(box).toBeChecked();
-  // 360 px with every connection ticked: the card scrolls sideways inside itself, the page does not, the title and the count do not overlap
-  await tickAll(page.locator('.ag-guide'));
-  await expect(page.locator('.ag-guide')).toHaveAttribute('data-complete', /.*/);
-  await page.setViewportSize({ width: 360, height: 800 });
-  const rect = l => l.evaluate(e => e.getBoundingClientRect().toJSON());
-  const [title, count] = [await rect(page.locator('.bg-card-title')), await rect(page.locator('.ag-head .ag-progress'))];
-  expect(title.right <= count.left || title.bottom <= count.top, 'title and count overlap').toBe(true);
-  // every control of the card is a 44 px target
-  const small = await page.locator('.bg-card').evaluate(card => [...card.querySelectorAll('button, select')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect()).filter(r => r.width < 44 || r.height < 44).length);
-  expect(small).toBe(0);
-  // the site accent replaces the component's green: every pair keeps its contrast in both schemes
-  const names = [...new Set([...TEXT, ...GRAPHICS].flat())];
-  for (const scheme of ['light', 'dark']) {
-    await signal(page, scheme);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth), scheme).toBeLessThanOrEqual(360);
-    const c = await colours(page, ['var(--md-accent-fg-color)', ...names.map(n => `var(--ag-${n})`)]), at = n => c[`var(--ag-${n})`];
-    expect(at('done'), scheme).toEqual(c['var(--md-accent-fg-color)']);
-    const low = [];
-    for (const [pairs, min] of [[TEXT, 4.5], [GRAPHICS, 3]]) for (const [a, b] of pairs) { const r = contrast(at(a), at(b)); if (r < min) low.push(`${a} on ${b}: ${r.toFixed(2)}`); }
-    expect(low, scheme).toEqual([]);
-    const { violations } = await new AxeBuilder({ page }).include('.bg-card').withRules(['color-contrast']).analyze();
-    expect(violations.map(v => v.id), scheme).toEqual([]);
-    await page.locator('.bg-live').screenshot({ path: info.outputPath(`home-${scheme}.png`) });
-  }
-});
-
-// the docs site on a phone and a tablet: the page never scrolls sideways, every control is a 44 px target
-test('MkDocs: the home page, an example page and a docs page fit 360, 390 and 820 px with 44 px targets', async ({ page }) => {
-  const html = await (await page.request.get(`${ORIGIN}${PREFIX}/`)).text();
-  test.skip(!/<meta name="generator" content="mkdocs-/.test(html), 'only the MkDocs docs site has these pages');
-  for (const width of [360, 390, 820]) for (const path of ['', 'example/wiring/', 'data-format/']) {
-    await page.setViewportSize({ width, height: 800 });
-    await page.goto(`${ORIGIN}${PREFIX}/${path}`); await settled(page);
-    const where = `${path || 'home'} at ${width} px`;
-    expect(await page.evaluate(() => document.documentElement.scrollWidth), where).toBeLessThanOrEqual(width);
-    const small = await page.evaluate(() => {
-      const shown = e => e.checkVisibility({ opacityProperty: true, visibilityProperty: true }) && e.getBoundingClientRect().width > 0;
-      // a link inside running text is exempt (WCAG 2.5.8); one alone in its paragraph, list item or table cell is not
-      const inline = a => { const text = a.parentElement.closest(':is(p, li, td, th, dd)'); return getComputedStyle(a).display === 'inline' && !!text && text.textContent.trim() !== a.textContent.trim(); };
-      const out = [];
-      for (const e of document.querySelectorAll('a[href], button, input, select, label[for], [role=tab]')) {
-        if (!shown(e) || e.matches('a') && inline(e)) continue;
-        // a tick box of the component toggles with its label, or alone where it has none (the wire rows): that target stays at the WCAG 2.2 minimum of 24 px
-        const tick = e.matches('.ag-guide input[type=checkbox]'), box = tick ? e.closest('label') ?? e : e, min = tick ? 24 : 44;
-        const r = box.getBoundingClientRect();
-        if (r.height < min || r.width < min) out.push(`${e.outerHTML.slice(0, 80)}: ${Math.round(r.width)} x ${Math.round(r.height)}`);
-        // and the row that holds a tick box is 44 px high
-        const row = tick && e.closest(':is(tr, li, .ag-wire-row, .ag-connection-detail)');
-        if (tick && !(row?.getBoundingClientRect().height >= 44)) out.push(`row of ${e.outerHTML.slice(0, 80)}: ${row ? Math.round(row.getBoundingClientRect().height) : 'none'}`);
-      }
-      return out;
-    });
-    expect(small, where).toEqual([]);
-  }
-});
-
-// the docs site's navigation drawer by keyboard alone: Tab reaches each toggle, Enter and Space operate it, only what is in view takes focus
-test('MkDocs: the navigation drawer works by keyboard at 360, 390 and 820 px', async ({ page }) => {
-  const html = await (await page.request.get(`${ORIGIN}${PREFIX}/`)).text();
-  test.skip(!/<meta name="generator" content="mkdocs-/.test(html), 'only the MkDocs docs site has the drawer');
-  const drawer = page.locator('.md-sidebar--primary');
-  const toggle = name => drawer.getByRole('button', { name, exact: true });
-  const press = async (name, key) => { await toggle(name).focus(); await page.keyboard.press(key); };
-  // Tab from the menu button until the page text: the drawer's stops, each with a 2 px focus ring on what shows it
-  const stops = async () => {
-    await page.locator('#__drawer').focus();
-    const out = [];
-    for (let i = 0; i < 80; i++) {
-      await page.keyboard.press('Tab');
-      const f = await page.evaluate(() => {
-        const e = document.activeElement, open = e.getAttribute('aria-expanded') === 'true';
-        // a toggle button shows its focus on the label, or on the title of its open pane
-        const shown = e.matches('.bg-nav-toggle') ? e.parentElement.querySelector(open ? ':scope > .md-nav > .md-nav__title' : ':scope > label.md-nav__link') : e;
-        const o = getComputedStyle(shown);
-        return { text: e.textContent.trim(), main: !!e.closest('.md-content'), drawer: !!e.closest('.md-sidebar--primary'), ring: shown.checkVisibility() && o.outlineStyle !== 'none' && parseFloat(o.outlineWidth) >= 2 };
-      });
-      if (f.main) return out;
-      if (f.drawer) { expect(f.ring, f.text).toBe(true); out.push(f.text); }
-    }
-    throw new Error('Tab never reached the page text');
-  };
-  const want = { guides: ['Examples', 'Data format', 'Reference'], top: ['Home', 'Getting started', 'Guides', 'Example guide'], toc: ['What the keys do'] };
-  for (const width of [360, 390, 820]) {
-    const where = `${width} px`;
-    await page.setViewportSize({ width, height: 800 });
-    await page.goto(`${ORIGIN}${PREFIX}/data-format/`);
-    // closed: nothing in the drawer takes focus
-    expect(await stops(), `${where} closed`).toEqual([]);
-    await page.locator('#__drawer').focus();
-    await page.keyboard.press('Space');
-    await expect(page.locator('#__drawer')).toBeChecked();
-    // the page's own section is open: its toggle, its links and the table of contents toggle, nothing of the level under it or of a closed pane
-    let s = await stops();
-    expect(s[0], where).toBe('Guides');
-    expect(s, where).toEqual(expect.arrayContaining(want.guides));
-    for (const t of [...want.top.filter(t => t !== 'Guides'), 'Plain HTML', ...want.toc]) expect(s, where).not.toContain(t);
-    await expect(toggle('Guides')).toHaveAttribute('aria-expanded', 'true');
-    const { violations } = await new AxeBuilder({ page }).include('.md-sidebar--primary').withRules(['aria-allowed-role', 'aria-allowed-attr', 'button-name', 'nested-interactive']).analyze();
-    expect(violations.flatMap(v => v.nodes.map(n => `${v.id}: ${n.html.slice(0, 80)}`)), where).toEqual([]);
-    // the table of contents: Enter opens it, Space closes it, the focus stays on the toggle
-    await press('Data format', 'Enter');
-    await expect(toggle('Data format')).toHaveAttribute('aria-expanded', 'true');
-    await expect(toggle('Data format')).toBeFocused();
-    s = await stops();
-    expect(s, `${where} toc`).toEqual(expect.arrayContaining(['Data format', ...want.toc]));
-    for (const t of want.guides.filter(t => t !== 'Data format')) expect(s, `${where} toc`).not.toContain(t);
-    await press('Data format', 'Space');
-    await expect(toggle('Data format')).toHaveAttribute('aria-expanded', 'false');
-    // back to the top level: the section toggles take focus, their links do not
-    await press('Guides', 'Space');
-    await expect(toggle('Guides')).toHaveAttribute('aria-expanded', 'false');
-    await expect(toggle('Guides')).toBeFocused();
-    s = await stops();
-    expect(s, `${where} top`).toEqual(expect.arrayContaining(want.top));
-    for (const t of [...want.guides, 'Plain HTML']) expect(s, `${where} top`).not.toContain(t);
-    await press('Getting started', 'Enter');
-    await expect(toggle('Getting started')).toHaveAttribute('aria-expanded', 'true');
-    expect(await stops(), `${where} getting started`).toEqual(expect.arrayContaining(['Getting started', 'Plain HTML', 'MkDocs']));
-    // instant navigation renders a new drawer: it closes, and opened again it works the same
-    await drawer.getByRole('link', { name: 'MkDocs', exact: true }).click();
-    await expect(page).toHaveURL(/\/mkdocs\/$/);
-    await expect(page.locator('#__drawer')).not.toBeChecked();
-    expect(await stops(), `${where} after navigation`).toEqual([]);
-    await page.locator('#__drawer').focus();
-    await page.keyboard.press('Space');
-    expect((await stops())[0], `${where} after navigation`).toBe('Getting started');
-    await expect(toggle('Getting started')).toHaveAttribute('aria-expanded', 'true');
-  }
-  // on a wide screen the sections are headings: no toggle buttons, and the sidebar stays in the tab order
-  await page.setViewportSize({ width: 1440, height: 900 });
-  // the media query's change event runs on a later frame
-  await expect.poll(() => drawer.evaluate(d => [d.inert, d.querySelectorAll('[inert]').length, [...d.querySelectorAll('.bg-nav-toggle')].filter(b => b.checkVisibility()).length])).toEqual([false, 0, 0]);
 });
 
 // the tick keys of every item of a component, in order

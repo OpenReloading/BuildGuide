@@ -1,9 +1,9 @@
 name: Pages
 # One site, one deployment (a Pages deployment replaces the whole site): the latest release, built from its tag, at the
-# root, and main under /next/. Without a release, or with a release from before the docs hook docs/hooks/edition.py,
-# the root redirects to /next/. A release is published when the release pull request is merged (release.yml; weekly on Monday by
-# release-weekly.yml, or by the owner);
-# that publication, a push to main and a manual run rebuild the site.
+# root, and main under /next/ (site/, Docusaurus; DOCS_BASE_URL sets the path). Without a release, or with a release from
+# before the edition handling (MkDocs: docs/hooks/edition.py), the root redirects to /next/. A release is published when
+# the release pull request is merged (release.yml; weekly on Monday by release-weekly.yml, or by the owner); that
+# publication, a push to main and a manual run rebuild the site.
 on:
   push:
     branches: [main]
@@ -47,31 +47,43 @@ jobs:
           ref: ${{ steps.latest.outputs.tag }}
           path: stable
           persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: next/.nvmrc
+          # no npm cache: this job builds what is deployed (zizmor cache-poisoning)
+          package-manager-cache: false
+      # shortcut: releases up to the MkDocs docs site build it with uv; drop uv and the mkdocs branch below once the latest release has site/
       - uses: astral-sh/setup-uv@18d369b23da25a81e9458561248e1aafff6a70fa # v10.3.1
         with:
           version: 0.13.4
           enable-cache: false
-      # the header's repository facts come from the GitHub API at build time
+      # first, since a build empties its output folder: the next edition goes into site/next/ below
+      # the navbar's repository facts come from the GitHub API at build time
       - name: Build the stable site into the root
         if: steps.latest.outputs.tag != ''
         working-directory: stable
         run: |
-          if [ -f docs/hooks/edition.py ]; then
+          if [ -f site/package.json ]; then
+            npm ci --ignore-scripts
+            npm run build -w site -- --out-dir "$GITHUB_WORKSPACE/site"
+          elif [ -f docs/hooks/edition.py ]; then
             uv run --locked --no-build --project packages/mkdocs mkdocs build --strict --site-dir "$GITHUB_WORKSPACE/site"
           else
-            echo "::notice::$TAG has no edition hook: the root redirects to /next/"
+            echo "::notice::$TAG has no edition handling: the root redirects to /next/"
           fi
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ steps.latest.outputs.tag }}
-      # the next edition keeps its own browser storage names (docs/hooks/edition.py) and its own site_url
+      # the next edition keeps its own browser storage names (site/scripts/edition.mts) and its own base path
       - name: Build main into /next/
         working-directory: next
-        run: uv run --locked --no-build --project packages/mkdocs mkdocs build --strict --site-dir "$GITHUB_WORKSPACE/site/next"
+        run: |
+          npm ci --ignore-scripts
+          npm run build -w site -- --out-dir "$GITHUB_WORKSPACE/site/next"
         env:
           GITHUB_TOKEN: ${{ github.token }}
           BUILDGUIDE_EDITION: next
-          SITE_URL: ${{ env.SITE }}next/
+          DOCS_BASE_URL: /BuildGuide/next/
       - name: Redirect the root to /next/ without a stable site
         run: |
           [ -f site/index.html ] || printf '<!doctype html><meta charset="utf-8"><title>BuildGuide</title><meta http-equiv="refresh" content="0; url=next/"><link rel="canonical" href="%snext/"><a href="next/">BuildGuide</a>\n' "$SITE" > site/index.html

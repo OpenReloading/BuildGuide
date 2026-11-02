@@ -1,0 +1,24 @@
+/* The recipe of the theming docs page (site/docs/theming.mdx) for MkDocs Material, loaded by this example site (extra_css) so that its build and the browser tests exercise it. */
+/* --8<-- [start:recipe] */
+.ag-guide{
+  --ag-font:var(--md-text-font-family);
+  --ag-accent:var(--md-typeset-a-color);
+  --ag-primary:var(--md-typeset-a-color);
+  --ag-primary-hover:color-mix(in srgb,var(--md-typeset-a-color),light-dark(#000,#fff) 20%);
+  --ag-page:var(--md-default-bg-color);
+  --ag-surface:var(--md-default-bg-color);
+  --ag-done-bg:color-mix(in srgb,var(--md-default-bg-color),#000 8%);
+}
+/* --8<-- [end:recipe] */
+/* this site only: a ticked row takes the soft accent of site-colours.css, the glow of a selected connection the accent (the default green glow is below 3:1 on the site's page) */
+.ag-guide{
+  --ag-done-bg:var(--md-accent-fg-color--transparent);
+  --ag-glow:var(--md-accent-fg-color);
+}
+/* this site only: the selected terminal and connection of a board take the light accent in both schemes, since the board filter darkens the drawing as a whole */
+.ag-guide{
+  --ag-board-terminal:#1d4ed8;
+  --ag-board-terminal-bg:#e3eafb;
+  --ag-board-terminal-ink:#1e3a8a;
+  --ag-board-outline:#1d4ed8;
+}

@@ -1,4 +1,4 @@
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/assets/buildguide-dark.svg"><img src="docs/assets/buildguide-light.svg" width="320" alt="OpenReloading BuildGuide"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="site/static/assets/buildguide-dark.svg"><img src="site/static/assets/buildguide-light.svg" width="320" alt="OpenReloading BuildGuide"></picture></p>
 
 # BuildGuide
 

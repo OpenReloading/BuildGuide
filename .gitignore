@@ -5,7 +5,8 @@ playwright-report/
 .playwright-mcp/
 .venv/
 __pycache__/
-/site/
+/site/build/
+/packages/mkdocs/example/site/
 packages/mkdocs/src/mkdocs_buildguide/core/
 .docusaurus/
 /packages/docusaurus/example/build/

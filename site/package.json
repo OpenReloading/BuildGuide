@@ -1,0 +1,43 @@
+{
+  "name": "buildguide-site",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "npm run prepack -w @openreloading/docusaurus-plugin-buildguide && docusaurus start",
+    "build": "npm run prepack -w @openreloading/docusaurus-plugin-buildguide && docusaurus build",
+    "typecheck": "tsc",
+    "test": "node --test scripts/*.test.mts",
+    "test:browser": "npm run build -- --out-dir build/test/BuildGuide && playwright test"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/plugin-content-docs": "3.10.2",
+    "@docusaurus/plugin-sitemap": "3.10.2",
+    "@docusaurus/theme-classic": "3.10.2",
+    "@openreloading/docusaurus-plugin-buildguide": "*",
+    "pagefind": "1.5.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@docusaurus/theme-common": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@playwright/test": "1.64.1",
+    "typescript": "7.0.2"
+  },
+  "browserslist": {
+    "production": [
+      "last 2 chrome version",
+      "last 2 firefox version",
+      "last 2 safari version",
+      "last 2 edge version"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

@@ -27,6 +27,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build]
 artifacts = ["src/mkdocs_buildguide/core/"]
 
+# the example site is the browser test host (npm run test:browser), not part of the package
+[tool.hatch.build.targets.sdist]
+exclude = ["example/"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mkdocs_buildguide"]
 

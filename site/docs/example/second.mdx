@@ -1,0 +1,19 @@
+---
+hide_table_of_contents: true
+---
+
+import BuildGuide from '@theme/BuildGuide';
+
+<p className="bg-label">Example guide</p>
+
+# Two guides
+
+One site, two guides: the first component is the minimal guide (`guides.minimal` in `docusaurus.config.ts`, selected with `guide="minimal"`), the second is the BOM of the example guide (the `data` file). Each keeps its own ticks.
+
+## First guide
+
+<div className="bg-card"><BuildGuide view="bom" guide="minimal" /></div>
+
+## Second guide
+
+<div className="bg-card"><BuildGuide view="bom" /></div>
