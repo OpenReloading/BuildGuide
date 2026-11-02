@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.2.6](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.5...core-v0.2.6) (2026-11-01)
+
+
+### Features
+
+* **core:** board tokens for the selected terminal and outline ([#195](https://github.com/OpenReloading/BuildGuide/issues/195)) ([acf9801](https://github.com/OpenReloading/BuildGuide/commit/acf98012adddf8c54b2ce98e9ab2a2743e7ab758))
+* **core:** enlarge a BOM image in a dialog, with alt text ([#194](https://github.com/OpenReloading/BuildGuide/issues/194)) ([aca6da3](https://github.com/OpenReloading/BuildGuide/commit/aca6da3eb55a56f64216577810f02b65e5fc73ef))
+* **core:** load the progress tools on demand from buildguide-progress.js ([#172](https://github.com/OpenReloading/BuildGuide/issues/172)) ([d3c34fd](https://github.com/OpenReloading/BuildGuide/commit/d3c34fd8b67ab6d942081e14f724b1a5b27b5d8f))
+* **core:** print every connection by step and export boards as CSV ([#196](https://github.com/OpenReloading/BuildGuide/issues/196)) ([77a0a78](https://github.com/OpenReloading/BuildGuide/commit/77a0a788f04da12792b142c8a9d8177c1acec95c))
+
+
+### Bug fixes
+
+* **core:** render the board toolbar before the board ([#185](https://github.com/OpenReloading/BuildGuide/issues/185)) ([93489a9](https://github.com/OpenReloading/BuildGuide/commit/93489a9805979cfe25ed2f1bb6f4b9033ad56a26))
+
+
+### Documentation
+
+* data format and install on the home page ([#179](https://github.com/OpenReloading/BuildGuide/issues/179)) ([3edf9f7](https://github.com/OpenReloading/BuildGuide/commit/3edf9f725d8c3a5ddc1f1dd8a7104770b7e85100))
+* example pages with the site tokens ([#180](https://github.com/OpenReloading/BuildGuide/issues/180)) ([6be88a3](https://github.com/OpenReloading/BuildGuide/commit/6be88a3b53d44a788a3d9bcd25745b7a07e3ac52))
+* keyboard use of the mobile navigation drawer ([#188](https://github.com/OpenReloading/BuildGuide/issues/188)) ([2bbd784](https://github.com/OpenReloading/BuildGuide/commit/2bbd7840f8f17dbbe4d6f4cb5ab2e4286efb9284))
+* live wiring board and progress on the home page ([#177](https://github.com/OpenReloading/BuildGuide/issues/177)) ([1586629](https://github.com/OpenReloading/BuildGuide/commit/1586629a373d24b66953510fee7f66d2bdc98cc7))
+* phone and touch checks with a browser test ([#183](https://github.com/OpenReloading/BuildGuide/issues/183)) ([fa7a277](https://github.com/OpenReloading/BuildGuide/commit/fa7a277800fadda3fbccab616c43be6d6a886f92))
+
 ## [0.2.5](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.4...core-v0.2.5) (2026-10-27)
 
 
