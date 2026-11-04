@@ -1492,7 +1492,7 @@ for (const [key, b] of boards) {
       return readFileSync(await file.path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
     };
     let csv = await csvOf();
-    expect(csv[0]).toBe('"No","From","To","Colour","Cable","Size","Done"');
+    expect(csv[0]).toBe('"No","From","To","Color","Cable","Size","Done"');
     expect(csv.length).toBe(all.length + 1);
     expect(csv[1]).toBe(connectionCells(b, all[0]).map(v => `"${v}"`).join(','));
     await page.locator('.ag-wire-row [data-check]').first().check();
@@ -2015,6 +2015,47 @@ test('guide: unmounting removes the tabs, the panel and every listener, mounting
   }
   await setHash(page, 'tubing=B&guide=wiring');
   await expect(page.locator('.ag-guide')).toHaveCount(0);
+});
+
+test('guide: buildguide-tabs.js is requested while the data loads, not after it', async ({ page }) => {
+  let release;
+  const held = new Promise(done => { release = done; });
+  await page.route(`${BASE}held.json`, async r => { await held; await r.fulfill({ json: D }); });
+  await page.route(BASE + 'parallel/', r => r.fulfill({ contentType: 'text/html', body:
+    `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css"><div data-buildguide="guide" data-src="../held.json"></div><script src="${CORE}buildguide.js" defer></script>` }));
+  const tabsFile = page.waitForRequest(r => r.url().endsWith('/buildguide-tabs.js'));
+  await page.goto(BASE + 'parallel/');
+  await tabsFile;
+  release();
+  await expect(page.getByRole('tab')).toHaveText(TABS);
+});
+
+test('guide: an unmount while buildguide-tabs.js loads leaves the root empty; a failed load says so and the next mount loads the file', async ({ page }) => {
+  await inlinePage(page, 'tabs-load/', D, '<div id="host"></div>');
+  let release;
+  const held = new Promise(done => { release = done; });
+  await page.route('**/buildguide-tabs.js', async r => { await held; await r.continue(); }, { times: 1 });
+  await page.goto(BASE + 'tabs-load/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const mount = () => page.evaluate(data => { window.__stop = window.BuildGuide.mount(document.getElementById('host'), data, { view: 'guide' }); }, D);
+  await mount();
+  await page.evaluate(() => window.__stop());
+  release();
+  await page.waitForFunction(() => window.BuildGuideModules?.tabs);
+  await page.evaluate(() => new Promise(done => setTimeout(done, 100)));
+  expect(await page.evaluate(() => document.getElementById('host').outerHTML)).toBe('<div id="host"></div>');
+  await mount();
+  await expect(page.getByRole('tab')).toHaveText(TABS);
+  await page.evaluate(() => window.__stop());
+  await expect(page.getByRole('tab')).toHaveCount(0);
+
+  await inlinePage(page, 'tabs-failed/', D, '<div data-buildguide="guide"></div>');
+  // scan() and the mount share the one request of the file
+  await page.route('**/buildguide-tabs.js', r => r.abort(), { times: 1 });
+  await page.goto(BASE + 'tabs-failed/');
+  await expect(page.locator('[data-buildguide]')).toHaveText('Guide tabs did not load.');
+  await page.evaluate(data => window.BuildGuide.mount(document.querySelector('[data-buildguide]'), data), D);
+  await expect(page.getByRole('tab')).toHaveText(TABS);
 });
 
 test('guide: a print shows the active component without the tabs', async ({ page }) => {

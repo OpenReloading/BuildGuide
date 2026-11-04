@@ -153,3 +153,16 @@ test('guides: an id is a file name and a URL segment', () => {
   for (const id of ['../x', 'a/b', 'a b', '', 'a.json']) assert.throws(() => site(example, { guides: { [id]: minimal } }), /guides id .* may only hold letters, digits, - and _/);
   site(example, { guides: { 'a-B_9': minimal } });
 });
+
+test('the theme component gets the noscript text and the failure text of each guide from its strings, and nothing else of them', async () => {
+  const guide = JSON.parse(readFileSync(example, 'utf8'));
+  const german = { ...guide, strings: { noScript: 'Diese Anleitung braucht JavaScript.', unavailable: 'Anleitungsdaten nicht verfügbar.', print: 'Drucken' } };
+  const plugin = site(guideFile(german), { guides: { english: guideFile({ ...guide, storage: 'english' }), short: guideFile({ ...guide, storage: 'short', strings: { unavailable: 'Keine Daten.' } }) } });
+  await plugin.loadContent();
+  let data;
+  await plugin.contentLoaded({ actions: { setGlobalData: (value) => { data = value; } } });
+  // Docusaurus writes the global data as JSON: keys without a value drop out
+  assert.deepEqual(JSON.parse(JSON.stringify(data)), {
+    noScript: 'Diese Anleitung braucht JavaScript.', unavailable: 'Anleitungsdaten nicht verfügbar.', guides: { english: {}, short: { unavailable: 'Keine Daten.' } },
+  });
+});

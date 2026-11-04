@@ -8,6 +8,19 @@ import { fileURLToPath } from 'node:url';
 
 // The guide data, as schema/buildguide.schema.json describes it
 
+/** The keys of the texts the components show or speak. `strings` in the guide, in a board or in the mount options replaces the
+ *  English text of the keys it names (the table is in buildguide.ts); `noScript` and `unavailable` are also the plugins' messages. */
+export const STRING_KEYS = [
+  'saved', 'notSaved', 'exportProgress', 'importProgress', 'progressFile', 'resetProgress', 'undo', 'imported', 'importedNotSaved', 'notProgress',
+  'tooLarge', 'reset', 'resetNotSaved', 'restored', 'restoredNotSaved', 'toolsFailed', 'checked', 'allChecked', 'whatChecked', 'parts', 'steps',
+  'connections', 'print', 'exportCsv', 'exportFailed', 'bom', 'find', 'search', 'showParts', 'all', 'missing', 'done', 'noMatch', 'filter', 'qty',
+  'component', 'specification', 'quantity', 'group', 'components', 'link', 'enlarge', 'image', 'close', 'zoomFailed', 'stepsTitle', 'usesParts',
+  'note', 'caution', 'warning', 'stepsOf', 'fullscreen', 'exitFullscreen', 'zoomOut', 'zoomIn', 'fit', 'show', 'visible', 'thisStep',
+  'selectedConnection', 'allConnections', 'from', 'to', 'cable', 'ringEnd', 'plainEnd', 'markChecked', 'isChecked', 'loading', 'previous',
+  'nextStep', 'nextConnection', 'lastConnection', 'inStep', 'allOf', 'connection', 'boardLabel', 'connectionLabel', 'ringAt', 'checkedLabel',
+  'noRenderer', 'noRouter', 'number', 'color', 'size', 'yes', 'no', 'byStep', 'guide', 'tabsFailed', 'unknown', 'unavailable', 'noScript',
+] as const;
+export type Strings = Record<(typeof STRING_KEYS)[number], string>;
 /** `[x, y]` or `[width, height]` in board units. */
 export type Point = [number, number];
 /** The note of a step: plain text or text with a level. */
@@ -47,6 +60,8 @@ export interface Board {
   props?: { name: string; at: Point; size: Point }[];
   parts: Record<string, Part>;
   steps: BoardStep[];
+  /** Texts of this board, over the guide's own: words such as from, to and cable can differ between boards. */
+  strings?: Partial<Strings>;
 }
 /** One guide: the data of the BOM, the text steps and the boards. */
 export interface Guide {
@@ -55,6 +70,8 @@ export interface Guide {
   bom?: Bom;
   steps?: TextSteps;
   boards?: Record<string, Board>;
+  /** Texts of the guide's components by key, for a guide in another language. */
+  strings?: Partial<Strings>;
 }
 
 const repeated = <T,>(values: T[]): T[] => [...new Set(values.filter((v, i) => values.indexOf(v) !== i))];

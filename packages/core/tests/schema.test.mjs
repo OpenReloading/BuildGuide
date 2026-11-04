@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import Ajv from 'ajv/dist/2020.js';
+import { STRING_KEYS } from '../lib/buildguide-check.mjs';
 
 const read = path => JSON.parse(readFileSync(new URL(path, import.meta.url)));
 const validate = new Ajv({ allErrors: true }).compile(read('../schema/buildguide.schema.json'));
@@ -50,4 +51,18 @@ test('the schema accepts the steps and rejects a step without title, a stray key
     assert.deepEqual(validate.errors.map(e => e.instancePath), ['/steps/items/0' + path]);
   }
   assert.deepEqual(Object.keys(first).sort((x, y) => x.localeCompare(y)), ['id', 'parts', 'text', 'title']);
+});
+
+test('the schema knows the keys of the string table, accepts strings in the guide and in a board, rejects an unknown key and a value that is not text', () => {
+  const schema = read('../schema/buildguide.schema.json'), guide = read('../example/guide.json'), german = read('./strings-de.json');
+  assert.deepEqual(schema.$defs.strings.propertyNames.enum, [...STRING_KEYS]);
+  guide.strings = german;
+  guide.boards.tubing.strings = { cable: 'Schlauch' };
+  assert.equal(validate(guide), true, JSON.stringify(validate.errors));
+  for (const [change, path] of [[g => { g.strings.colour = 'Farbe'; }, '/strings'], [g => { g.boards.tubing.strings.cable = 1; }, '/boards/tubing/strings/cable']]) {
+    const copy = structuredClone(guide);
+    change(copy);
+    assert.equal(validate(copy), false);
+    assert.deepEqual([...new Set(validate.errors.map(e => e.instancePath))], [path]);
+  }
 });

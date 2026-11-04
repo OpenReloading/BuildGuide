@@ -67,6 +67,12 @@ function buildguide(context: Pick<LoadContext, 'siteDir' | 'baseUrl'>, options: 
       }
       return loaded;
     },
+    // the theme component's own two messages in the language of each guide (its strings): the noscript text and the text of a failed load.
+    // Only these reach the page bundle; core takes the rest of the strings from the data
+    async contentLoaded({ actions }) {
+      const messages = (g: Guide | undefined) => ({ noScript: g?.strings?.noScript, unavailable: g?.strings?.unavailable });
+      actions.setGlobalData({ ...messages(guide), guides: Object.fromEntries(named.map((g) => [g.id, messages(guides[g.id])])) });
+    },
     // the theme component reads the URLs from here; the data is the file guide.json, so the pages carry none of it.
     // The name differs from core's own #guide-data, so core does not mount by itself when it loads
     injectHtmlTags() {

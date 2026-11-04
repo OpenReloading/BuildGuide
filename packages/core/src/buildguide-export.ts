@@ -3,17 +3,17 @@
    function with the context of one component and the action, 'csv' or 'print'. */
 window.BuildGuideModules = {...window.BuildGuideModules, export: (c, action) => {
   type BoardStep = import('./buildguide-check.mjs').BoardStep;
-  const {board, bom, esc} = c, yes = (done: boolean) => done ? 'Yes' : 'No';
-  const HEAD = ['No', 'From', 'To', 'Colour', 'Cable', 'Size', 'Done'];
+  const {board, bom, esc, t} = c, yes = (done: boolean) => t(done ? 'yes' : 'no');
+  const HEAD = [t('number'), t('from'), t('to'), t('color'), t('cable'), t('size'), t('done')];
   const rows = (step: BoardStep) => step.connections.map(x => [x.no, c.label(x, 'a'), c.label(x, 'b'), x.color, x.cable, x.size, yes(c.checked(c.connKey(x)))]);
   if (action === 'print') {
     const list = c.root.querySelector('.ag-print-list');
-    if (list && board) list.innerHTML = `<table class="ag-table"><caption class="ag-sr">All connections by step</caption><thead><tr>${HEAD.map(h => `<th scope="col">${h}</th>`).join('')}</tr></thead>${
+    if (list && board) list.innerHTML = `<table class="ag-table"><caption class="ag-sr">${esc(t('byStep'))}</caption><thead><tr>${HEAD.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead>${
       board.steps.map(s => `<tbody><tr class="ag-group"><th colspan="7" scope="rowgroup">${esc(s.title)}</th></tr>${rows(s).map(r => `<tr>${r.map(v => `<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody>`).join('')}</table>`;
     return;
   }
   const table: unknown[][] = board ? [HEAD, ...board.steps.flatMap(rows)]
-    : [['Group', 'Component', 'Specification', 'Quantity', bom.linkLabel || 'Link', 'Done'], ...c.parts().map(p => [p.group, p.part, p.spec, p.qty, p.link || '', yes(c.checked(c.bomKey(p)))])];
+    : [[t('group'), t('component'), t('specification'), t('quantity'), bom.linkLabel || t('link'), t('done')], ...c.parts().map(p => [p.group, p.part, p.spec, p.qty, p.link || '', yes(c.checked(c.bomKey(p)))])];
   // a leading = + - @ would run as a spreadsheet formula
   const cell = (v: unknown) => '"' + String(v ?? '').replace(/^[=+\-@\t\r]/, "'$&").replace(/"/g, '""') + '"';
   c.download(new Blob(['﻿' + table.map(r => r.map(cell).join(',')).join('\r\n')], {type: 'text/csv;charset=utf-8'}), board ? c.boardKey + '.csv' : bom.export || 'bom.csv');
