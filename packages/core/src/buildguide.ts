@@ -173,8 +173,8 @@ interface Window {
       if (mine === undefined) return false;
       const bits = pairValue(mine).split('/').map(decode);
       const {step, wire} = state;
-      const i = steps.findIndex(s => s.id === bits[0]); state.step = i >= 0 ? i : 0;
-      const j = stepAt(state.step).connections.findIndex(c => c.no === bits[1]); state.wire = j >= 0 ? j : 0;
+      const i = steps.findIndex(s => s.id === bits[0]); state.step = Math.max(i, 0);
+      const j = stepAt(state.step).connections.findIndex(c => c.no === bits[1]); state.wire = Math.max(j, 0);
       return state.step !== step || state.wire !== wire;
     }
 

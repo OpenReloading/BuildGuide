@@ -655,7 +655,7 @@ test('Docusaurus: a second guide is a file, no page holds it, each guide is fetc
   // a fresh load of the page with both: one request for each file
   fetched.length = 0;
   await page.goto(url('second')); await expect(page.locator('.ag-guide')).toHaveCount(2); await settled(page);
-  expect(fetched.sort()).toEqual([`${PREFIX}/assets/buildguide/guide.json`, `${PREFIX}/assets/buildguide/guides/minimal.json`]);
+  expect(fetched.sort((x, y) => x.localeCompare(y))).toEqual([`${PREFIX}/assets/buildguide/guide.json`, `${PREFIX}/assets/buildguide/guides/minimal.json`]);
 });
 
 // the tick keys of every item of a component, in order
