@@ -67,6 +67,10 @@ node assets/buildguide-<version>/buildguide-check.mjs guide.json
 
 It prints one line per problem and exits 1, or 2 without a file. `check(data)` from `buildguide-check.mjs` returns the list of problems. It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part, the per-terminal limit, a board `title`, and tick prefixes that are unique across boards and not `bom`. The MkDocs plugin runs the same checks (`check.py`) and stops the build on a problem.
 
+## Types
+
+The npm package ships TypeScript declarations next to the scripts: `buildguide-check.d.mts` types `check(data)` and the guide data (`Guide`, `Board`, `Connection` and the rest), and `buildguide.d.ts` declares `window.BuildGuide`, the mount options and the `buildguide-progress` event on `document` as globals.
+
 ## Plugins
 
 Options and markup of the [MkDocs](mkdocs.mdx) and [Docusaurus](docusaurus.mdx) plugins are on their getting started pages.

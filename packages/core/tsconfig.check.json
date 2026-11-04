@@ -1,0 +1,17 @@
+{
+  // the check module and CLI: Node only, no DOM
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "lib": ["es2023"],
+    "types": ["node"],
+    "verbatimModuleSyntax": true,
+    // coverage and stack traces point at the TypeScript source (node --enable-source-maps)
+    "sourceMap": true,
+    "inlineSources": true,
+    "rootDir": "src",
+    "outDir": "lib",
+    "tsBuildInfoFile": ".tsbuild/check.tsbuildinfo"
+  },
+  "files": ["src/buildguide-check.mts"]
+}

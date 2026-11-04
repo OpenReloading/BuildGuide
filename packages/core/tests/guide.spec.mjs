@@ -10,8 +10,8 @@ const MINIMAL = JSON.parse(readFileSync(new URL('../example/minimal/all.json', i
 // BUILDGUIDE_PREFIX: the path the tested site lives under, e.g. /docs
 const PREFIX = process.env.BUILDGUIDE_PREFIX ?? '';
 const ORIGIN = 'http://127.0.0.1:8080', BASE = `${ORIGIN}${PREFIX}/example/`;
-// the core files: src/ here, assets/buildguide/ in a site built with a plugin
-const CORE = process.env.BUILDGUIDE_SITE ? `${PREFIX}/assets/buildguide/` : '/src/';
+// the core files: lib/ (the emitted output) here, assets/buildguide/ in a site built with a plugin
+const CORE = process.env.BUILDGUIDE_SITE ? `${PREFIX}/assets/buildguide/` : '/lib/';
 const boards = Object.entries(D.boards);
 const label = (b, c, side) => c['l' + side] ?? `${b.parts[c[side].split(':')[0]].name} · ${c[side].slice(c[side].indexOf(':') + 1)}`;
 const hashOf = (s, c) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');

@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 const SKIP = /\/vendor\/|\.(png|jpg|wasm|ico|woff2?)$|package-lock\.json$/;
 const BAD = /\u2014|\p{Emoji_Presentation}|\uFE0F/u;
 // Paths git ignores (.gitignore and the local agent config), left out when there is no git to ask (a worktree opened in the dev container).
-const IGNORED = /^(\.agents|\.claude|\.codex)\/|(^|\/)(\.git|node_modules|dist|test-results|playwright-report|\.playwright-mcp|\.venv|__pycache__|\.docusaurus)\/|(^|\/)(\.coverage|coverage\.xml|lcov\.info)$|^site\/build\/|^packages\/mkdocs\/example\/site\/|^packages\/mkdocs\/src\/mkdocs_buildguide\/core\/|^packages\/docusaurus\/(example\/build|core)\//;
+const IGNORED = /^(\.agents|\.claude|\.codex)\/|(^|\/)(\.git|node_modules|dist|test-results|playwright-report|\.playwright-mcp|\.venv|__pycache__|\.docusaurus)\/|(^|\/)(\.coverage|coverage\.xml|lcov\.info)$|^site\/build\/|^packages\/mkdocs\/example\/site\/|^packages\/mkdocs\/src\/mkdocs_buildguide\/core\/|^packages\/docusaurus\/(example\/build|core)\/|^packages\/[^/]+\/(lib|\.tsbuild)\//;
 
 function listFiles() {
   try {

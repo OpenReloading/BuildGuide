@@ -16,12 +16,7 @@
   },
   "overrides": [
     {
-      "includes": ["packages/core/src/buildguide.js", "packages/core/src/buildguide-board.js"],
-      // classic browser scripts, not modules: their 'use strict' is not redundant
-      "linter": { "rules": { "suspicious": { "noRedundantUseStrict": "off" } } }
-    },
-    {
-      "includes": ["packages/core/src/**", "!packages/core/src/buildguide-check.mjs"],
+      "includes": ["packages/core/src/**", "!packages/core/src/buildguide-check.mts"],
       "linter": {
         "rules": {
           "style": {

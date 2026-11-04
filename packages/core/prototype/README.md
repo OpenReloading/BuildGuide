@@ -1,8 +1,8 @@
 # Board renderer without third-party code (prototype)
 
-`board-svg.js` draws the boards of a guide with plain SVG and routes the connections with an own orthogonal router, so a board needs no JointJS and no libavoid. It is a prototype for [#1](https://github.com/OpenReloading/BuildGuide/issues/1): it is not shipped, not loaded by the component and not part of any package. The third-party files under `src/` stay as they are until the owner decides.
+`board-svg.js` draws the boards of a guide with plain SVG and routes the connections with an own orthogonal router, so a board needs no JointJS and no libavoid. It is a prototype for [#1](https://github.com/OpenReloading/BuildGuide/issues/1): it is not shipped, not loaded by the component and not part of any package. The third-party files under `src/vendor/` stay as they are until the owner decides.
 
-It has the entry point, the options and the DOM hooks of `src/buildguide-board.js` (`data-connection`, `role`, `tabindex`, the `aria-label` texts, `data-ready`, the `joint-*` hooks and `model-id` attributes the browser tests read, the `✓ ` mark and `; checked`), so the component and the browser tests run against it as they are.
+It has the entry point, the options and the DOM hooks of the shipped board renderer (`src/buildguide-board.ts`) (`data-connection`, `role`, `tabindex`, the `aria-label` texts, `data-ready`, the `joint-*` hooks and `model-id` attributes the browser tests read, the `✓ ` mark and `; checked`), so the component and the browser tests run against it as they are.
 
 ## Compare
 
@@ -12,7 +12,7 @@ node prototype/compare.mjs            # screenshots, counts, size and time into 
 SKIP_SPECS=1 node prototype/compare.mjs
 ```
 
-The script copies the package twice per guide into `test-results/compare/`, puts `board-svg.js` in place of `src/buildguide-board.js` in one copy and empties the third-party script there, serves each copy and reads the drawn geometry the way `tests/board-layout.spec.mjs` does. `dense-guide.json` is the 52-wire wiring board and the tubing board of a published build guide of the same organisation (MIT, notes and bill of materials left out, one part kind renamed). To run only the unchanged browser tests against the prototype, run `npx playwright test` in `test-results/compare/prototype-demo`.
+The script copies the package twice per guide into `test-results/compare/`, puts `board-svg.js` in place of the emitted `lib/buildguide-board.js` in one copy (run `npm run build` first) and empties the third-party script there, serves each copy and reads the drawn geometry the way `tests/board-layout.spec.mjs` does. `dense-guide.json` is the 52-wire wiring board and the tubing board of a published build guide of the same organisation (MIT, notes and bill of materials left out, one part kind renamed). To run only the unchanged browser tests against the prototype, run `npx playwright test` in `test-results/compare/prototype-demo`.
 
 `tests/board-route.test.mjs` covers the router with a few small cases.
 

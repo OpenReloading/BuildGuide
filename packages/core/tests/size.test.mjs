@@ -3,21 +3,23 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 
-// gzip budgets in bytes, about 10 % above the size at the time of writing; raise one only on purpose
+// gzip budgets in bytes of the shipped files (lib/: the emitted scripts without their comments, the stylesheet, the third-party files);
+// raise one only on purpose
 const BUDGET = {
-  'buildguide.js': 12700, // scan, pushState navigation, the loader of buildguide-<name>.js, combined tabs, text steps, zoom and full screen: 12002 at the time (11554 before)
-  'buildguide-progress.js': 850, // export, import, reset and undo of progress: 772 at the time
-  'buildguide-zoom.js': 1000, // the dialog of an enlarged BOM image: 906 at the time
-  'buildguide-export.js': 1090, // CSV of the BOM and of boards, the print list of a board: 988 at the time
-  'buildguide-board.js': 9900, // routing retries, number placement, pinch and wheel zoom: 8989 at the time (7441 before)
+  'buildguide.js': 12700, // scan, pushState navigation, the loader of buildguide-<name>.js, combined tabs, text steps, zoom and full screen: 10360 emitted at the time (12002 as the hand-written script with its comments)
+  'buildguide-progress.js': 850, // export, import, reset and undo of progress: 632 emitted at the time (772 as the hand-written script)
+  'buildguide-zoom.js': 1000, // the dialog of an enlarged BOM image: 674 emitted at the time (906 as the hand-written script)
+  'buildguide-export.js': 1090, // CSV of the BOM and of boards, the print list of a board: 816 emitted at the time (988 as the hand-written script)
+  'buildguide-board.js': 9900, // routing retries, number placement, pinch and wheel zoom: 7504 emitted at the time (8989 as the hand-written script)
   'buildguide.css': 6300, // text steps: 5757 at the time (5567 before), progress bar in three engines and forced colours before that
   'vendor/joint/joint.min.js': 160000,
   'vendor/libavoid/index.js': 19200,
   'vendor/libavoid/libavoid.wasm': 202000,
 };
 const byName = (a, b) => a.localeCompare(b);
-const SRC = new URL('../src/', import.meta.url);
-// the shipped files: the own files (buildguide.js, buildguide.css, buildguide-<name>.js) and everything under vendor/ except licences and notes
+const SRC = new URL('../lib/', import.meta.url);
+// the shipped files: the own files (buildguide.js, buildguide.css, buildguide-<name>.js) and everything under vendor/ except licences and notes;
+// the declarations (.d.ts) and the check CLI are not loaded by a page
 const shipped = readdirSync(SRC, { recursive: true }).filter(f => /^(buildguide(-[a-z]+)?\.(js|css)|vendor\/.+)$/.test(f) && !/(^|\/)(LICENSE|README\.txt)$/.test(f) && /\.\w+$/.test(f)).sort(byName);
 
 test('every shipped file has a budget', () => assert.deepEqual(shipped, Object.keys(BUDGET).sort(byName)));

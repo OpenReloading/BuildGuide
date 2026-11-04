@@ -1,35 +1,61 @@
 // BuildGuide board renderer: JointJS parts with terminals and libavoid orthogonal routes, for wiring and tubing alike.
 // The component around it owns navigation and saved progress; this renderer owns only its drawing.
 (() => {
-  let library;
-  const cachedRoutes = new Map();
-  function ready(base) {
-    if (!library) library = import(base + 'index.js').then(async ({AvoidLib}) => {
+  type Board = import('./buildguide-check.mjs').Board;
+  type Connection = import('./buildguide-check.mjs').Connection;
+  type Part = import('./buildguide-check.mjs').Part;
+  type PartKind = import('./buildguide-check.mjs').PartKind;
+  type Side = import('./buildguide-check.mjs').Side;
+  type Joint = typeof import('@joint/core');
+  type JointElement = import('@joint/core').dia.Element;
+  type LinkView = import('@joint/core').dia.LinkView;
+  type XY = { x: number; y: number };
+  type Box = { x0: number; y0: number; x1: number; y1: number };
+  // the parts of libavoid-js that the router uses (the package's own declarations type them as any)
+  type Router = { setRoutingParameter(parameter: unknown, value: number): void; setRoutingOption(option: unknown, value: boolean): void; processTransaction(): void; delete(): void };
+  type Avoid = {
+    Router: new (flags: number) => Router;
+    RouterFlag: { OrthogonalRouting: { value: number } };
+    RoutingParameter: Record<string, unknown>;
+    RoutingOption: Record<string, unknown>;
+    Point: new (x: number, y: number) => XY;
+    Rectangle: new (topLeft: XY, bottomRight: XY) => object;
+    ShapeRef: new (router: Router, polygon: object) => object;
+    ShapeConnectionPin: new (shape: object, classId: number, x: number, y: number, proportional: boolean, insideOffset: number, directions: number) => { setExclusive(exclusive: boolean): void };
+    ConnEnd: new (shape: object | undefined, classId: number | undefined) => object;
+    ConnRef: new (router: Router, source: object, target: object) => { displayRoute(): { size(): number; at(index: number): XY } };
+  };
+  let library: Promise<Avoid> | null = null;
+  const cachedRoutes = new Map<string, XY[][]>();
+  function ready(base: string) {
+    if (!library) library = (import(base + 'index.js') as Promise<{ AvoidLib: { load(file: string): Promise<void>; getInstance(): Avoid } }>).then(async ({AvoidLib}) => {
       await AvoidLib.load(base + 'libavoid.wasm');
       return AvoidLib.getInstance();
     }).catch(error => { library = null; throw error; });
     return library;
   }
   const FONT = 'inherit';   // the drawing's text follows --ag-font through the canvas
-  const PIN_TEXT = {'-': '−'};
+  const PIN_TEXT: Record<string, string> = {'-': '−'};
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
   const SMALLEST = 8.5, PHONE = 560;   // px: smallest font size drawn below, canvas width of a phone
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
-  const inkOn = fill => { const n = /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
-  const end = e => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)]; };
+  const inkOn = (fill: string | undefined) => { const n = fill && /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
+  const end = (e: string) => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)] as const; };
   // a wheel delta in pixels, a notch or a trackpad pinch (ctrl + wheel) as a zoom factor of 35 % at most
-  const wheelPx = (delta, mode) => delta * [1, 16, 400][mode || 0];
-  const wheelFactor = (delta, mode) => Math.exp(-Math.max(-30, Math.min(30, wheelPx(delta, mode))) * .01);
+  const wheelPx = (delta: number, mode?: number) => delta * ([1, 16, 400][mode || 0] as number);
+  const wheelFactor = (delta: number, mode?: number) => Math.exp(-Math.max(-30, Math.min(30, wheelPx(delta, mode))) * .01);
 
-  window.BuildGuideBoard = (root, B, options) => {
-    if (!window.joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
+  const draw = (root: HTMLElement, B: Board, options: BuildGuideBoardOptions): BuildGuideDrawing => {
+    const joint = (window as Window & { joint?: Joint }).joint;
+    if (!joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
     let disposed = false;
     const {dia, shapes} = joint;
     const [W, H] = B.size;
     const kinds = B.kinds || {}, colors = B.colors || {}, parts = B.parts || {}, areas = B.areas || {};
-    const kindOf = p => ({...DEFAULT_KIND, ...kinds[p.kind]});
-    const colorOf = c => ({line: '#64748b', outline: '#1f2937', ...colors[c.color]});
+    const kindOf = (p: { kind?: string | undefined }): PartKind => ({...DEFAULT_KIND, ...kinds[p.kind as string]});
+    const colorOf = (c: Connection) => ({line: '#64748b', outline: '#1f2937', ...colors[c.color]});
+    const cell = (id: string) => graph.getCell(id) as JointElement;
 
     const Area = dia.Element.define('buildguide.Area', {
       attrs: {body: {width: 'calc(w)', height: 'calc(h)', rx: 12, fill: '#f8fafc', strokeWidth: 1.5, strokeDasharray: '6 5'}},
@@ -38,7 +64,7 @@
     const Caption = dia.Element.define('buildguide.Caption', {
       attrs: {label: {x: 0, y: 14, fontSize: 14, fontWeight: 700, fontFamily: FONT, stroke: '#ffffff', strokeWidth: 4, paintOrder: 'stroke'}},
     }, {markup: [{tagName: 'text', selector: 'label'}]});
-    const Part = dia.Element.define('buildguide.Part', {
+    const PartShape = dia.Element.define('buildguide.Part', {
       attrs: {
         body: {width: 'calc(w)', height: 'calc(h)', rx: 6, strokeWidth: 1.5},
         title: {x: 'calc(0.5*w)', y: -10, textAnchor: 'middle', fontSize: 14, fontWeight: 800, fill: '#17202a', fontFamily: FONT},
@@ -47,7 +73,7 @@
     }, {markup: [{tagName: 'rect', selector: 'body'}, {tagName: 'rect', selector: 'band'},
                  {tagName: 'text', selector: 'title'}, {tagName: 'text', selector: 'sub'}]});
 
-    const ns = {...shapes, buildguide: {Area, Part, Caption}};
+    const ns = {...shapes, buildguide: {Area, Part: PartShape, Caption}};
     const graph = new dia.Graph({}, {cellNamespace: ns});
     const holder = document.createElement('div');
     const paper = new dia.Paper({
@@ -75,9 +101,9 @@
 
     for (const [id, p] of Object.entries(parts)) {
       const k = kindOf(p), inset = k.inset || 0, offset = k.offset || {};
-      const groups = {}, items = [];
+      const groups: Record<string, object> = {}, items = [];
       for (const [side, pins] of Object.entries(p.ports || {})) {
-        const args = {left: {dx: inset}, right: {dx: -inset}, top: {dy: offset.top || 0}, bottom: {dy: offset.bottom || 0}}[side];
+        const args = {left: {dx: inset}, right: {dx: -inset}, top: {dy: offset.top || 0}, bottom: {dy: offset.bottom || 0}}[side as Side];
         groups[side] = {position: {name: side, args}};
         for (const pin of pins) {
           const core = k.pins?.[pin];
@@ -93,7 +119,7 @@
         }
       }
       const body = k.round ? {fill: p.color || k.fill, stroke: k.stroke, rx: p.size[0] / 2} : {fill: k.fill, stroke: k.stroke, ...(k.rx != null && {rx: k.rx})};
-      graph.addCell(new Part({
+      graph.addCell(new PartShape({
         id, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
         ports: {groups, items},
         // a title or label on a side with terminals is drawn inside the part, so no connection has to cross it
@@ -107,41 +133,42 @@
     // routing with libavoid: orthogonal connections around the parts, parallel ones nudged apart.
     // Every part is a rectangle with its terminals as pins. A title or label on a side without terminals lies outside the part
     // and is part of the rectangle; terminal circles sit on the part edge, so a side with terminals is padded instead.
-    const obstacles = graph.getElements().filter(el => el.get('type') !== 'buildguide.Area').map(el => {
-      const b = el.getBBox(), part = parts[el.id] || {}, k = part.kind ? kindOf(part) : {};
-      const pad = side => (part.ports?.[side] && !k.inset ? 14 : 0);
+    type Obstacle = Box & { id: string; pins: { key: string; ox: number; oy: number; dir: number }[] };
+    const obstacles: Obstacle[] = graph.getElements().filter(el => el.get('type') !== 'buildguide.Area').map(el => {
+      const id = el.id as string, b = el.getBBox(), part: Partial<Part> = parts[id] || {}, k: PartKind = part.kind ? kindOf(part) : {};
+      const pad = (side: Side) => (part.ports?.[side] && !k.inset ? 14 : 0);
       const y0 = b.y - Math.max(part.name && !part.ports?.top ? 22 : 0, pad('top')), y1 = b.y + b.height + Math.max(part.sub && !part.ports?.bottom ? 22 : 0, pad('bottom'));
       const x0 = b.x - pad('left'), x1 = b.x + b.width + pad('right');
       const pins = [];   // at the terminals themselves: the last leg of a connection runs straight into its terminal
       for (const [side, names] of Object.entries(part.ports || {})) {
         const pos = el.getPortsPositions(side);
-        for (const pin of names) pins.push({key: el.id + ':' + pin, ox: b.x - x0 + pos[pin].x, oy: b.y + pos[pin].y - y0, dir: DIR[side]});
+        for (const pin of names) pins.push({key: id + ':' + pin, ox: b.x - x0 + (pos[pin]?.x ?? 0), oy: b.y + (pos[pin]?.y ?? 0) - y0, dir: DIR[side as Side]});
       }
-      return {id: el.id, x0, y0, x1, y1, pins};
+      return {id, x0, y0, x1, y1, pins};
     });
     // the walls of a box with glands: connections leave it only through the gaps, and
     // tall fences between the glands outside keep each cable in its own gland's channel
     for (const [key, a] of Object.entries(areas)) {
       if (!a.glands) continue;
       const [x0, y0] = a.at, x1 = x0 + a.size[0], y1 = y0 + a.size[1], t = 4, gap = 36;
-      const wall = (xa, ya, xb, yb) => obstacles.push({id: 'wall-' + key + obstacles.length, x0: xa, y0: ya, x1: xb, y1: yb, pins: []});
+      const wall = (xa: number, ya: number, xb: number, yb: number) => obstacles.push({id: 'wall-' + key + obstacles.length, x0: xa, y0: ya, x1: xb, y1: yb, pins: []});
       const gx = a.glands.map(g => g[0]).sort((p, q) => p - q);
       let x = x0 - t;
       for (const g of gx) { wall(x, y0 - t, g - gap, y0 + t); x = g + gap; }
       wall(x, y0 - t, x1 + t, y0 + t); wall(x0 - t, y1 - t, x1 + t, y1 + t); wall(x0 - t, y0 - t, x0 + t, y1 + t); wall(x1 - t, y0 - t, x1 + t, y1 + t);
-      for (let i = 1; i < gx.length; i++) { const m = (gx[i - 1] + gx[i]) / 2; wall(m - 2, -5000, m + 2, y0); }
+      for (let i = 1; i < gx.length; i++) { const m = ((gx[i - 1] as number) + (gx[i] as number)) / 2; wall(m - 2, -5000, m + 2, y0); }
     }
 
     // libavoid returns a straight line between the terminals when it finds no way round: such a route is not orthogonal
-    const orthogonal = pts => pts.every((p, i) => !i || Math.abs(p.x - pts[i - 1].x) < .5 || Math.abs(p.y - pts[i - 1].y) < .5);
+    const orthogonal = (pts: XY[]) => pts.every((p, i) => { const q = pts[i - 1]; return !q || Math.abs(p.x - q.x) < .5 || Math.abs(p.y - q.y) < .5; });
     // the room between parts shrinks with the buffer around them: the widest that finds a route for every connection wins
-    function route(Avoid, list) {
-      let routes;
-      for (const buffer of [14, 8, 4, 0]) { routes = attempt(Avoid, list, buffer); if (routes.every((pts, i) => colorOf(list[i]).diode || orthogonal(pts))) break; }
+    function route(Avoid: Avoid, list: Connection[]) {
+      let routes: XY[][] = [];
+      for (const buffer of [14, 8, 4, 0]) { routes = attempt(Avoid, list, buffer); if (routes.every((pts, i) => colorOf(list[i] as Connection).diode || orthogonal(pts))) break; }
       return routes.map(pts => pts.slice(1, -1));   // the terminals are the connection's ends: the vertices are the bends between
     }
-    function attempt(Avoid, list, buffer) {
-      const param = n => Avoid.RoutingParameter[n], option = n => Avoid.RoutingOption[n];
+    function attempt(Avoid: Avoid, list: Connection[], buffer: number) {
+      const param = (n: string) => Avoid.RoutingParameter[n], option = (n: string) => Avoid.RoutingOption[n];
       const r = new Avoid.Router(Avoid.RouterFlag.OrthogonalRouting.value);
       r.setRoutingParameter(param('shapeBufferDistance'), buffer);
       r.setRoutingParameter(param('idealNudgingDistance'), 14);
@@ -150,7 +177,7 @@
       r.setRoutingOption(option('nudgeOrthogonalSegmentsConnectedToShapes'), false);   // the leg into a terminal stays on it
       r.setRoutingOption(option('nudgeSharedPathsWithCommonEndPoint'), true);
       r.setRoutingOption(option('performUnifyingNudgingPreprocessingStep'), true);
-      const shapeOf = {}, pinOf = {};
+      const shapeOf: Record<string, object> = {}, pinOf: Record<string, number> = {};
       let cls = 1;
       for (const o of obstacles) {
         const shape = new Avoid.ShapeRef(r, new Avoid.Rectangle(new Avoid.Point(o.x0, o.y0), new Avoid.Point(o.x1, o.y1)));
@@ -161,7 +188,7 @@
           pinOf[p.key] = cls++;
         }
       }
-      const ref = e => new Avoid.ConnEnd(shapeOf[end(e)[0]], pinOf[e]);
+      const ref = (e: string) => new Avoid.ConnEnd(shapeOf[end(e)[0]], pinOf[e]);
       const conns = list.map(c => new Avoid.ConnRef(r, ref(c.a), ref(c.b)));
       r.processTransaction();
       const routes = conns.map(c => {
@@ -174,10 +201,10 @@
     }
 
     // a diode drawn as a part across two terminals: it loops around a part whose kind says so, else it hangs above or below
-    function diodeVertices(id, sourcePin, targetPin) {
-      const part = parts[id], el = graph.getCell(id), k = kindOf(part);
-      const sideOf = pin => Object.keys(part.ports).find(side => part.ports[side].includes(pin));
-      const pos = pin => { const p = el.getPortsPositions(sideOf(pin))[pin]; return {x: part.at[0] + p.x, y: part.at[1] + p.y}; };
+    function diodeVertices(id: string, sourcePin: string, targetPin: string) {
+      const part = parts[id] as Part, el = cell(id), k = kindOf(part);
+      const sideOf = (pin: string) => (Object.keys(part.ports) as Side[]).find(side => part.ports[side]?.includes(pin)) as Side;
+      const pos = (pin: string) => { const p = el.getPortsPositions(sideOf(pin))[pin] as XY; return {x: part.at[0] + p.x, y: part.at[1] + p.y}; };
       const source = pos(sourcePin), target = pos(targetPin);
       const top = part.at[1] - (k.diodeLoop === 'around' ? 34 : 45);
       if (k.diodeLoop === 'around') return [{x: part.at[0] + part.size[0] + 14, y: source.y}, {x: part.at[0] + part.size[0] + 14, y: top}, {x: part.at[0] - 14, y: top}, {x: part.at[0] - 14, y: target.y}];
@@ -185,7 +212,7 @@
       const y = sideOf(sourcePin) === 'bottom' ? part.at[1] + part.size[1] + 36 : top;
       return [{x: source.x, y}, {x: target.x, y}];
     }
-    function link(c, i, vertices) {
+    function link(c: Connection, i: number, vertices: XY[]) {
       const [pa, a] = end(c.a), [pb, b] = end(c.b), col = colorOf(c), diode = col.diode, done = options.done?.(c.no), mark = done ? '✓ ' : '';
       const l = new shapes.standard.DoubleLink({
         id: 'c' + c.no, source: {id: pa, port: a}, target: {id: pb, port: b},
@@ -195,7 +222,7 @@
         attrs: {line: {stroke: col.line, strokeWidth: col.width || 4, targetMarker: {type: 'path', d: ''}},
                 outline: {stroke: col.outline, strokeWidth: (col.width || 4) + 3}},
         labels: [{
-          position: [0.5, 0.35, 0.65][i % 3],
+          position: [0.5, 0.35, 0.65][i % 3] as number,
           markup: [{tagName: 'rect', selector: 'pill'}, {tagName: 'text', selector: 'num'}],
           attrs: {
             num: {text: mark + c.no, fontSize: 12, fontWeight: 800, fill: '#17202a', fontFamily: FONT, textAnchor: 'middle', textVerticalAnchor: 'middle'},
@@ -214,7 +241,7 @@
             ring: {x: -13, y: -8, width: 6, height: 16, fill: '#d1d5db'},
           },
         }, {   // the name stays upright, just beside the body (above it when the diode hangs below a part)
-          position: {distance: 0.5, offset: parts[pa].ports.bottom?.includes(a) ? -18 : 18},
+          position: {distance: 0.5, offset: parts[pa]?.ports.bottom?.includes(a) ? -18 : 18},
           markup: [{tagName: 'text', selector: 'name'}],
           attrs: {name: {text: mark + c.no, fontSize: 13, fontWeight: 800, fill: '#17202a', fontFamily: FONT, textAnchor: 'middle', textVerticalAnchor: 'middle'}},
         }]);
@@ -226,24 +253,24 @@
     root.appendChild(holder);
     root.setAttribute('aria-label', options.name + '. Select a numbered connection to inspect it.');
     const steps = B.steps, all = steps.flatMap(s => s.connections);
-    const step = steps[options.step];
-    const selected = step.connections[options.wire];
+    const step = steps[options.step] as Board['steps'][number];
+    const selected = step.connections[options.wire] as Connection;
     const visible = options.scope === 'all' ? all : options.scope === 'single' ? [selected] : step.connections;
     const used = new Set(visible.flatMap(c => [end(c.a)[0], end(c.b)[0]]));
     const terms = new Set([selected.a, selected.b]);
     for (const id of Object.keys(parts)) {
-      const el = graph.getCell(id);
+      const el = cell(id);
       el.attr('root/opacity', used.has(id) ? 1 : .65);
       for (const port of el.getPorts()) {
         if (terms.has(id + ':' + port.id)) {
           // colours from --ag-board-terminal, -bg and -ink (buildguide.css): a rule outranks the attribute
-          el.portProp(port.id, 'attrs/pb', {class: 'ag-terminal', strokeWidth: 3});
-          el.portProp(port.id, 'attrs/pt/class', 'ag-terminal');
+          el.portProp(port.id as string, 'attrs/pb', {class: 'ag-terminal', strokeWidth: 3});
+          el.portProp(port.id as string, 'attrs/pt/class', 'ag-terminal');
         }
       }
     }
-    const links = {};
-    function highlight(no, hot) {
+    const links: Record<string, ReturnType<typeof link>> = {};
+    function highlight(no: string, hot?: boolean) {
       const l = links[no];
       if (!l) return;
       l.attr('outline/strokeWidth', hot ? 11 : l.get('outlineWidth'));
@@ -254,45 +281,45 @@
     ready(options.base).then(Avoid => {
       if (disposed) return;
       if (!cachedRoutes.has(key)) cachedRoutes.set(key, route(Avoid, visible));
-      const routes = cachedRoutes.get(key);
+      const routes = cachedRoutes.get(key) as XY[][];
       const views = visible.map((c, i) => {
-        const l = link(c, i, routes[i]), diode = colorOf(c).diode;
+        const l = link(c, i, routes[i] as XY[]), diode = colorOf(c).diode;
         links[c.no] = l;
         graph.addCell(l);
-        const view = paper.findViewByModel(l);
-        view.el.dataset.connection = c.no;
-        view.el.setAttribute('role', 'button');
-        view.el.setAttribute('tabindex', '0');
-        view.el.setAttribute('aria-label', c.no + ': ' + label(c, 'a') + ' to ' + label(c, 'b') + (diode ? '; ring at ' + label(c, 'a') : '') + (options.done?.(c.no) ? '; checked' : ''));
-        view.el.addEventListener('keydown', event => {
+        const view = paper.findViewByModel<LinkView>(l), el = view.el;
+        el.dataset.connection = c.no;
+        el.setAttribute('role', 'button');
+        el.setAttribute('tabindex', '0');
+        el.setAttribute('aria-label', c.no + ': ' + label(c, 'a') + ' to ' + label(c, 'b') + (diode ? '; ring at ' + label(c, 'a') : '') + (options.done?.(c.no) ? '; checked' : ''));
+        el.addEventListener('keydown', event => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.select(c.no); }
         });
-        if (options.focus === c.no) view.el.focus({preventScroll: true});
+        if (options.focus === c.no) el.focus({preventScroll: true});
         return view;
       });
       // a number goes on a straight stretch, clear of bends, parts, labels, other numbers and other connections;
       // the longest stretches first, then a spot nearer the ends, then one beside another connection
-      const lines = views.map(v => [v.sourcePoint, ...v.route, v.targetPoint]);
-      const stretches = (line, grow) => line.slice(1).map((q, k) => ({x0: Math.min(line[k].x, q.x) - grow, y0: Math.min(line[k].y, q.y) - grow, x1: Math.max(line[k].x, q.x) + grow, y1: Math.max(line[k].y, q.y) + grow}));
-      const free = (box, others) => !others.some(o => box.x0 < o.x1 && o.x0 < box.x1 && box.y0 < o.y1 && o.y0 < box.y1);
-      const placed = [];
+      const lines: XY[][] = views.map(v => [v.sourcePoint, ...v.route, v.targetPoint]);
+      const stretches = (line: XY[], grow: number) => line.slice(1).map((q, k) => { const p = line[k] as XY; return {x0: Math.min(p.x, q.x) - grow, y0: Math.min(p.y, q.y) - grow, x1: Math.max(p.x, q.x) + grow, y1: Math.max(p.y, q.y) + grow}; });
+      const free = (box: Box, others: Box[]) => !others.some(o => box.x0 < o.x1 && o.x0 < box.x1 && box.y0 < o.y1 && o.y0 < box.y1);
+      const placed: Box[] = [];
       visible.forEach((c, i) => {
         if (colorOf(c).diode) return;
-        const hw = options.done?.(c.no) ? 24 : 15, fixed = [...obstacles, ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
-        const spots = lines[i].slice(1).flatMap((q, k) => {
-          const p = lines[i][k], long = Math.hypot(q.x - p.x, q.y - p.y);
+        const own = lines[i] as XY[], hw = options.done?.(c.no) ? 24 : 15, fixed = [...obstacles, ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
+        const spots = own.slice(1).flatMap((q, k) => {
+          const p = own[k] as XY, long = Math.hypot(q.x - p.x, q.y - p.y);
           return [.5, .35, .65, .2, .8].map(t => ({x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, long, room: long * Math.min(t, 1 - t)}));
         }).sort((u, v) => v.long - u.long);
         // shortcut: the box of a number is a fixed 30 x 24 px (48 wide with a check mark), enough for two digits
-        const spot = [[20, [...fixed, ...near]], [20, fixed], [10, fixed]].reduce((found, [room, others]) =>
-          found ?? spots.find(s => s.room >= room && free({x0: s.x - hw, y0: s.y - 12, x1: s.x + hw, y1: s.y + 12}, others)), null);
-        const view = views[i], at = spot ?? view.getPointAtRatio(.5);
-        links[c.no].label(0, {position: spot ? view.getClosestPointLength(at) / view.getConnectionLength() : .5});
+        const spot = ([[20, [...fixed, ...near]], [20, fixed], [10, fixed]] as [number, Box[]][]).reduce<XY | undefined>((found, [room, others]) =>
+          found ?? spots.find(s => s.room >= room && free({x0: s.x - hw, y0: s.y - 12, x1: s.x + hw, y1: s.y + 12}, others)), undefined);
+        const view = views[i] as LinkView, at = spot ?? view.getPointAtRatio(.5);
+        links[c.no]?.label(0, {position: spot ? view.getClosestPointLength(at) / view.getConnectionLength() : .5});
         placed.push({x0: at.x - hw - 2, y0: at.y - 14, x1: at.x + hw + 2, y1: at.y + 14});
       });
       highlight(selected.no, true);
       // a drawing wider than the canvas opens on the selected connection
-      const {sourcePoint: from, targetPoint: to} = views[visible.indexOf(selected)], {sx} = paper.scale();
+      const {sourcePoint: from, targetPoint: to} = views[visible.indexOf(selected)] as LinkView, {sx} = paper.scale();
       root.scrollLeft = (from.x + to.x) / 2 * sx - root.clientWidth / 2; root.scrollTop = (from.y + to.y) / 2 * sx - root.clientHeight / 2;
       root.dataset.ready = 'true';
     }).catch(() => {
@@ -301,9 +328,10 @@
       note.textContent = 'Router unavailable. Use the labelled connection list below.'; root.appendChild(note);
       root.dataset.ready = 'error';
     });
-    paper.on('link:mouseenter', view => highlight(view.model.id.slice(1), true));
-    paper.on('link:mouseleave', view => highlight(view.model.id.slice(1), view.model.id === 'c' + selected.no));
-    paper.on('link:pointerclick', view => options.select(view.model.id.slice(1)));
+    const connectionOf = (view: LinkView) => (view.model.id as string).slice(1);
+    paper.on('link:mouseenter', (view: LinkView) => highlight(connectionOf(view), true));
+    paper.on('link:mouseleave', (view: LinkView) => highlight(connectionOf(view), view.model.id === 'c' + selected.no));
+    paper.on('link:pointerclick', (view: LinkView) => options.select(connectionOf(view)));
     // zoomFactor 0: below PHONE px the drawing is wide enough for its smallest text (SMALLEST) to show at the canvas font size (--ag-text-small) and pans, else it fits
     let zoomFactor = options.zoom, shown = 1, readable = 1;
     function fit() {
@@ -317,7 +345,7 @@
       paper.scale(scale);
     }
     // zoom to `next` (1, the whole board, up to the maximum of the buttons), the board point under the page point (x, y) moves to (toX, toY)
-    function zoomTo(next, x, y, toX = x, toY = y) {
+    function zoomTo(next: number, x: number, y: number, toX = x, toY = y) {
       const {left, top} = holder.getBoundingClientRect(), before = paper.scale().sx;
       zoomFactor = Math.min(Math.max(1, next), Math.max(3, readable * 1.5)); fit();
       const r = holder.getBoundingClientRect(), grow = paper.scale().sx / before;
@@ -330,11 +358,11 @@
     const beforePrint = () => { const s = Math.min(700 / W, 700 / H); paper.setDimensions(W * s, H * s); paper.scale(s); };
     addEventListener('beforeprint', beforePrint); addEventListener('afterprint', fit);
     // mouse and pen dragging pans the zoomed canvas; one finger scrolls it natively and the page takes over at its edge; two fingers pinch and pan
-    let drag, pinch;
-    const touches = new Map(), mid = () => { const [a, b] = [...touches.values()]; return [(a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1]; };
+    let drag: { x: number; y: number; left: number; top: number } | null = null, pinch: [number, number, number] | null = null;
+    const touches = new Map<number, PointerEvent>(), mid = (): [number, number, number] => { const [a, b] = [...touches.values()] as [PointerEvent, PointerEvent]; return [(a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2, Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) || 1]; };
     root.addEventListener('pointerdown', event => {
       if (event.pointerType === 'touch') { touches.set(event.pointerId, event); pinch = touches.size === 2 ? mid() : null; return; }
-      if (event.target.closest('.joint-link')) return;   // connections and their numbers stay clickable
+      if ((event.target as Element).closest('.joint-link')) return;   // connections and their numbers stay clickable
       drag = {x: event.clientX, y: event.clientY, left: root.scrollLeft, top: root.scrollTop};
       root.setPointerCapture(event.pointerId);
     });
@@ -346,7 +374,7 @@
       if (!drag) return;
       root.scrollLeft = drag.left + drag.x - event.clientX; root.scrollTop = drag.top + drag.y - event.clientY;
     });
-    const release = event => { drag = null; touches.delete(event.pointerId); pinch = null; };
+    const release = (event: PointerEvent) => { drag = null; touches.delete(event.pointerId); pinch = null; };
     root.addEventListener('pointerup', release); root.addEventListener('pointercancel', release);
     // ctrl or cmd with the wheel (and a trackpad pinch) zooms around the pointer; a plain vertical wheel scrolls the nearest ancestor that can move that way, the page last, and keeps the board still
     root.addEventListener('wheel', event => {
@@ -356,7 +384,7 @@
       else for (let e = root.parentElement; e; e = e.parentElement) {
         const {overflowY} = getComputedStyle(e), body = e === document.body;
         if (body && overflowY === 'hidden') return;   // the page behind a fullscreen board stays locked
-        const to = body ? document.scrollingElement : e;
+        const to = body ? document.scrollingElement as Element : e;
         if ((body || /auto|scroll/.test(overflowY)) && (dy < 0 ? to.scrollTop > 0 : to.scrollTop + to.clientHeight + 1 < to.scrollHeight)) { to.scrollBy(0, dy); break; }
         if (!e.parentElement) return;
       }
@@ -369,5 +397,6 @@
       highlight,
     };
   };
-  window.BuildGuideBoard.wheelFactor = wheelFactor;   // for the unit tests
+  draw.wheelFactor = wheelFactor;   // for the unit tests
+  window.BuildGuideBoard = draw;
 })();

@@ -13,10 +13,10 @@ const CORE = resolve(import.meta.dirname, '..');
 const OUT = `${CORE}/prototype/comparison`;
 const WORK = `${CORE}/test-results/compare`;   // inside the package: the static server serves only folders of the repository
 const gz = file => gzipSync(readFileSync(`${CORE}/${file}`)).length;
-// the third-party scripts and the wasm module are the files in the folders under src/
-const thirdParty = readdirSync(`${CORE}/src`, { recursive: true }).filter(f => /[\\/]/.test(f) && /\.(js|wasm)$/.test(f));
+// the third-party scripts and the wasm module are the files in the folders under lib/ (npm run build)
+const thirdParty = readdirSync(`${CORE}/lib`, { recursive: true }).filter(f => /[\\/]/.test(f) && /\.(js|wasm)$/.test(f));
 const SIZES = {
-  shipped: ['buildguide-board.js', ...thirdParty].map(f => gz(`src/${f}`)).reduce((a, b) => a + b, 0),
+  shipped: ['buildguide-board.js', ...thirdParty].map(f => gz(`lib/${f}`)).reduce((a, b) => a + b, 0),
   prototype: gz('prototype/board-svg.js'),
 };
 
@@ -25,10 +25,10 @@ function copy(name, renderer, guide) {
   const dir = `${WORK}/${name}`;
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
-  for (const part of ['src', 'example', 'tests', 'package.json', 'playwright.config.mjs']) cpSync(`${CORE}/${part}`, `${dir}/${part}`, { recursive: true });
+  for (const part of ['lib', 'example', 'tests', 'package.json', 'playwright.config.mjs']) cpSync(`${CORE}/${part}`, `${dir}/${part}`, { recursive: true });
   if (renderer === 'prototype') {
-    cpSync(`${CORE}/prototype/board-svg.js`, `${dir}/src/buildguide-board.js`);
-    for (const f of thirdParty.filter(f => f.endsWith('.min.js'))) writeFileSync(`${dir}/src/${f}`, '');
+    cpSync(`${CORE}/prototype/board-svg.js`, `${dir}/lib/buildguide-board.js`);
+    for (const f of thirdParty.filter(f => f.endsWith('.min.js'))) writeFileSync(`${dir}/lib/${f}`, '');
   }
   if (guide === 'dense') cpSync(`${CORE}/prototype/dense-guide.json`, `${dir}/example/guide.json`);
   return dir;

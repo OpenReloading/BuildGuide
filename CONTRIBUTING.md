@@ -5,7 +5,7 @@
 
    ```sh
    devcontainer up --docker-path podman --workspace-folder .
-   devcontainer exec --docker-path podman --workspace-folder . npm run lint           # Biome, ruff, no em dash or emoji, tsc type check (core and site)
+   devcontainer exec --docker-path podman --workspace-folder . npm run lint           # Biome, ruff, no em dash or emoji, strict TypeScript build of core and the Docusaurus plugin, tsc type check of the site
    devcontainer exec --docker-path podman --workspace-folder . npm test               # unit tests of every component and the site scripts, with coverage floors (core: packages/core/package.json, MkDocs: packages/mkdocs/pyproject.toml)
    devcontainer exec --docker-path podman --workspace-folder . npm run test:browser   # browser tests: docs site, core example, MkDocs example, Docusaurus example
    devcontainer exec --docker-path podman --workspace-folder . npm run docs           # docs site (Docusaurus) into site/build/

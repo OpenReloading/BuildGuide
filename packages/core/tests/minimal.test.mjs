@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import Ajv from 'ajv/dist/2020.js';
-import { check } from '../src/buildguide-check.mjs';
+import { check } from '../lib/buildguide-check.mjs';
 
 // the small examples of the docs (one component each): they must stay valid
 const validate = new Ajv({ allErrors: true }).compile(JSON.parse(readFileSync(new URL('../schema/buildguide.schema.json', import.meta.url))));

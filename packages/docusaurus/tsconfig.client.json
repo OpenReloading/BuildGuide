@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "rootDir": "src",
+    "outDir": "lib",
+    "tsBuildInfoFile": ".tsbuild/client.tsbuildinfo"
+  },
+  // core's global declarations, copied into core/, type window.BuildGuide
+  "files": ["src/theme/BuildGuide/index.ts", "core/buildguide.d.ts"]
+}
