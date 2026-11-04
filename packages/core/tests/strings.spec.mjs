@@ -55,9 +55,10 @@ const germanGuide = () => {
   return data;
 };
 
-test('a guide with German strings shows and speaks no English text in any component or state', async ({ page }) => {
+// Not opened here, so not covered by this test: the error texts (a file that did not load, an unknown component) and storage being unavailable
+test('a guide with German strings shows and speaks no English text in its components and in the states the test opens', async ({ page }) => {
   const guide = germanGuide(), data = { ...guide, strings: DE }, texts = [];
-  await inlinePage(page, 'german/', data, ['bom', 'steps', 'board" data-board="wiring', 'board" data-board="tubing', 'guide'].map(v => `<div data-buildguide="${v}"></div>`).join(''));
+  await inlinePage(page, 'german/', data, `<div lang="de">${['bom', 'steps', 'board" data-board="wiring', 'board" data-board="tubing', 'guide'].map(v => `<div data-buildguide="${v}"></div>`).join('')}</div>`);
   // the wiring board opens on its diode, whose ends have words of their own
   const wiringSteps = D.boards.wiring.steps, step = wiringSteps.find(s => s.connections.some(c => D.boards.wiring.colors[c.color].diode));
   const diode = step.connections.find(c => D.boards.wiring.colors[c.color].diode);
@@ -74,6 +75,8 @@ test('a guide with German strings shows and speaks no English text in any compon
   await wiring.locator('[data-action=fullscreen]').click();
   await bom.locator('[data-zoom]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
+  // the dialog sits in the body, outside the element with the language
+  await expect(page.getByRole('dialog')).toHaveAttribute('lang', 'de');
   texts.push(...await shown(page));
   await page.keyboard.press('Escape');
   await bom.locator('[data-role=search]').fill('zzz');
@@ -86,20 +89,25 @@ test('a guide with German strings shows and speaks no English text in any compon
   await steps.locator('[data-action=reset-progress]').click();
   await expect(steps.locator('[data-action=undo-progress]')).toBeVisible();
   texts.push(...await shown(page));
+  await steps.locator('[data-action=undo-progress]').click();
+  await expect(steps.locator('.ag-message')).toHaveText(DE.restored);
+  texts.push(...await shown(page));
   await bom.locator('[data-role=import-file]').setInputFiles({ name: 'p.json', mimeType: 'application/json', buffer: Buffer.from('[1]') });
   await expect(bom.locator('.ag-message')).not.toBeEmpty();
   texts.push(...await shown(page));
   await bom.locator('[data-role=search]').fill('');
   texts.push(await csv(page, bom), await csv(page, wiring));
 
-  // the values of the data (ids, terminal names, color names), not its keys
-  const values = [];
-  JSON.stringify(guide, (_, value) => { if (typeof value === 'string') values.push(value); return value; });
+  // the values of the data that a component shows (ids, terminal names, color names), not its keys and not the values it never shows
+  const HIDDEN = new Set(['storage', 'export', 'image', 'prefix', 'kind', 'scope', 'level', 'key', 'diodeLoop']), values = [];
+  JSON.stringify(guide, (key, value) => { if (typeof value === 'string' && !HIDDEN.has(key)) values.push(value); return value; });
   const allowed = new Set([...Object.values(DE).flatMap(s => words(s.replace(/\{\w+\}/g, ''))), ...values.flatMap(words)]);
   expect([...new Set(texts.flatMap(words))].filter(w => !allowed.has(w))).toEqual([]);
   // and the German texts are there
   const all = texts.join('\n');
-  for (const text of [DE.bom, DE.saved, DE.from, DE.cable, DE.ringEnd, DE.exitFullscreen, DE.close, DE.noMatch, 'Alle Schritte abgehakt', DE.reset, DE.undo, DE.notProgress, DE.caution, DE.byStep])
+  // ("Export", "CSV", "Filter", "Link" are German words too, so the word check above cannot tell the English texts that use them)
+  for (const text of [DE.bom, DE.saved, DE.from, DE.cable, DE.ringEnd, DE.exitFullscreen, DE.close, DE.noMatch, 'Alle Schritte abgehakt', DE.reset, DE.undo,
+    DE.restored, DE.notProgress, DE.caution, DE.warning, DE.byStep, DE.exportCsv, DE.all])
     expect(all).toContain(text);
   expect(all).toContain('"Gruppe","Bauteil","Spezifikation","Menge","Inhalt","Erledigt"');
   expect(all).toContain('"Nr.","Von","Nach","Farbe","Kabel","Größe","Erledigt"');

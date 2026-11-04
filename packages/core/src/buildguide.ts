@@ -237,12 +237,13 @@ interface Window {
     const S = {...EN, ...options.strings, ...D.strings, ...board?.strings};
     const t: BuildGuideText = (key, vars = {}) => String(S[key]).replace(/\{(\w+)\}/g, (m, name: string) => String(vars[name] ?? m));
     if (view === 'guide') {
-      // buildguide-tabs.js, requested by scan() with the data; the unmount works while the file loads
+      // buildguide-tabs.js: scan() mounts once it is here, so the tabs draw at once; a mount before it loads returns an unmount that works meanwhile
       let stop = () => {};
       const destroy = () => { if (mounted.get(root) === destroy) { mounted.delete(root); stop(); } };
+      const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount, id: `ag-tabs-${++tabSeq}`}, root, D, options); };
       mounted.set(root, destroy);
-      ext('tabs').then(run => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount, id: `ag-tabs-${++tabSeq}`}, root, D, options); },
-        () => { if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
+      const tabs = window.BuildGuideModules?.tabs;
+      if (tabs) start(tabs); else ext('tabs').then(start).catch(() => { if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
       return destroy;
     }
     if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : !board) { root.textContent = t('unknown', {name: `${view}${boardKey ? ' ' + boardKey : ''}`}); return () => {}; }
@@ -271,7 +272,7 @@ interface Window {
     const tally = (): [number, number] => view === 'steps' ? [count(textSteps, stepKey), textSteps.length] : board ? [count(all(), connKey), all().length] : [count(items, bomKey), items.length];
     const what = t(board ? 'connections' : view === 'steps' ? 'steps' : 'parts');
     let wasDone: boolean | undefined;
-    const state: { step: number; wire: number; scope: string; zoom: number; expanded: boolean; search: string; filter: string; message: string; pageY?: number } =
+    const state: { step: number; wire: number; scope: string; zoom: number; expanded: boolean; search: string; filter: 'All' | 'Missing' | 'Done'; message: string; pageY?: number } =
       {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', filter: 'All', message: ''};
     const end = (e: string) => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)] as const; };
     // the note of a step, a string or {level, text}, in a board step and in a text step; a level the table lacks is shown as written
@@ -429,7 +430,7 @@ interface Window {
     const bom: Partial<Bom> = D.bom || {}, items = bom.items || [], textSteps = D.steps?.items || [];
     const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()) && (state.filter === 'All' || checked(bomKey(p)) === (state.filter === 'Done')));
     function renderBOM() {
-      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div>${actions()}</div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="${esc(t('find'))}" aria-label="${esc(t('search'))}" value="${esc(state.search)}"></label><select data-role="filter" aria-label="${esc(t('showParts'))}">${['All', 'Missing', 'Done'].map(v => `<option value="${v}">${esc(t(v.toLowerCase() as 'all'))}</option>`).join('')}</select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div>${actions()}</div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="${esc(t('find'))}" aria-label="${esc(t('search'))}" value="${esc(state.search)}"></label><select data-role="filter" aria-label="${esc(t('showParts'))}">${(['All', 'Missing', 'Done'] as const).map(v => `<option value="${v}">${esc(t(v.toLowerCase() as Lowercase<typeof v>))}</option>`).join('')}</select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
     }
     function renderSteps() {
       const row = (s: TextStep, i: number) => {
@@ -441,7 +442,7 @@ interface Window {
     const groupTally = (g: string) => { const of = items.filter(p => p.group === g); return `${count(of, bomKey)} / ${of.length}`; };
     function bomRows() {
       const parts = filteredParts();
-      if (!parts.length) return `<div class="ag-empty">${esc(t('noMatch') + (state.filter === 'All' ? '' : ' ' + t('filter', {filter: t(state.filter.toLowerCase() as 'all')})))}</div>`;
+      if (!parts.length) return `<div class="ag-empty">${esc(t('noMatch') + (state.filter === 'All' ? '' : ' ' + t('filter', {filter: t(state.filter.toLowerCase() as Lowercase<typeof state.filter>)})))}</div>`;
       let group = '';
       const row = (p: BomItem) => {
         const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)} · ${groupTally(p.group)}</th></tr>` : ''; group = p.group;
@@ -508,7 +509,7 @@ interface Window {
       };
     }
     function bind() {
-      for (const select of root.querySelectorAll('select')) { const role = select.dataset.role as 'scope' | 'filter'; select.value = state[role]; select.onchange = () => { if (role === 'scope') state.scope = select.value; else state.filter = select.value; render(); }; }
+      for (const select of root.querySelectorAll('select')) { const role = select.dataset.role as 'scope' | 'filter'; select.value = state[role]; select.onchange = () => { if (role === 'scope') state.scope = select.value; else state.filter = select.value as typeof state.filter; render(); }; }
       for (const b of root.querySelectorAll<HTMLElement>('[data-step]')) b.onclick = () => navigate(Number(b.dataset.step));
       for (const b of root.querySelectorAll<HTMLElement>('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll<HTMLElement>('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, stepAt(i).connections.findIndex(c => c.no === b.dataset.goto)); };
@@ -560,10 +561,10 @@ interface Window {
       if (auto.has(root)) continue;
       const entry: { dead: boolean; stop?: () => void } = {dead: false};
       auto.set(root, entry);
-      // the tabs file loads while the data does
-      if (root.dataset.buildguide === 'guide') ext('tabs').catch(ignore);
+      // a guide's tabs file loads while the data does, and the guide mounts once both are here: the scroll below then finds it drawn
+      const tabs = root.dataset.buildguide === 'guide' && ext('tabs').catch(ignore);
       const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent as string));
-      pending.push(data.then(D => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = EN.unavailable; }));
+      pending.push(Promise.all([data, tabs]).then(([D]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = EN.unavailable; }));
     }
     // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
     if (pending.length) Promise.allSettled(pending).then(() => {

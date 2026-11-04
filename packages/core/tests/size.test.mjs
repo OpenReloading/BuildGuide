@@ -6,7 +6,7 @@ import { gzipSync } from 'node:zlib';
 // gzip budgets in bytes of the shipped files (lib/: the emitted scripts without their comments, the stylesheet, the third-party files);
 // raise one only on purpose
 const BUDGET = {
-  'buildguide.js': 12700, // scan, pushState navigation, the loader of buildguide-<name>.js, text steps, zoom and full screen and the English string table: 10592 emitted at the time (10395 before, with the tabs and without the table)
+  'buildguide.js': 12700, // scan, pushState navigation, the loader of buildguide-<name>.js, text steps, zoom and full screen and the English string table: 10638 emitted at the time (10395 before, with the tabs and without the table)
   'buildguide-progress.js': 850, // export, import, reset and undo of progress: 576 emitted at the time, its messages in the string table (632 before)
   'buildguide-zoom.js': 1000, // the dialog of an enlarged BOM image: 674 emitted at the time (906 as the hand-written script)
   'buildguide-export.js': 1090, // CSV of the BOM and of boards, the print list of a board: 816 emitted at the time (988 as the hand-written script)

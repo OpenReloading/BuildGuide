@@ -1551,6 +1551,14 @@ test('the anchor stays in view when a board pair follows it', async ({ page }) =
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
 });
 
+test('the anchor below a guide is in view once its tabs are drawn, also when the tabs file is slow', async ({ page }) => {
+  await page.route('**/buildguide-tabs.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); });
+  await inlinePage(page, 'below-guide/', D, '<div data-buildguide="guide"></div><h2 id="below">Below</h2><div style="height:3000px"></div>');
+  await page.goto(`${BASE}below-guide/#below&guide=wiring`);
+  await ready(panelOf(page));
+  await expect(page.locator('#below')).toBeInViewport();
+});
+
 test('a name-only fragment equal to a board key is an anchor, not a position', async ({ page }) => {
   await inlinePage(page, 'same/', D, '<h2 id="wiring">Wiring</h2><div data-buildguide="board" data-board="wiring"></div>');
   await page.goto(BASE + 'same/');
@@ -2018,13 +2026,12 @@ test('guide: unmounting removes the tabs, the panel and every listener, mounting
 });
 
 test('guide: buildguide-tabs.js is requested while the data loads, not after it', async ({ page }) => {
+  // a host with inline data makes no request for it
   let release;
   const held = new Promise(done => { release = done; });
-  await page.route(`${BASE}held.json`, async r => { await held; await r.fulfill({ json: D }); });
-  await page.route(BASE + 'parallel/', r => r.fulfill({ contentType: 'text/html', body:
-    `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css"><div data-buildguide="guide" data-src="../held.json"></div><script src="${CORE}buildguide.js" defer></script>` }));
+  await page.route('**/guide.json', async r => { await held; await r.continue(); });
   const tabsFile = page.waitForRequest(r => r.url().endsWith('/buildguide-tabs.js'));
-  await page.goto(BASE + 'parallel/');
+  await page.goto(url('guide'));
   await tabsFile;
   release();
   await expect(page.getByRole('tab')).toHaveText(TABS);
@@ -2050,8 +2057,8 @@ test('guide: an unmount while buildguide-tabs.js loads leaves the root empty; a 
   await expect(page.getByRole('tab')).toHaveCount(0);
 
   await inlinePage(page, 'tabs-failed/', D, '<div data-buildguide="guide"></div>');
-  // scan() and the mount share the one request of the file
-  await page.route('**/buildguide-tabs.js', r => r.abort(), { times: 1 });
+  // scan() requests the file with the data and the mount tries once more before it says so
+  await page.route('**/buildguide-tabs.js', r => r.abort(), { times: 2 });
   await page.goto(BASE + 'tabs-failed/');
   await expect(page.locator('[data-buildguide]')).toHaveText('Guide tabs did not load.');
   await page.evaluate(data => window.BuildGuide.mount(document.querySelector('[data-buildguide]'), data), D);
