@@ -19,5 +19,5 @@ class CoreHook(BuildHookInterface):
                 return
             raise FileNotFoundError(f"{core / 'lib'} is missing: build core first (npm run build -w packages/core)")
         shutil.rmtree(target, ignore_errors=True)
-        shutil.copytree(core / "lib", target, ignore=shutil.ignore_patterns("*.d.ts", "*.d.mts"))
+        shutil.copytree(core / "lib", target, ignore=shutil.ignore_patterns("*.d.ts", "*.d.mts", "*.map"))
         shutil.copy(core / "schema/buildguide.schema.json", target)

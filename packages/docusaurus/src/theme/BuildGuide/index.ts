@@ -5,7 +5,7 @@ import React, { useEffect, useRef } from 'react';
 type Core = NonNullable<Window['BuildGuide']>;
 type Guide = Parameters<Core['mount']>[1];
 /** The props of the component: one BuildGuide view of the site's guide, or of the guide `guide` of the plugin's guides option. */
-export interface Props { view?: 'bom' | 'steps' | 'board' | 'guide'; board?: string; guide?: string }
+export interface Props { view: 'bom' | 'steps' | 'board' | 'guide'; board?: string; guide?: string }
 
 let core: Promise<Core> | null = null;
 // core loads once per full page load; it finds vendor/ and the board renderer next to its own URL
