@@ -210,7 +210,7 @@ interface Window {
       if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && alive() && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
       bind();
       if (board) {
-        exporter('print');
+        void exporter('print');
         const canvas = root.querySelector('.ag-board-canvas') as HTMLElement;
         drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoomBy(d) { return this.inner?.zoomBy(d) ?? state.zoom; }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
         boardRenderer().then(mountBoard => {
@@ -382,7 +382,7 @@ interface Window {
       for (const b of root.querySelectorAll<HTMLElement>('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll<HTMLElement>('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, stepAt(i).connections.findIndex(c => c.no === b.dataset.goto)); };
       bindChecks(root);
-      const file = root.querySelector('[data-role=import-file]') as HTMLInputElement; file.onchange = () => { const f = file.files?.[0]; if (f) tools('import', f); };
+      const file = root.querySelector('[data-role=import-file]') as HTMLInputElement; file.onchange = () => { const f = file.files?.[0]; if (f) void tools('import', f); };
       const search = root.querySelector<HTMLInputElement>('[data-role=search]'); if (search) search.oninput = () => { state.search = search.value; const results = root.querySelector('.ag-bom-results') as HTMLElement; results.innerHTML = bomRows(); bindChecks(results); };
       for (const b of root.querySelectorAll<HTMLElement>('[data-action]')) b.onclick = () => {
         switch (b.dataset.action) {
@@ -392,12 +392,12 @@ interface Window {
           case 'zoom-fit': state.zoom = 1; drawing?.fit(); break;
           case 'next-wire': moveWire(1); break;
           case 'prev-wire': moveWire(-1); break;
-          case 'export': exporter('csv'); break;
+          case 'export': void exporter('csv'); break;
           case 'print': window.print(); break;
-          case 'export-progress': tools('export'); break;
+          case 'export-progress': void tools('export'); break;
           case 'import-progress': file.click(); break;
-          case 'reset-progress': tools('reset'); break;
-          case 'undo-progress': if (undo) tools('undo', undo.before); break;
+          case 'reset-progress': void tools('reset'); break;
+          case 'undo-progress': if (undo) void tools('undo', undo.before); break;
         }
       };
     }

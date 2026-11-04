@@ -18,7 +18,7 @@ Emitted with TypeScript 7.0.2, measured with zlib level 6 against the budgets:
 
 | File | Budget | Hand-written script before | Emitted |
 |---|---|---|---|
-| `buildguide.js` | 12,700 | 12,174 | 10,352 |
+| `buildguide.js` | 12,700 | 12,174 | 10,360 |
 | `buildguide-board.js` | 9,900 | 9,015 | 7,504 |
 | `buildguide-progress.js` | 850 | 771 | 632 |
 | `buildguide-zoom.js` | 1,000 | 944 | 674 |
