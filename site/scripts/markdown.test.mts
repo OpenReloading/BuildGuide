@@ -83,7 +83,7 @@ test('files table and precache list the shipped files with sizes, licences and n
   assert.deepEqual(real.slice(0, 3), ['buildguide.css', 'buildguide.js', 'buildguide-board.js'])
   const modules = real.filter((name) => !name.includes('/')).slice(3) // every buildguide-<name>.js on demand, sorted
   assert.ok(modules.includes('buildguide-progress.js'))
-  assert.deepEqual(modules, [...modules].sort())
+  assert.deepEqual(modules, [...modules].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0)))
   const lines = precacheLines(SRC).split('\n')
   assert.equal(lines[0], "  '/assets/buildguide-<version>/buildguide.css',")
   assert.equal(lines.length, real.length)

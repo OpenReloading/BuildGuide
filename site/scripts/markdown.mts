@@ -50,16 +50,16 @@ const resolve = (schema: Node, node: Node): Node => {
   return { ...schema.$defs[$ref.replace('#/$defs/', '')], ...own }
 }
 
-export function describe(schema: Node, node: Node, path: string): string {
+export function describeType(schema: Node, node: Node, path: string): string {
   const n = resolve(schema, node)
   if ('enum' in n) return `one of ${n.enum.map((v: unknown) => `\`${JSON.stringify(v)}\``).join(', ')}`
-  if ('oneOf' in n) return n.oneOf.map((a: Node) => describe(schema, a, path)).join(' or ')
+  if ('oneOf' in n) return n.oneOf.map((a: Node) => describeType(schema, a, path)).join(' or ')
   const kind = n.type
   if (kind === undefined) throw new Error(`schema node ${path} has no type or $ref`)
   if (Array.isArray(kind)) return kind.join(' or ')
   if (kind === 'array') {
-    if ('prefixItems' in n) return `array of [${n.prefixItems.map((i: Node) => describe(schema, i, path)).join(', ')}]`
-    return `array of ${describe(schema, n.items, path)}`
+    if ('prefixItems' in n) return `array of [${n.prefixItems.map((i: Node) => describeType(schema, i, path)).join(', ')}]`
+    return `array of ${describeType(schema, n.items, path)}`
   }
   return kind
 }
@@ -71,7 +71,7 @@ export function walk(schema: Node, node: Node, path: string, required: boolean):
   const n = resolve(schema, node)
   let meaning: string = n.description ?? ''
   if ('propertyNames' in n) meaning = `${meaning} Keys: ${n.propertyNames.enum.join(', ')}.`.trim()
-  const rows: Row[] = [[path, describe(schema, n, path), required ? 'yes' : '', meaning]]
+  const rows: Row[] = [[path, describeType(schema, n, path), required ? 'yes' : '', meaning]]
   const children = (props: Node, req: string[] | undefined, prefix: string) => {
     for (const [key, child] of Object.entries(props ?? {})) rows.push(...walk(schema, child, `${prefix}.${key}`, !!req?.includes(key)))
   }
@@ -99,7 +99,7 @@ export function schemaTable(name: string): string {
   const schema = JSON.parse(readFileSync(SCHEMA, 'utf8'))
   let rows: Row[]
   if (name === 'root')
-    rows = Object.entries(schema.properties).map(([key, child]) => [key, describe(schema, child, key), schema.required.includes(key) ? 'yes' : '', resolve(schema, child).description ?? ''])
+    rows = Object.entries(schema.properties).map(([key, child]) => [key, describeType(schema, child, key), schema.required.includes(key) ? 'yes' : '', resolve(schema, child).description ?? ''])
   else if (name === 'bom' || name === 'steps') rows = walk(schema, schema.properties[name], name, false)
   else if (name === 'board') rows = walk(schema, schema.$defs.board, 'boards.<key>', false)
   else throw new Error(`no schema table named ${name}`)
