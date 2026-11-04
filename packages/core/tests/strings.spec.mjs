@@ -71,8 +71,11 @@ test('a guide with German strings shows and speaks no English text in its compon
   // the states with texts of their own: full screen, the enlarged image, an empty search, every step ticked, a reset with its undo, a refused import
   await wiring.locator('[data-action=fullscreen]').click();
   await expect(wiring.locator('[data-action=fullscreen]')).toHaveAttribute('aria-pressed', 'true');
+  // the component says it is expanded before the browser's full screen request resolves: leave only once it has
+  await page.waitForFunction(() => document.fullscreenElement);
   texts.push(...await shown(page));
   await wiring.locator('[data-action=fullscreen]').click();
+  await page.waitForFunction(() => !document.fullscreenElement);
   await bom.locator('[data-zoom]').click();
   await expect(page.getByRole('dialog')).toBeVisible();
   // the dialog sits in the body, outside the element with the language
@@ -116,13 +119,14 @@ test('a guide with German strings shows and speaks no English text in its compon
 
 test('strings of the mount options, the guide and a board replace the English texts in that order, as text, with their placeholders filled', async ({ page }) => {
   const data = structuredClone(D);
-  data.strings = { print: 'Print (guide)', from: 'From (guide)', checked: '{m} to check, {n} done {x}', saved: '<img src=x onerror="window.injected = 1">' };
+  data.strings = { print: 'Print (guide)', from: 'From (guide)', checked: '{m} to check, {n} done {x}', saved: '<img src=x onerror="window.injected = 1">', search: null };
   data.boards.wiring.strings = { from: 'From (wiring)' };
   await inlinePage(page, 'order/', D, '<div id="bom"></div><div id="wiring"></div><div id="tubing"></div><div id="guide"></div>');
   await page.goto(BASE + 'order/');
   await page.waitForFunction(() => window.BuildGuide);
   await page.evaluate(data => {
-    const strings = { print: 'Print (mount)', from: 'From (mount)', fit: 'Fit (mount)', bom: 'Parts (mount)', saved: 'Saved (mount)' };
+    // a key without a text (undefined here, null in the data) keeps the English one
+    const strings = { print: 'Print (mount)', from: 'From (mount)', fit: 'Fit (mount)', bom: 'Parts (mount)', saved: 'Saved (mount)', exportCsv: undefined };
     for (const [id, options] of [['bom', { view: 'bom' }], ['wiring', { view: 'board', board: 'wiring' }], ['tubing', { view: 'board', board: 'tubing' }], ['guide', { view: 'guide' }]])
       window.BuildGuide.mount(document.getElementById(id), data, { ...options, strings });
   }, data);
@@ -132,6 +136,8 @@ test('strings of the mount options, the guide and a board replace the English te
   await expect(bom.locator('.ag-progress')).toHaveText(`${D.bom.items.length} to check, 0 done {x}`);
   await expect(bom.locator('.ag-status')).toHaveText(data.strings.saved);
   await expect(bom.locator('.ag-status img')).toHaveCount(0);
+  await expect(bom.locator('[data-action=export]')).toHaveText('↓ Export CSV');
+  await expect(bom.locator('[data-role=search]')).toHaveAttribute('aria-label', 'Search BOM');
   await expect(wiring.locator('.ag-connection-detail small').first()).toHaveText(/^From \(wiring\)/);
   await expect(tubing.locator('.ag-connection-detail small').first()).toHaveText('From (guide)');
   await expect(wiring.locator('[data-action=zoom-fit]')).toHaveText('Fit (mount)');

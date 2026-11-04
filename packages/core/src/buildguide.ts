@@ -9,7 +9,7 @@ type BuildGuideProgress = Record<string, boolean>;
     `strings` replaces the English texts of the keys it names; the guide's and the board's `strings` win over it. */
 interface BuildGuideMountOptions {
   view?: 'bom' | 'steps' | 'board' | 'guide' | undefined; board?: string | undefined; assets?: string | undefined;
-  strings?: Partial<import('./buildguide-check.mjs').Strings> | undefined;
+  strings?: Partial<Omit<import('./buildguide-check.mjs').Strings, 'noScript'>> | undefined;
 }
 /** The detail of the `buildguide-progress` event, sent on `document` when a component imports, resets or restores progress. */
 interface BuildGuideProgressDetail { storage: string; saved: BuildGuideProgress; before: BuildGuideProgress }
@@ -233,9 +233,9 @@ interface Window {
     mounted.get(root)?.();
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
     const board = view === 'board' ? own(D.boards, boardKey) : null;
-    // guide data comes from anyone: String() keeps a value that is not text from breaking the component
+    // guide data comes from anyone: a key without a text keeps the English one, String() keeps any other value from breaking the component
     const S = {...EN, ...options.strings, ...D.strings, ...board?.strings};
-    const t: BuildGuideText = (key, vars = {}) => String(S[key]).replace(/\{(\w+)\}/g, (m, name: string) => String(vars[name] ?? m));
+    const t: BuildGuideText = (key, vars = {}) => String(S[key] ?? EN[key]).replace(/\{(\w+)\}/g, (m, name: string) => String(vars[name] ?? m));
     if (view === 'guide') {
       // buildguide-tabs.js: scan() mounts once it is here, so the tabs draw at once; a mount before it loads returns an unmount that works meanwhile
       let stop = () => {};
