@@ -15,10 +15,10 @@ Source = "https://github.com/OpenReloading/BuildGuide"
 buildguide = "mkdocs_buildguide.plugin:BuildGuidePlugin"
 
 [dependency-groups]
-dev = ["pytest==9.1.1", "ruff==0.17.1", "mkdocs-material==9.7.7", "pytest-cov==7.1.0"]
+dev = ["pytest==9.2.0", "ruff==0.17.3", "mkdocs-material==9.7.7", "pytest-cov==7.1.0"]
 
 [build-system]
-requires = ["hatchling==1.32.4"]
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
 
 # hatch_build.py copies packages/core/lib and the schema into src/mkdocs_buildguide/core/ (git-ignored)
