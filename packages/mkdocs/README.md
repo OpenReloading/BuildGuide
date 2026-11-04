@@ -64,7 +64,7 @@ Pages with a component also get the core, so Material's `navigation.instant` wor
 
 ## Development
 
-From the repository root, in the dev container: `npm run lint` (ruff), `npm test` (pytest), `npm run docs` (the docs site with this plugin) and `npm run test:browser` (the core browser tests, also against the built docs site). `uv build packages/mkdocs` builds the wheel and sdist into `packages/mkdocs/dist/`. The build copies `packages/core/src` and the schema into `src/mkdocs_buildguide/core/` (git-ignored); the editable install rebuilds when core changes.
+From the repository root, in the dev container: `npm run lint` (ruff), `npm test` (pytest) and `npm run test:browser` (the core browser tests, also against the example site in `example/`, built with this plugin and Material). `uv build packages/mkdocs` builds the wheel and sdist into `packages/mkdocs/dist/` after `npm run build -w packages/core`: the build copies core's `lib/` and the schema into `src/mkdocs_buildguide/core/` (git-ignored); the editable install rebuilds when core changes.
 
 ## Licenses
 

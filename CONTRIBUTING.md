@@ -5,10 +5,10 @@
 
    ```sh
    devcontainer up --docker-path podman --workspace-folder .
-   devcontainer exec --docker-path podman --workspace-folder . npm run lint           # Biome, ruff, no em dash or emoji, tsc type check
-   devcontainer exec --docker-path podman --workspace-folder . npm test               # unit tests of every component, with coverage floors (core: packages/core/package.json, MkDocs: packages/mkdocs/pyproject.toml)
-   devcontainer exec --docker-path podman --workspace-folder . npm run test:browser   # browser tests: core example, docs site, Docusaurus example
-   devcontainer exec --docker-path podman --workspace-folder . npm run docs           # docs site into site/
+   devcontainer exec --docker-path podman --workspace-folder . npm run lint           # Biome, ruff, no em dash or emoji, strict TypeScript build of core and the Docusaurus plugin, tsc type check of the site
+   devcontainer exec --docker-path podman --workspace-folder . npm test               # unit tests of every component and the site scripts, with coverage floors (core: packages/core/package.json, MkDocs: packages/mkdocs/pyproject.toml)
+   devcontainer exec --docker-path podman --workspace-folder . npm run test:browser   # browser tests: docs site, core example, MkDocs example, Docusaurus example
+   devcontainer exec --docker-path podman --workspace-folder . npm run docs           # docs site (Docusaurus) into site/build/
    devcontainer exec --docker-path podman --workspace-folder . npm run dist           # release archives
    ```
 
@@ -28,8 +28,8 @@ Every merge to `main` deploys the `next` edition. A release happens when the rel
 
 - **Release pull request:** `release.yml` runs release-please on every push to `main` with the org's release GitHub App token, so its pull request starts the required checks without anyone approving the runs. `release-weekly.yml` enables auto-merge on it on Mondays.
 - **Release:** merging the release pull request tags each changed component (`<component>-vX.Y.Z`) and creates its GitHub Release. The archives, wheel, sdist and packages are built and published from those tags by `release.yml`, never from a push to `main`. `npm run dist` in `ci.yml` builds without publishing.
-- **Pages:** `pages.yml` builds one site and deploys it in one deployment, on a push to `main`, when a release is published and on manual dispatch. The root of https://openreloading.github.io/BuildGuide/ is the latest release of the repository, built from its tag. `/next/` is `main`. Without a release, or with a latest release from before `docs/hooks/edition.py`, the root redirects to `/next/`.
-- **Browser storage:** both editions are on one origin and share `localStorage`. The build of `/next/` runs with `BUILDGUIDE_EDITION=next`, which `docs/hooks/edition.py` turns into the suffix `-next` on every guide's `storage` key. The root keeps the keys of the guide data, so saved ticks stay. The docs site has no service worker and no other browser data. A service worker for `/next/` would need the scope `/next/` and a cache name with the same suffix.
+- **Pages:** `pages.yml` builds one site and deploys it in one deployment, on a push to `main`, when a release is published and on manual dispatch. The root of https://openreloading.github.io/BuildGuide/ is the latest release of the repository, built from its tag. `/next/` is `main`. Without a release, or with a latest release from before the edition handling (MkDocs: `docs/hooks/edition.py`, Docusaurus: `site/scripts/edition.mts`), the root redirects to `/next/`.
+- **Browser storage:** both editions are on one origin and share `localStorage`. The build of `/next/` runs with `BUILDGUIDE_EDITION=next`, which `site/scripts/edition.mts` turns into the suffix `-next` on every guide's `storage` key. The root keeps the keys of the guide data, so saved ticks stay. The docs site has no service worker and no other browser data, apart from Docusaurus' colour mode choice (`theme` in `localStorage`), which both editions share. A service worker for `/next/` would need the scope `/next/` and a cache name with the same suffix.
 
 Optional: a pre-push hook runs `npm run lint` in the dev container (start it first) before each push. Enable it with `git config core.hooksPath .githooks`. CI stays the gate.
 

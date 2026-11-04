@@ -1,0 +1,7 @@
+{
+  "title": "BuildGuide",
+  "description": "Interactive build guides from one data file, with the MkDocs and Docusaurus plugins and the core browser library.",
+  "url": "https://openreloading.github.io",
+  "baseUrl": "/BuildGuide/",
+  "repo": "OpenReloading/BuildGuide"
+}

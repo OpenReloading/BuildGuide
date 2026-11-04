@@ -1,0 +1,17 @@
+{
+  // the browser files: scripts without import or export, emitted as classic scripts that find their siblings through
+  // document.currentScript. Comments stay in the source: the gzip budgets apply to the emitted files (tests/size.test.mjs)
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "types": [],
+    "removeComments": true,
+    "rootDir": "src",
+    "outDir": "lib",
+    "tsBuildInfoFile": ".tsbuild/browser.tsbuildinfo"
+  },
+  "include": ["src/buildguide*.ts"],
+  "references": [{ "path": "./tsconfig.check.json" }]
+}

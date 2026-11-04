@@ -1,0 +1,322 @@
+import TabItem from '@theme/TabItem';
+import Tabs from '@theme/Tabs';
+
+# Examples
+
+One small, complete guide per component, and the files that show it on a plain HTML page, in MkDocs and in Docusaurus. Save the JSON as `guide.json`. The [example guide](example/index.mdx) uses every key of the [data format](data-format.mdx).
+
+Plain HTML needs a web server (the script fetches `guide.json`), for example `python3 -m http.server`, and the core files unpacked into `assets/` ([Plain HTML](core.mdx)). Replace `<version>` with the core version.
+
+## BOM checklist
+
+Items with a group, a name, a specification and a quantity. The component adds search, a filter for missing and done items, a tick per item, group counts, the CSV export and a print button. Live with the full example data: [BOM](example/bom.mdx).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/bom.json"
+```
+
+<Tabs>
+<TabItem value="html" label="Plain HTML">
+
+```html title="bom.html"
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BOM</title>
+<link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+</head>
+<body>
+<h1>BOM</h1>
+<div data-buildguide="bom" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+<script src="assets/buildguide-<version>/buildguide.js" defer></script>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="mkdocs" label="MkDocs">
+
+```yaml title="mkdocs.yml"
+plugins:
+  - search
+  - buildguide:
+      data: guide.json
+```
+
+```markdown title="docs/bom.md"
+# BOM
+
+<div data-buildguide="bom"></div>
+```
+
+</TabItem>
+<TabItem value="docusaurus" label="Docusaurus">
+
+```js title="docusaurus.config.js"
+plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+```
+
+```mdx title="docs/bom.mdx"
+# BOM
+
+import BuildGuide from '@theme/BuildGuide';
+
+<BuildGuide view="bom" />
+```
+
+</TabItem>
+</Tabs>
+
+## Steps
+
+A numbered list of text steps, each with a title, text, an optional note and the BOM items it uses (`parts`, ids from the BOM). The component adds a tick per step, a progress bar and a print button. Live with the full example data: [Steps](example/steps.mdx).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/steps.json"
+```
+
+<Tabs>
+<TabItem value="html" label="Plain HTML">
+
+```html title="steps.html"
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Steps</title>
+<link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+</head>
+<body>
+<h1>Steps</h1>
+<div data-buildguide="steps" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+<script src="assets/buildguide-<version>/buildguide.js" defer></script>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="mkdocs" label="MkDocs">
+
+```yaml title="mkdocs.yml"
+plugins:
+  - search
+  - buildguide:
+      data: guide.json
+```
+
+```markdown title="docs/steps.md"
+# Steps
+
+<div data-buildguide="steps"></div>
+```
+
+</TabItem>
+<TabItem value="docusaurus" label="Docusaurus">
+
+```js title="docusaurus.config.js"
+plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+```
+
+```mdx title="docs/steps.mdx"
+# Steps
+
+import BuildGuide from '@theme/BuildGuide';
+
+<BuildGuide view="steps" />
+```
+
+</TabItem>
+</Tabs>
+
+## Wiring board
+
+Parts with terminals on their sides, placed by `at` and `size`, and numbered connections from `PART:terminal` to `PART:terminal` in steps. The colour code names the wire; the routes are computed. Live with the full example data: [Wiring](example/wiring.mdx).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/wiring.json"
+```
+
+<Tabs>
+<TabItem value="html" label="Plain HTML">
+
+```html title="wiring.html"
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wiring</title>
+<link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+</head>
+<body>
+<h1>Wiring</h1>
+<div data-buildguide="board" data-board="wiring" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+<script src="assets/buildguide-<version>/buildguide.js" defer></script>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="mkdocs" label="MkDocs">
+
+```yaml title="mkdocs.yml"
+plugins:
+  - search
+  - buildguide:
+      data: guide.json
+```
+
+```markdown title="docs/wiring.md"
+# Wiring
+
+<div data-buildguide="board" data-board="wiring"></div>
+```
+
+</TabItem>
+<TabItem value="docusaurus" label="Docusaurus">
+
+```js title="docusaurus.config.js"
+plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+```
+
+```mdx title="docs/wiring.mdx"
+# Wiring
+
+import BuildGuide from '@theme/BuildGuide';
+
+<BuildGuide view="board" board="wiring" />
+```
+
+</TabItem>
+</Tabs>
+
+## Tubing board
+
+The same structure with one colour for the tube. `scope: "all"` shows every tube at first, `listAll` lists them all whichever step is selected. Live with the full example data: [Tubing](example/tubing.mdx).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/tubing.json"
+```
+
+<Tabs>
+<TabItem value="html" label="Plain HTML">
+
+```html title="tubing.html"
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tubing</title>
+<link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+</head>
+<body>
+<h1>Tubing</h1>
+<div data-buildguide="board" data-board="tubing" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+<script src="assets/buildguide-<version>/buildguide.js" defer></script>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="mkdocs" label="MkDocs">
+
+```yaml title="mkdocs.yml"
+plugins:
+  - search
+  - buildguide:
+      data: guide.json
+```
+
+```markdown title="docs/tubing.md"
+# Tubing
+
+<div data-buildguide="board" data-board="tubing"></div>
+```
+
+</TabItem>
+<TabItem value="docusaurus" label="Docusaurus">
+
+```js title="docusaurus.config.js"
+plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+```
+
+```mdx title="docs/tubing.mdx"
+# Tubing
+
+import BuildGuide from '@theme/BuildGuide';
+
+<BuildGuide view="board" board="tubing" />
+```
+
+</TabItem>
+</Tabs>
+
+## BOM, steps and boards behind tabs
+
+One component with a tab for the BOM, one for the steps when the data has a top-level `steps` object, and one for each board, in the order of the data (the BOM, the steps, then the boards). Only the shown tab is mounted, so a board is drawn when you open its tab. `data-board="wiring tubing"` (Docusaurus: `board="wiring tubing"`) picks tabs and their order; `bom` names the BOM and `steps` the steps. The tab is kept in the hash (`#guide=wiring`) next to the boards' own positions. Live with the full example data: [Combined](example/guide.mdx).
+
+```json title="guide.json"
+--8<-- "packages/core/example/minimal/all.json"
+```
+
+<Tabs>
+<TabItem value="html" label="Plain HTML">
+
+```html title="guide.html"
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guide</title>
+<link rel="stylesheet" href="assets/buildguide-<version>/buildguide.css">
+</head>
+<body>
+<h1>Guide</h1>
+<div data-buildguide="guide" data-src="guide.json"><noscript>This guide needs JavaScript.</noscript></div>
+<script src="assets/buildguide-<version>/buildguide.js" defer></script>
+</body>
+</html>
+```
+
+</TabItem>
+<TabItem value="mkdocs" label="MkDocs">
+
+```yaml title="mkdocs.yml"
+plugins:
+  - search
+  - buildguide:
+      data: guide.json
+```
+
+```markdown title="docs/guide.md"
+# Guide
+
+<div data-buildguide="guide"></div>
+```
+
+</TabItem>
+<TabItem value="docusaurus" label="Docusaurus">
+
+```js title="docusaurus.config.js"
+plugins: [['@openreloading/docusaurus-plugin-buildguide', { data: 'guide.json' }]],
+```
+
+```mdx title="docs/guide.mdx"
+# Guide
+
+import BuildGuide from '@theme/BuildGuide';
+
+<BuildGuide view="guide" />
+```
+
+</TabItem>
+</Tabs>
+
+## Several components on one page
+
+Place them one after the other, each board once per page. The [All components](example/all.mdx) page shows the BOM, wiring and tubing together; its guide data holds `bom` and both boards. A board is either standalone or in a tab, not both on one page.

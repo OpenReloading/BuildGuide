@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 
 // the renderer is browser code: it only sets window.BuildGuideBoard when loaded, and its pure helpers hang off it
 const window = {};
-runInNewContext(readFileSync(new URL('../src/buildguide-board.js', import.meta.url), 'utf8'), { window });
+runInNewContext(readFileSync(new URL('../lib/buildguide-board.js', import.meta.url), 'utf8'), { window });
 const { wheelFactor } = window.BuildGuideBoard;
 
 test('wheel zoom: no movement keeps the zoom, up zooms in, down zooms out, both by the same factor', () => {

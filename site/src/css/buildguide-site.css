@@ -1,0 +1,480 @@
+/* BuildGuide site layout on the brand tokens of brand.css. The home page is the doc "index": Docusaurus puts
+   docs-doc-id-index on <html>, which scopes its rules. Every control is a 44 px target (site/tests/site.spec.mjs). */
+
+/* Links in running text are underlined, so they do not rely on colour against the text around them */
+.markdown :is(p, li, td) > a:not(.button) {
+  text-decoration: underline;
+}
+
+:is(.navbar, .markdown, .menu, .pagination-nav, .footer, .breadcrumbs, .theme-doc-toc-mobile) :is(a, button):focus-visible,
+.tabs__item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+:is(.navbar, .footer) a:focus-visible {
+  outline-color: var(--header-ink);
+}
+
+/* Navbar: a page-coloured bar with a line under it, the wordmark as the title */
+.navbar {
+  --ifm-navbar-item-padding-vertical: 9px;
+  border-bottom: 1px solid var(--line);
+}
+
+.navbar__brand {
+  min-height: 44px;
+}
+
+.navbar__logo {
+  height: 40px;
+}
+
+.navbar .clean-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.menu__link {
+  min-height: 44px;
+  align-items: center;
+}
+
+/* the page links as tabs: the active one underlined in the accent */
+.navbar__items:not(.navbar__items--right) .navbar__link--active {
+  box-shadow: inset 0 -2px var(--accent);
+}
+
+/* The repository link (src/components/RepoWidget.tsx) is an outlined button: icon, name, release, stars and forks */
+/* the widget is a navbar item: Infima hides those below 997 px, where the menu shows it */
+@media (min-width: 997px) {
+  .navbar__items .repo-widget {
+    display: flex;
+    min-height: 44px;
+  }
+}
+
+.repo-widget {
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  max-width: 15rem;
+  padding: 4px 12px;
+  border: 1px solid var(--control-line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.repo-widget:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  text-decoration: none;
+}
+
+.navbar-sidebar .repo-widget {
+  margin: 8px 12px;
+}
+
+.repo-widget svg {
+  display: block;
+  fill: currentColor;
+}
+
+.repo-widget__icon svg {
+  width: 1.6rem;
+  height: 1.6rem;
+}
+
+.repo-widget__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.repo-widget__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--ifm-font-weight-semibold);
+}
+
+.repo-widget__facts {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.repo-widget__facts li {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.repo-widget__facts svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+/* spoken label of a fact: the icon is hidden from assistive technology, the count alone says nothing */
+.repo-widget__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Search (src/theme/SearchBar.tsx): Pagefind's button and field 44 px high (its own rules outrank any selector, its
+   variables do not); the button on --surface like a field */
+:is(pagefind-modal-trigger, pagefind-modal) {
+  --pf-input-height: 44px;
+  --pf-border-radius: 10px;
+}
+
+pagefind-modal-trigger {
+  --pf-background: var(--surface);
+}
+
+/* The skip link, the breadcrumbs, the mobile "On this page" button and the tabs: 44 px targets */
+a[href$="__docusaurus_skipToContent_fallback"],
+.breadcrumbs__link,
+.theme-doc-toc-mobile > button,
+.tabs__item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.theme-doc-toc-mobile > button {
+  display: flex;
+  width: 100%;
+}
+
+/* The current page in the sidebar and the breadcrumbs, and code in a link: the link colour on the accent tint, which
+   keeps 4.5:1 in both schemes (on --surface-alt, Infima's choice through brand.css, it is 4.4:1 in light) */
+html[data-theme] {
+  --ifm-menu-color-background-active: var(--accent-tint);
+  --ifm-breadcrumb-item-background-active: var(--accent-tint);
+}
+
+.markdown a code {
+  background-color: var(--accent-tint);
+}
+
+/* A link alone in a table cell is a 44 px target, links inside a sentence stay inline (WCAG 2.2 target size exception) */
+.markdown td > a:only-child {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Sidebar: the groups are headings (sidebars.ts), in the small capitals of the labels */
+.menu__list-item-collapsible .menu__link:not([href]) {
+  margin-top: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: default;
+}
+
+.menu__list-item-collapsible:hover {
+  background: none;
+}
+
+/* Reading measure: about 75 characters per line for running text; tables, code and the components keep the full width */
+.markdown > :is(p, ul, ol, dl, blockquote, h1, h2, h3, h4, .theme-admonition) {
+  max-width: 720px;
+}
+
+.markdown :is(h1, h2, h3) {
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.theme-doc-markdown {
+  padding-top: 8px;
+}
+
+/* Warnings are safety notices: the amber panel of brand.css */
+.theme-admonition-warning {
+  --ifm-alert-background-color: var(--warn-fill);
+  --ifm-alert-background-color-highlight: var(--surface-alt);
+  --ifm-alert-border-color: var(--warn-border);
+  --ifm-alert-foreground-color: var(--warn-body);
+  --ifm-link-color: var(--link);
+  --ifm-link-hover-color: var(--link-hover);
+  border: 1px solid var(--warn-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.theme-admonition-warning > :first-child {
+  color: var(--warn-text);
+}
+
+/* Note levels on the data format page, with the component's markup; the components' own notes keep buildguide.css */
+.markdown > .ag-step-note {
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.markdown > .ag-step-note[data-level="caution"] {
+  border: 1.5px dashed var(--control-line);
+}
+
+.markdown > .ag-step-note[data-level="warning"] {
+  border: 2px solid var(--accent);
+  background: var(--accent-tint);
+}
+
+.markdown > .ag-step-note strong {
+  margin-right: 0.4em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* The label above a title: home page and example pages */
+.bg-label {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* Each component in a card on the page colour, which the component's sticky bars also paint (brand.css); nothing
+   clips it, so its sticky step navigation stays on screen */
+.bg-card {
+  margin: 0 0 32px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--page);
+}
+
+/* every control of a component in a card is a 44 px target, the tick boxes stay at the component's 24 px; :where()
+   keeps the specificity low, so a larger size of the component's own (the step buttons) wins */
+.bg-card :where(.ag-guide button, .ag-guide select, .ag-guide input[type="search"], .ag-guide .ag-source-link) {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* the zoom and progress buttons set smaller sizes of their own */
+.bg-card .ag-guide :is(.ag-board-controls button, .ag-progress-tools button) {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Home page: no breadcrumbs (the home icon alone), title, lead, two buttons and the facts */
+.docs-doc-id-index .theme-doc-breadcrumbs {
+  display: none;
+}
+
+/* Home page: title, lead, two buttons and the facts */
+.docs-doc-id-index .markdown h1 {
+  font-size: 44px;
+  letter-spacing: -0.02em;
+}
+
+.bg-lead {
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.bg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.bg-actions .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+.bg-actions .button--secondary {
+  border: 1px solid var(--control-line);
+  background: transparent;
+  color: var(--ink);
+}
+
+.bg-actions .button--secondary:hover {
+  border-color: var(--ink);
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.bg-actions .button--primary {
+  color: var(--on-accent);
+}
+
+ul.bg-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .docs-doc-id-index .markdown h1 {
+    font-size: 38px;
+  }
+
+  .bg-actions {
+    flex-direction: column;
+  }
+}
+
+/* Home page: the components as cards, two per row from 820 px */
+.bg-grid {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 32px;
+}
+
+@media (min-width: 820px) {
+  .bg-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.bg-grid > div {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.bg-grid h3 {
+  margin: 0 0 4px;
+}
+
+.bg-grid h3 a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.bg-grid p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* Home page: the live wiring board in a card, the progress text beside it from 1280 px */
+.bg-live {
+  display: grid;
+  gap: 32px;
+  margin: 0 0 32px;
+}
+
+@media (min-width: 1280px) {
+  .bg-live {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    align-items: start;
+  }
+}
+
+.bg-live .bg-card {
+  margin: 0;
+}
+
+.bg-card-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.bg-source {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* Home page: data format and install, their text and code from the docs and READMEs (scripts/markdown.mts) */
+:is(.bg-data, .bg-install) {
+  margin: 0 0 32px;
+}
+
+/* the README lists keep their numbers in the source, a tab shows one step at a time */
+.bg-install ol {
+  padding-left: 0;
+  list-style: none;
+}
+
+.bg-data > p:last-child a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Footer: a line above, muted text; the links underlined, 44 px high and 28 px apart */
+.footer {
+  border-top: 1px solid var(--line);
+}
+
+.footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 28px;
+  margin-bottom: 0;
+  text-align: left;
+}
+
+.footer__link-item {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-decoration: underline;
+}
+
+.footer__link-separator,
+.footer__link-item svg {
+  display: none;
+}
+
+.footer__copyright {
+  color: var(--muted);
+  text-align: left;
+}
+
+/* Previous and next */
+.pagination-nav__link {
+  border-color: var(--line);
+}
+
+.pagination-nav__link:hover {
+  border-color: var(--accent);
+}
+
+@media print {
+  .markdown > * {
+    max-width: none;
+  }
+
+  .bg-actions {
+    display: none;
+  }
+}

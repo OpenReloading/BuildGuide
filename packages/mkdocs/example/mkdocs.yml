@@ -1,0 +1,51 @@
+# Example site: the core example guide's components under /example/ with this plugin and Material, for the core browser
+# tests (npm run test:browser), as packages/docusaurus/example is for the Docusaurus plugin. Not published.
+site_name: BuildGuide MkDocs example
+# instant navigation only follows links to URLs of the sitemap, which has the site_url: the address of the test server
+site_url: http://127.0.0.1:8080/
+
+theme:
+  name: material
+  font: false   # system fonts: no requests outside the site
+  features:
+    - navigation.instant   # pages swap without a reload: the components must follow
+  palette:
+    - scheme: default
+      primary: custom   # colours in assets/site-colours.css
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+# the plugin adds its stylesheets before these, so a plain .ag-guide rule here wins (tests/guide.spec.mjs checks the order)
+extra_css:
+  - assets/site-colours.css
+  - assets/buildguide-material.css   # the Material recipe of the theming docs page
+
+plugins:
+  - search
+  - buildguide:
+      data: ../../core/example/guide.json
+      guides:
+        minimal: ../../core/example/minimal/all.json   # example/second.md
+
+markdown_extensions:
+  - admonition
+
+nav:
+  - Home: index.md
+  - Example guide:
+      - Introduction: example/index.md
+      - BOM: example/bom.md
+      - Steps: example/steps.md
+      - Wiring: example/wiring.md
+      - Tubing: example/tubing.md
+      - All components: example/all.md
+      - Combined: example/guide.md
+      - Two guides: example/second.md

@@ -1,0 +1,217 @@
+/* OpenMarksman brand for Docusaurus sites, version 1 (from OpenMarksman/Brand, docusaurus/brand.css; copy, do not link): the palette tokens and their mapping to Infima, Pagefind's search modal
+   and BuildGuide components. Colours only, no layout: each site adds its own layout file.
+   Slate neutrals from the Mantine colour generator (seed #63687C), Mantine blue as the one accent (blue.8 light,
+   blue.4 dark, as primaryColor in the Ballistics app), amber only for safety. Docusaurus sets data-theme on <html>.
+   The light tokens are the first rule, so a site's tools can read them (AutoLever: tools/social_card.py). */
+:root,
+[data-theme="light"] {
+  --page: #ffffff;
+  --surface: #f6f8fc;
+  --surface-alt: #eef0f6;
+  --ink: #1d2130;
+  --muted: #555a6d;
+  --accent: #1971c2;
+  --accent-hover: #1864ab;
+  --accent-tint: #e7f5ff;
+  --on-accent: #ffffff;
+  --link: #1971c2;
+  --link-hover: #1d2130;
+  --header-bg: #ffffff;
+  --header-ink: #1d2130;
+  --line: #dcdfe9;
+  --control-line: #7b7f91;
+  --select: #fab005;
+  --warn-text: #7a4f00;
+  --warn-border: #e0b84a;
+  --warn-fill: #fff6db;
+  --warn-body: #1d2130;
+}
+
+html[data-theme="dark"] {
+  --page: #10121b;
+  --surface: #161923;
+  --surface-alt: #1e212c;
+  --ink: #e9ebf1;
+  --muted: #acb0c0;
+  --accent: #4dabf7;
+  --accent-hover: #74c0fc;
+  --accent-tint: #172a40;
+  --on-accent: #10121b;
+  --link: #74c0fc;
+  --link-hover: #d0ebff;
+  --header-bg: #10121b;
+  --header-ink: #e9ebf1;
+  --line: #2f323f;
+  --control-line: #6f7485;
+  --select: #fab005;
+  --warn-text: #f5c518;
+  --warn-border: #6b5a12;
+  --warn-fill: #1a1a12;
+  --warn-body: #e1e6ee;
+}
+
+/* Always the light tokens on paper, also when the dark scheme is active on screen */
+@media print {
+  html[data-theme="dark"] {
+    --page: #ffffff;
+    --surface: #f6f8fc;
+    --surface-alt: #eef0f6;
+    --ink: #1d2130;
+    --muted: #555a6d;
+    --accent: #1971c2;
+    --accent-tint: #e7f5ff;
+    --link: #1971c2;
+    --line: #dcdfe9;
+    --control-line: #7b7f91;
+    --warn-text: #7a4f00;
+    --warn-border: #e0b84a;
+    --warn-fill: #fff6db;
+    --warn-body: #1d2130;
+  }
+}
+
+/* Infima from the tokens. html[data-theme] outranks Infima's own html[data-theme="dark"] block. The primary shades
+   are mixed from the accent with Docusaurus's steps (10, 15 and 30 %), so they follow the scheme. The emphasis scale
+   runs from the page to the ink in both schemes, as Infima's does. */
+html[data-theme] {
+  --ifm-color-primary: var(--accent);
+  --ifm-color-primary-dark: color-mix(in srgb, var(--accent), #000 10%);
+  --ifm-color-primary-darker: color-mix(in srgb, var(--accent), #000 15%);
+  --ifm-color-primary-darkest: color-mix(in srgb, var(--accent), #000 30%);
+  --ifm-color-primary-light: color-mix(in srgb, var(--accent), #fff 10%);
+  --ifm-color-primary-lighter: color-mix(in srgb, var(--accent), #fff 15%);
+  --ifm-color-primary-lightest: color-mix(in srgb, var(--accent), #fff 30%);
+  --ifm-background-color: var(--page);
+  --ifm-background-surface-color: var(--surface);
+  --ifm-color-content: var(--ink);
+  --ifm-color-content-secondary: var(--muted);
+  --ifm-font-color-base: var(--ink);
+  --ifm-font-color-secondary: var(--muted);
+  --ifm-heading-color: var(--ink);
+  --ifm-link-color: var(--link);
+  --ifm-link-hover-color: var(--link-hover);
+  --ifm-color-emphasis-0: var(--page);
+  --ifm-color-emphasis-100: var(--surface);
+  --ifm-color-emphasis-200: var(--surface-alt);
+  --ifm-color-emphasis-300: var(--line);
+  --ifm-color-emphasis-400: color-mix(in srgb, var(--line), var(--control-line));
+  --ifm-color-emphasis-500: var(--control-line);
+  --ifm-color-emphasis-600: color-mix(in srgb, var(--control-line), var(--muted));
+  --ifm-color-emphasis-700: var(--muted);
+  --ifm-color-emphasis-800: color-mix(in srgb, var(--muted), var(--ink));
+  --ifm-color-emphasis-900: var(--ink);
+  --ifm-color-emphasis-1000: var(--ink);
+  --ifm-hover-overlay: var(--surface-alt);
+  --ifm-toc-border-color: var(--line);
+  --ifm-table-border-color: var(--line);
+  --ifm-table-stripe-background: var(--surface);
+  --ifm-code-background: var(--surface-alt);
+  --ifm-pre-background: var(--surface-alt);
+  --ifm-pre-color: var(--ink);
+  --ifm-navbar-background-color: var(--header-bg);
+  --ifm-navbar-link-color: var(--muted);
+  --ifm-navbar-link-hover-color: var(--header-ink);
+  --ifm-navbar-link-active-color: var(--header-ink);
+  --ifm-navbar-shadow: none;
+  --ifm-menu-color: var(--ink);
+  --ifm-menu-color-active: var(--link);
+  --ifm-footer-background-color: var(--header-bg);
+  --ifm-footer-color: var(--header-ink);
+  --ifm-footer-link-color: var(--header-ink);
+  --ifm-footer-link-hover-color: var(--link);
+  --ifm-footer-title-color: var(--header-ink);
+
+  /* the search modal (Pagefind's component UI) */
+  --pf-background: var(--page);
+  --pf-text: var(--ink);
+  --pf-text-secondary: var(--muted);
+  --pf-text-muted: var(--muted);
+  --pf-border: var(--line);
+  --pf-border-focus: var(--accent);
+  --pf-outline-focus: var(--accent);
+  --pf-hover: var(--surface-alt);
+  --pf-mark: var(--ink);
+  --pf-skeleton: var(--surface-alt);
+  --pf-skeleton-shine: var(--surface);
+  --pf-font: var(--ifm-font-family-base);
+}
+
+/* BuildGuide components sit on the page: no slab of their own (the expanded view and the sticky bar keep --ag-page as
+   an opaque fill); every other component colour comes from the tokens, so none of BuildGuide's greens remain */
+html[data-theme] .ag-guide {
+  background: transparent;
+  --ag-font: var(--ifm-font-family-base);
+  --ag-page: var(--page);
+  --ag-ink: var(--ink);
+  --ag-muted: var(--muted);
+  --ag-text: var(--ink);
+  --ag-accent: var(--accent);
+  --ag-line: var(--line);
+  --ag-divider: var(--line);
+  --ag-detail-line: var(--line);
+  --ag-control-line: var(--control-line);
+  --ag-placeholder-line: var(--control-line);
+  --ag-swatch-line: var(--control-line);
+  --ag-control-ink: var(--ink);
+  --ag-control-hover: var(--surface-alt);
+  --ag-surface: var(--surface);
+  --ag-surface-soft: var(--surface-alt);
+  --ag-surface-head: var(--surface-alt);
+  --ag-surface-chip: var(--surface-alt);
+  --ag-primary: var(--accent);
+  --ag-primary-hover: var(--accent-hover);
+  --ag-done: var(--accent);
+  --ag-focus: var(--accent);
+  --ag-glow: var(--accent);
+  --ag-step-current-bg: var(--accent-tint);
+  --ag-step-current-line: var(--accent);
+  --ag-row-selected: var(--accent-tint);
+  --ag-row-selected-bar: var(--accent);
+  --ag-row-hover: var(--surface-alt);
+  --ag-bom-hover: var(--surface-alt);
+  --ag-row-arrow: var(--muted);
+  --ag-arrow: var(--muted);
+  --ag-error-bg: var(--warn-fill);
+  --ag-done-bg: var(--accent-tint);
+}
+
+/* Dark scheme: the board panel stays a light card and the drawing keeps its true colours. BuildGuide's dark filter
+   (invert and hue-rotate) turns black wires light grey and red ones pink, against a legend that says red and black,
+   and no filtered colour gives a bright selection highlight. */
+html[data-theme="dark"] .ag-guide .ag-full-board {
+  color-scheme: light;
+  --ag-board-filter: none;
+  --ag-surface: #f6f8fc;
+  --ag-ink: #1d2130;
+  --ag-text: #1d2130;
+  --ag-muted: #555a6d;
+  --ag-line: #dcdfe9;
+  --ag-divider: #dcdfe9;
+  --ag-swatch-line: #7b7f91;
+  background: #f6f8fc;
+  color: #1d2130;
+}
+
+/* Board drawing: BuildGuide draws the selected connection and the done wire numbers in green as SVG attributes
+   (buildguide-board.js); CSS outranks them. The selected wire gets a yellow highlighter, which no wire colour (red,
+   black, brown, blue) shares, and the done numbers the blue tint. Literal colours: the drawing stays light in both
+   schemes. */
+.ag-guide .ag-board-canvas [stroke="#198b47"] {
+  stroke: #ffd43b;
+}
+
+.ag-guide .ag-board-canvas circle[fill="#e1f7df"] {
+  fill: #fff3bf;
+}
+
+.ag-guide .ag-board-canvas [stroke="#237b33"] {
+  stroke: #1d2130;
+}
+
+.ag-guide .ag-board-canvas [fill="#173d23"] {
+  fill: #1d2130;
+}
+
+.ag-guide .ag-board-canvas rect[fill="#e1f7df"] {
+  fill: #d0ebff;
+}

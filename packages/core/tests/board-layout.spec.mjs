@@ -1,5 +1,5 @@
 // Browser checks of the geometry of the example boards: what the router and the renderer drew, read from the DOM.
-// Expectations come from example/guide.json. The example pages exist in the core example, the MkDocs docs site and the Docusaurus example.
+// Expectations come from example/guide.json. The example pages exist in the core example, the MkDocs example and the Docusaurus example.
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 

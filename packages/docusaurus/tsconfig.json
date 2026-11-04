@@ -1,0 +1,6 @@
+{
+  // tsc -b builds the plugin into lib/: the Node part as CommonJS (Docusaurus requires plugins) and the theme component as
+  // an ES module for the site's bundler. npm run compile copies core and its declarations into core/ first
+  "files": [],
+  "references": [{ "path": "./tsconfig.server.json" }, { "path": "./tsconfig.client.json" }]
+}

@@ -21,18 +21,22 @@ dev = ["pytest==9.1.1", "ruff==0.17.1", "mkdocs-material==9.7.7", "pytest-cov==7
 requires = ["hatchling==1.32.4"]
 build-backend = "hatchling.build"
 
-# hatch_build.py copies packages/core/src and the schema into src/mkdocs_buildguide/core/ (git-ignored)
+# hatch_build.py copies packages/core/lib and the schema into src/mkdocs_buildguide/core/ (git-ignored)
 [tool.hatch.build.hooks.custom]
 
 [tool.hatch.build]
 artifacts = ["src/mkdocs_buildguide/core/"]
+
+# the example site is the browser test host (npm run test:browser), not part of the package
+[tool.hatch.build.targets.sdist]
+exclude = ["example/"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mkdocs_buildguide"]
 
 # rebuild the editable install when core changes, so the copy stays current
 [tool.uv]
-cache-keys = [{ file = "pyproject.toml" }, { file = "hatch_build.py" }, { file = "../core/src/**" }, { file = "../core/schema/*.json" }]
+cache-keys = [{ file = "pyproject.toml" }, { file = "hatch_build.py" }, { file = "../core/lib/**" }, { file = "../core/schema/*.json" }]
 
 [tool.ruff]
 line-length = 140

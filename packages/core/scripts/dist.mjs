@@ -7,7 +7,8 @@ const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
 const name = `buildguide-${version}`, out = `dist/${name}`;
 rmSync('dist', { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
-cpSync('src', out, { recursive: true });
+// lib/ without the declarations and the check's source map, which only the npm package carries
+cpSync('lib', out, { recursive: true, filter: (f) => !/\.(d\.m?ts|map)$/.test(f) });
 cpSync('schema/buildguide.schema.json', `${out}/buildguide.schema.json`);
 cpSync('LICENSE', `${out}/LICENSE`);
 execFileSync('/usr/bin/tar', ['-cf', `${name}.tar.gz`, '-I', 'gzip -n', '--sort=name', '--owner=0', '--group=0', '--numeric-owner', '--mode=go-w,u+rw,a+rX', '--mtime=@0', name], { cwd: 'dist' });

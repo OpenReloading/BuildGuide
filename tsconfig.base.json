@@ -1,0 +1,17 @@
+{
+  // strict settings shared by the packages; each package config adds its own lib and types
+  "compilerOptions": {
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "target": "es2023",
+    "composite": true,
+    "declaration": true,
+    "skipLibCheck": false
+  }
+}

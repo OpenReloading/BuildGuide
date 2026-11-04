@@ -1,22 +1,5 @@
 {
-  "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "strict": false,
-    "target": "es2023",
-    "lib": [
-      "es2023",
-      "dom",
-      "dom.iterable"
-    ],
-    "types": [
-      "node"
-    ]
-  },
-  "include": [
-    "src/buildguide*.js",
-    "src/buildguide-check.mjs",
-    "types/*.d.ts"
-  ]
+  // tsc -b builds both parts into lib/: the check CLI for Node and the classic browser scripts
+  "files": [],
+  "references": [{ "path": "./tsconfig.check.json" }, { "path": "./tsconfig.browser.json" }]
 }
