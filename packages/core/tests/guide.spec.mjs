@@ -1553,7 +1553,8 @@ test('the anchor stays in view when a board pair follows it', async ({ page }) =
 
 test('the anchor below a guide is in view once its tabs are drawn, also when the tabs file is slow', async ({ page }) => {
   await page.route('**/buildguide-tabs.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); });
-  await inlinePage(page, 'below-guide/', D, '<div data-buildguide="guide"></div><h2 id="below">Below</h2><div style="height:3000px"></div>');
+  // without scroll anchoring, which would keep the heading in view even when the scroll came too early
+  await inlinePage(page, 'below-guide/', D, '<style>*{overflow-anchor:none}</style><div data-buildguide="guide"></div><h2 id="below">Below</h2><div style="height:3000px"></div>');
   await page.goto(`${BASE}below-guide/#below&guide=wiring`);
   await ready(panelOf(page));
   await expect(page.locator('#below')).toBeInViewport();

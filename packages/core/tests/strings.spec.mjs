@@ -79,6 +79,7 @@ test('a guide with German strings shows and speaks no English text in its compon
   await expect(page.getByRole('dialog')).toHaveAttribute('lang', 'de');
   texts.push(...await shown(page));
   await page.keyboard.press('Escape');
+  await expect(bom.locator('[data-role=filter] option')).toHaveText([DE.all, DE.missing, DE.done]);
   await bom.locator('[data-role=search]').fill('zzz');
   await bom.locator('[data-role=filter]').selectOption('Missing');
   await expect(bom.locator('.ag-empty')).toBeVisible();
@@ -107,7 +108,7 @@ test('a guide with German strings shows and speaks no English text in its compon
   const all = texts.join('\n');
   // ("Export", "CSV", "Filter", "Link" are German words too, so the word check above cannot tell the English texts that use them)
   for (const text of [DE.bom, DE.saved, DE.from, DE.cable, DE.ringEnd, DE.exitFullscreen, DE.close, DE.noMatch, 'Alle Schritte abgehakt', DE.reset, DE.undo,
-    DE.restored, DE.notProgress, DE.caution, DE.warning, DE.byStep, DE.exportCsv, DE.all])
+    DE.restored, DE.notProgress, DE.caution, DE.warning, DE.byStep, DE.exportCsv])
     expect(all).toContain(text);
   expect(all).toContain('"Gruppe","Bauteil","Spezifikation","Menge","Inhalt","Erledigt"');
   expect(all).toContain('"Nr.","Von","Nach","Farbe","Kabel","Größe","Erledigt"');

@@ -243,7 +243,7 @@ interface Window {
       const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount, id: `ag-tabs-${++tabSeq}`}, root, D, options); };
       mounted.set(root, destroy);
       const tabs = window.BuildGuideModules?.tabs;
-      if (tabs) start(tabs); else ext('tabs').then(start).catch(() => { if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
+      if (tabs) start(tabs); else ext('tabs').then(start).catch(error => { console.error(error); if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
       return destroy;
     }
     if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : !board) { root.textContent = t('unknown', {name: `${view}${boardKey ? ' ' + boardKey : ''}`}); return () => {}; }

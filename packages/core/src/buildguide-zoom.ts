@@ -11,7 +11,8 @@ window.BuildGuideModules = {...window.BuildGuideModules, zoom: (c, key) => {
   for (const name of style) if (name.startsWith('--ag-')) dialog.style.setProperty(name, style.getPropertyValue(name));
   dialog.style.colorScheme = style.colorScheme;
   // in the body it would take the page's language: it keeps the component's, so its texts are read in that language
-  dialog.lang = root.closest<HTMLElement>('[lang]')?.lang ?? '';
+  const lang = root.closest<HTMLElement>('[lang]')?.lang;
+  if (lang) dialog.lang = lang;
   dialog.setAttribute('aria-label', small.closest('tr')?.querySelector('strong')?.textContent || t('image'));
   close.type = 'button'; close.textContent = t('close'); close.onclick = () => dialog.close();
   image.src = small.currentSrc || small.src; image.alt = small.alt;
