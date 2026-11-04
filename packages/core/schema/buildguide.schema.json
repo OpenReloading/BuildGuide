@@ -61,10 +61,16 @@
       },
       "additionalProperties": false
     },
-    "boards": { "type": "object", "additionalProperties": { "$ref": "#/$defs/board" } }
+    "boards": { "type": "object", "additionalProperties": { "$ref": "#/$defs/board" } },
+    "strings": { "$ref": "#/$defs/strings", "description": "texts of the components in the language of the guide: each replaces the English text of its key" }
   },
   "additionalProperties": false,
   "$defs": {
+    "strings": {
+      "type": "object",
+      "propertyNames": { "enum": ["saved", "notSaved", "exportProgress", "importProgress", "progressFile", "resetProgress", "undo", "imported", "importedNotSaved", "notProgress", "tooLarge", "reset", "resetNotSaved", "restored", "restoredNotSaved", "toolsFailed", "checked", "allChecked", "whatChecked", "parts", "steps", "connections", "print", "exportCsv", "exportFailed", "bom", "find", "search", "showParts", "all", "missing", "done", "noMatch", "filter", "qty", "component", "specification", "quantity", "group", "components", "link", "enlarge", "image", "close", "zoomFailed", "stepsTitle", "usesParts", "note", "caution", "warning", "stepsOf", "fullscreen", "exitFullscreen", "zoomOut", "zoomIn", "fit", "show", "visible", "thisStep", "selectedConnection", "allConnections", "from", "to", "cable", "ringEnd", "plainEnd", "markChecked", "isChecked", "loading", "previous", "nextStep", "nextConnection", "lastConnection", "inStep", "allOf", "connection", "boardLabel", "connectionLabel", "ringAt", "checkedLabel", "noRenderer", "noRouter", "number", "color", "size", "yes", "no", "byStep", "guide", "tabsFailed", "unknown", "unavailable", "noScript"] },
+      "additionalProperties": { "type": "string" }
+    },
     "note": {
       "type": ["string", "object"],
       "properties": {
@@ -206,7 +212,8 @@
             },
             "additionalProperties": false
           }
-        }
+        },
+        "strings": { "$ref": "#/$defs/strings", "description": "texts of this board over the strings of the guide, such as the words from, to and cable" }
       },
       "additionalProperties": false
     }

@@ -14,9 +14,9 @@ type Check = typeof import('../core/buildguide-check.mjs');
 interface Options { data: string; guides?: Record<string, string>; assets?: string }
 
 const CORE = path.join(__dirname, '..', 'core');
-// one line per schema error: the path of the key (a surplus or missing key named at its end), then what is wrong
+// one line per schema error: the path of the key (a surplus, missing or unknown key named at its end), then what is wrong
 const schemaProblem = (e: ErrorObject) => {
-  const key: unknown = e.params.additionalProperty ?? e.params.missingProperty;
+  const key: unknown = e.params.additionalProperty ?? e.params.missingProperty ?? e.propertyName;
   return `${e.instancePath}${key === undefined ? '' : `/${String(key).replaceAll('~', '~0').replaceAll('/', '~1')}`}: ${e.message}`;
 };
 
@@ -50,7 +50,8 @@ function buildguide(context: Pick<LoadContext, 'siteDir' | 'baseUrl'>, options: 
         let loaded: unknown;
         try { loaded = JSON.parse(readFileSync(file, 'utf8')); } catch (error) { throw new Error(`${name}: ${(error as Error).message}`); }
         // before the check: it reads the data as the schema describes it
-        if (!validate(loaded)) throw new Error(`${name}:\n${(validate.errors ?? []).map(schemaProblem).join('\n')}`);
+        // a key outside a closed set (propertyNames) gives two errors: the one of its value names the key, the other repeats it without
+        if (!validate(loaded)) throw new Error(`${name}:\n${(validate.errors ?? []).filter((e) => e.keyword !== 'propertyNames').map(schemaProblem).join('\n')}`);
         const problems = check(loaded);
         if (problems.length) throw new Error(`${name}:\n${problems.join('\n')}`);
         return loaded;
@@ -66,6 +67,12 @@ function buildguide(context: Pick<LoadContext, 'siteDir' | 'baseUrl'>, options: 
         owners.set(storage, `guides.${g.id}`);
       }
       return loaded;
+    },
+    // the theme component's own two messages in the language of each guide (its strings): the noscript text and the text of a failed load.
+    // Only these reach the page bundle; core takes the rest of the strings from the data
+    async contentLoaded({ actions }) {
+      const messages = (g: Guide | undefined) => ({ noScript: g?.strings?.noScript, unavailable: g?.strings?.unavailable });
+      actions.setGlobalData({ ...messages(guide), guides: Object.fromEntries(named.map((g) => [g.id, messages(guides[g.id])])) });
     },
     // the theme component reads the URLs from here; the data is the file guide.json, so the pages carry none of it.
     // The name differs from core's own #guide-data, so core does not mount by itself when it loads

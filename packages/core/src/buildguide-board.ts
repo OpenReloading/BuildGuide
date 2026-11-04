@@ -48,7 +48,8 @@
 
   const draw = (root: HTMLElement, B: Board, options: BuildGuideBoardOptions): BuildGuideDrawing => {
     const joint = (window as Window & { joint?: Joint }).joint;
-    if (!joint) { root.textContent = 'Board renderer unavailable. Use the connection list below.'; return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
+    const {t} = options;
+    if (!joint) { root.textContent = t('noRenderer'); return {destroy() {}, zoomBy() { return 1; }, fit() {}, highlight() {}}; }
     let disposed = false;
     const {dia, shapes} = joint;
     const [W, H] = B.size;
@@ -251,7 +252,7 @@
     }
 
     root.appendChild(holder);
-    root.setAttribute('aria-label', options.name + '. Select a numbered connection to inspect it.');
+    root.setAttribute('aria-label', t('boardLabel', {name: options.name}));
     const steps = B.steps, all = steps.flatMap(s => s.connections);
     const step = steps[options.step] as Board['steps'][number];
     const selected = step.connections[options.wire] as Connection;
@@ -290,7 +291,7 @@
         el.dataset.connection = c.no;
         el.setAttribute('role', 'button');
         el.setAttribute('tabindex', '0');
-        el.setAttribute('aria-label', c.no + ': ' + label(c, 'a') + ' to ' + label(c, 'b') + (diode ? '; ring at ' + label(c, 'a') : '') + (options.done?.(c.no) ? '; checked' : ''));
+        el.setAttribute('aria-label', [t('connectionLabel', {no: c.no, a: label(c, 'a'), b: label(c, 'b')}), diode && t('ringAt', {a: label(c, 'a')}), options.done?.(c.no) && t('checkedLabel')].filter(Boolean).join('; '));
         el.addEventListener('keydown', event => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); options.select(c.no); }
         });
@@ -325,7 +326,7 @@
     }).catch(() => {
       if (disposed) return;
       const note = document.createElement('p'); note.className = 'ag-board-error';
-      note.textContent = 'Router unavailable. Use the labelled connection list below.'; root.appendChild(note);
+      note.textContent = t('noRouter'); root.appendChild(note);
       root.dataset.ready = 'error';
     });
     const connectionOf = (view: LinkView) => (view.model.id as string).slice(1);

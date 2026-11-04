@@ -46,7 +46,7 @@ test('steps table walks the items and the shared note; MDX characters in a meani
 })
 
 test('root and BOM tables; an unknown table or a node without type fails', () => {
-  assert.deepEqual(rows(schemaTable('root')).map((r) => r[0]), ['$schema', 'storage', 'bom', 'steps', 'boards'])
+  assert.deepEqual(rows(schemaTable('root')).map((r) => r[0]), ['$schema', 'storage', 'bom', 'steps', 'boards', 'strings'])
   const bom = byPath(schemaTable('bom'))
   assert.equal(bom['bom.items[].qty']?.[1], 'integer or string')
   assert.equal(bom['bom.items[].id']?.[2], 'yes')

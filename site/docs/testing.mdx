@@ -17,7 +17,7 @@ A browser test can check that the components on your own pages mounted, drew the
 
 The full list is [Reference](reference.mdx). `data-ready` is the only completion signal of a board, but it is not part of the stable surface, and neither is the text of an error message or the markup inside a component. If a release changes one of them the test below fails (it times out waiting for `data-ready`), and you adjust that one line.
 
-An error leaves its text in the element of the component, so one regular expression covers all of them: `Guide data unavailable.` (data missing or not valid), `Unknown guide component` (a view, board or key that the data does not have), `Board renderer unavailable` and `Router unavailable` (a file of the board renderer did not load).
+An error leaves its text in the element of the component, so one regular expression covers all of them: `Guide data unavailable.` (data missing or not valid), `Unknown guide component` (a view, board or key that the data does not have), `Board renderer unavailable` and `Router unavailable` (a file of the board renderer did not load), `Guide tabs did not load` (the file of the tabs did not load). These are the English texts: a guide with [`strings`](reference.mdx#texts-and-language) shows its own, so match those instead.
 
 ## A smoke test
 
@@ -27,7 +27,7 @@ This test uses [Playwright](https://playwright.dev/docs/intro) Test. It opens ea
 import { test, expect } from '@playwright/test';
 
 const PAGES = ['/guide/', '/wiring/'];
-const ERROR_TEXT = /Guide data unavailable|Unknown guide component|Board renderer unavailable|Router unavailable/;
+const ERROR_TEXT = /Guide data unavailable|Unknown guide component|Board renderer unavailable|Router unavailable|Guide tabs did not load/;
 
 for (const path of PAGES) {
   test(`${path}: components mount without error`, async ({ page }) => {

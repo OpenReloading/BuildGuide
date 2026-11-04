@@ -1492,7 +1492,7 @@ for (const [key, b] of boards) {
       return readFileSync(await file.path(), 'utf8').replace(/^\ufeff/, '').split('\r\n');
     };
     let csv = await csvOf();
-    expect(csv[0]).toBe('"No","From","To","Colour","Cable","Size","Done"');
+    expect(csv[0]).toBe('"No","From","To","Color","Cable","Size","Done"');
     expect(csv.length).toBe(all.length + 1);
     expect(csv[1]).toBe(connectionCells(b, all[0]).map(v => `"${v}"`).join(','));
     await page.locator('.ag-wire-row [data-check]').first().check();
@@ -1549,6 +1549,15 @@ test('the anchor stays in view when a board pair follows it', async ({ page }) =
   await ready(page);
   await expect(page.locator('#top')).toBeInViewport();
   await expect(page.locator('.ag-wire-row.selected .ag-wire-number')).toHaveText(c.no);
+});
+
+test('the anchor below a guide is in view once its tabs are drawn, also when the tabs file is slow', async ({ page }) => {
+  await page.route('**/buildguide-tabs.js', async r => { await new Promise(done => setTimeout(done, 300)); await r.continue(); });
+  // without scroll anchoring, which would keep the heading in view even when the scroll came too early
+  await inlinePage(page, 'below-guide/', D, '<style>*{overflow-anchor:none}</style><div data-buildguide="guide"></div><h2 id="below">Below</h2><div style="height:3000px"></div>');
+  await page.goto(`${BASE}below-guide/#below&guide=wiring`);
+  await ready(panelOf(page));
+  await expect(page.locator('#below')).toBeInViewport();
 });
 
 test('a name-only fragment equal to a board key is an anchor, not a position', async ({ page }) => {
@@ -2015,6 +2024,46 @@ test('guide: unmounting removes the tabs, the panel and every listener, mounting
   }
   await setHash(page, 'tubing=B&guide=wiring');
   await expect(page.locator('.ag-guide')).toHaveCount(0);
+});
+
+test('guide: buildguide-tabs.js is requested while the data loads, not after it', async ({ page }) => {
+  // a host with inline data makes no request for it
+  let release;
+  const held = new Promise(done => { release = done; });
+  await page.route('**/guide.json', async r => { await held; await r.continue(); });
+  const tabsFile = page.waitForRequest(r => r.url().endsWith('/buildguide-tabs.js'));
+  await page.goto(url('guide'));
+  await tabsFile;
+  release();
+  await expect(page.getByRole('tab')).toHaveText(TABS);
+});
+
+test('guide: an unmount while buildguide-tabs.js loads leaves the root empty; a failed load says so and the next mount loads the file', async ({ page }) => {
+  await inlinePage(page, 'tabs-load/', D, '<div id="host"></div>');
+  let release;
+  const held = new Promise(done => { release = done; });
+  await page.route('**/buildguide-tabs.js', async r => { await held; await r.continue(); }, { times: 1 });
+  await page.goto(BASE + 'tabs-load/');
+  await page.waitForFunction(() => window.BuildGuide);
+  const mount = () => page.evaluate(data => { window.__stop = window.BuildGuide.mount(document.getElementById('host'), data, { view: 'guide' }); }, D);
+  await mount();
+  await page.evaluate(() => window.__stop());
+  release();
+  await page.waitForFunction(() => window.BuildGuideModules?.tabs);
+  await page.evaluate(() => new Promise(done => setTimeout(done, 100)));
+  expect(await page.evaluate(() => document.getElementById('host').outerHTML)).toBe('<div id="host"></div>');
+  await mount();
+  await expect(page.getByRole('tab')).toHaveText(TABS);
+  await page.evaluate(() => window.__stop());
+  await expect(page.getByRole('tab')).toHaveCount(0);
+
+  await inlinePage(page, 'tabs-failed/', D, '<div data-buildguide="guide"></div>');
+  // scan() requests the file with the data and the mount tries once more before it says so
+  await page.route('**/buildguide-tabs.js', r => r.abort(), { times: 2 });
+  await page.goto(BASE + 'tabs-failed/');
+  await expect(page.locator('[data-buildguide]')).toHaveText('Guide tabs did not load.');
+  await page.evaluate(data => window.BuildGuide.mount(document.querySelector('[data-buildguide]'), data), D);
+  await expect(page.getByRole('tab')).toHaveText(TABS);
 });
 
 test('guide: a print shows the active component without the tabs', async ({ page }) => {

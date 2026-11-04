@@ -5,38 +5,51 @@
 
 /** The saved ticks of one guide, stored as one JSON object under its `storage` key: tick key to ticked or not. */
 type BuildGuideProgress = Record<string, boolean>;
-/** The options of `BuildGuide.mount`; each falls back to the root's `data-buildguide`, `data-board` and `data-assets`. */
-interface BuildGuideMountOptions { view?: 'bom' | 'steps' | 'board' | 'guide' | undefined; board?: string | undefined; assets?: string | undefined }
+/** The options of `BuildGuide.mount`; view, board and assets fall back to the root's `data-buildguide`, `data-board` and `data-assets`.
+    `strings` replaces the English texts of the keys it names; the guide's and the board's `strings` win over it. */
+interface BuildGuideMountOptions {
+  view?: 'bom' | 'steps' | 'board' | 'guide' | undefined; board?: string | undefined; assets?: string | undefined;
+  strings?: Partial<Omit<import('./buildguide-check.mjs').Strings, 'noScript'>> | undefined;
+}
 /** The detail of the `buildguide-progress` event, sent on `document` when a component imports, resets or restores progress. */
 interface BuildGuideProgressDetail { storage: string; saved: BuildGuideProgress; before: BuildGuideProgress }
 // biome-ignore lint/correctness/noUnusedVariables: merges into the DOM's DocumentEventMap, so document.addEventListener types the event
 interface DocumentEventMap { 'buildguide-progress': CustomEvent<BuildGuideProgressDetail> }
 
 // The contracts between this file and the files it loads on demand (buildguide-board.js and buildguide-<name>.js)
+/** The text of a key in the component's language, each {name} in it replaced by vars.name (`noScript` is the plugins' own). */
+type BuildGuideText = (key: Exclude<keyof import('./buildguide-check.mjs').Strings, 'noScript'>, vars?: Record<string, string | number>) => string;
 interface BuildGuideBoardOptions {
-  key: string; name: string; step: number; wire: number; scope: string; zoom: number; base: string; focus?: string | undefined;
+  t: BuildGuideText; key: string; name: string; step: number; wire: number; scope: string; zoom: number; base: string; focus?: string | undefined;
   label(connection: import('./buildguide-check.mjs').Connection, end: 'a' | 'b'): string; zoomed?(zoom: number): void; done?(no: string): boolean; select(no: string): void;
 }
 interface BuildGuideDrawing { destroy(): void; zoomBy(step: number): number; fit(): void; highlight(no: string, on?: boolean): void }
 type BuildGuideBoardRenderer = ((root: HTMLElement, board: import('./buildguide-check.mjs').Board, options: BuildGuideBoardOptions) => BuildGuideDrawing) & { wheelFactor?(delta: number, mode?: number): number };
 /** What the progress tools get from one component: its state through accessors. */
 interface BuildGuideProgressContext {
-  D: import('./buildguide-check.mjs').Guide; root: HTMLElement; download(blob: Blob, name: string): void; isProgress(value: unknown): value is BuildGuideProgress;
+  D: import('./buildguide-check.mjs').Guide; root: HTMLElement; t: BuildGuideText; download(blob: Blob, name: string): void; isProgress(value: unknown): value is BuildGuideProgress;
   alive(): boolean; say(message: string): void; share(progress: BuildGuideProgress, message: string, before?: BuildGuideProgress): void;
   saved(): BuildGuideProgress; ok(): boolean; fail(): void;
 }
 type BuildGuideProgressAction = ['export'] | ['reset'] | ['import', File] | ['undo', BuildGuideProgress];
 /** What the CSV export and the print list get from one component. */
 interface BuildGuideExportContext {
-  root: HTMLElement; board: import('./buildguide-check.mjs').Board | null | undefined; boardKey: string | undefined; bom: Partial<import('./buildguide-check.mjs').Bom>;
+  root: HTMLElement; t: BuildGuideText; board: import('./buildguide-check.mjs').Board | null | undefined; boardKey: string | undefined; bom: Partial<import('./buildguide-check.mjs').Bom>;
   esc(value: unknown): string; label(connection: import('./buildguide-check.mjs').Connection, end: 'a' | 'b'): string; download(blob: Blob, name: string): void;
   parts(): import('./buildguide-check.mjs').BomItem[]; checked(key: string): boolean; connKey(connection: import('./buildguide-check.mjs').Connection): string; bomKey(item: import('./buildguide-check.mjs').BomItem): string;
+}
+/** What the tabs of the combined component get: core's hash helpers, mount for the panel and an id for the tab elements. */
+interface BuildGuideTabsContext {
+  t: BuildGuideText; esc(value: unknown): string; own<T>(object: Record<string, T> | undefined, key: string | undefined): T | undefined; decode(value: string): string;
+  pairs(): string[]; nameOf(pair: string): string | null; pairValue(pair: string): string; putPair(name: string, value: string): boolean;
+  mount(root: HTMLElement, data: import('./buildguide-check.mjs').Guide, options: BuildGuideMountOptions): () => void; id: string;
 }
 /** The features loaded on first use: buildguide-<name>.js sets window.BuildGuideModules[name]. */
 interface BuildGuideModuleMap {
   progress: (context: BuildGuideProgressContext, ...action: BuildGuideProgressAction) => Promise<void>;
-  zoom: (context: { root: HTMLElement }, key: string) => () => void;
+  zoom: (context: { root: HTMLElement; t: BuildGuideText }, key: string) => () => void;
   export: (context: BuildGuideExportContext, action: 'csv' | 'print') => void;
+  tabs: (context: BuildGuideTabsContext, root: HTMLElement, data: import('./buildguide-check.mjs').Guide, options: BuildGuideMountOptions) => () => void;
 }
 // biome-ignore lint/correctness/noUnusedVariables: merges into the DOM's Window
 interface Window {
@@ -71,7 +84,113 @@ interface Window {
   const decode = (v: string) => { try { return decodeURIComponent(v); } catch { return v; } };
   // end of a fire-and-forget promise: a refused fullscreen request or unreadable import has nothing to report
   const ignore = () => {};
-  const button = (text: string, action: string, extra = '') => `<button type="button" data-action="${action}" ${extra}>${text}</button>`;
+  const button = (text: string, action: string, extra = '') => `<button type="button" data-action="${action}" ${extra}>${esc(text)}</button>`;
+  // Every text the components show or speak, by key (the keys are STRING_KEYS of buildguide-check.mts). A mount takes these,
+  // then the strings of the mount options, of the guide data and of the board, each replacing the keys it names.
+  // {name} is filled in at use; the plugins keep the English noScript text themselves.
+  // --8<-- [start:strings]
+  const EN: Omit<import('./buildguide-check.mjs').Strings, 'noScript'> = {
+    // the status line and the progress tools
+    saved: 'Progress saved in this browser.',
+    notSaved: 'Storage unavailable: progress is not saved.',
+    exportProgress: 'Export progress',
+    importProgress: 'Import progress',
+    progressFile: 'Progress file',
+    resetProgress: 'Reset progress',
+    undo: 'Undo',
+    imported: 'Progress imported.',
+    importedNotSaved: 'Imported, but storage is unavailable: progress is not saved.',
+    notProgress: 'Not imported: the file is not a progress export.',
+    tooLarge: 'Not imported: the file is larger than 1 MB.',
+    reset: 'Progress reset.',
+    resetNotSaved: 'Reset for this visit: storage is unavailable.',
+    restored: 'Progress restored.',
+    restoredNotSaved: 'Restored for this visit: storage is unavailable.',
+    toolsFailed: 'Progress tools did not load. Try again.',
+    // the count of a component: {what} is the word for its items below
+    checked: '{n} / {m} checked',
+    allChecked: 'All {what} checked',
+    whatChecked: '{what} checked',
+    parts: 'parts',
+    steps: 'steps',
+    connections: 'connections',
+    print: 'Print',
+    exportCsv: 'Export CSV',
+    exportFailed: 'Export did not load. Try again.',
+    // the BOM, its CSV and the enlarged image
+    bom: 'Bill of materials',
+    find: 'Find a component…',
+    search: 'Search BOM',
+    showParts: 'Show parts',
+    all: 'All',
+    missing: 'Missing',
+    done: 'Done',
+    noMatch: 'No matching components.',
+    filter: 'Filter: {filter}.',
+    qty: 'Qty',
+    component: 'Component',
+    specification: 'Specification',
+    quantity: 'Quantity',
+    group: 'Group',
+    components: '{n} / {m} components',
+    link: 'Link',
+    enlarge: 'Enlarge image: {name}',
+    image: 'Image',
+    close: 'Close',
+    zoomFailed: 'Image zoom did not load. Try again.',
+    // the text steps
+    stepsTitle: 'Steps',
+    usesParts: 'Parts: {parts}',
+    note: 'note',
+    caution: 'caution',
+    warning: 'warning',
+    // a board: {title} is the board's title, {lower} the same in lower case
+    stepsOf: '{title} steps',
+    fullscreen: 'Fullscreen',
+    exitFullscreen: 'Exit fullscreen',
+    zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in',
+    fit: 'Fit',
+    show: 'Show',
+    visible: 'Visible connections',
+    thisStep: 'This step',
+    selectedConnection: 'Selected connection',
+    allConnections: 'All connections',
+    from: 'From',
+    to: 'To',
+    cable: 'Cable',
+    ringEnd: 'Ring end',
+    plainEnd: 'Plain end',
+    markChecked: 'Mark checked',
+    isChecked: 'Checked',
+    loading: 'Loading board…',
+    previous: 'Previous',
+    nextStep: 'Next step',
+    nextConnection: 'Next connection',
+    lastConnection: 'Last connection',
+    inStep: 'Connections in this step',
+    allOf: 'All {lower} connections',
+    connection: 'Connection {no}',
+    boardLabel: '{name}. Select a numbered connection to inspect it.',
+    connectionLabel: '{no}: {a} to {b}',
+    ringAt: 'ring at {a}',
+    checkedLabel: 'checked',
+    noRenderer: 'Board renderer unavailable. Use the connection list below.',
+    noRouter: 'Router unavailable. Use the labeled connection list below.',
+    // the columns of a board's CSV and print list
+    number: 'No',
+    color: 'Color',
+    size: 'Size',
+    yes: 'Yes',
+    no: 'No',
+    byStep: 'All connections by step',
+    // the combined guide and the errors of a component
+    guide: 'Guide',
+    tabsFailed: 'Guide tabs did not load.',
+    unknown: 'Unknown guide component: {name}.',
+    unavailable: 'Guide data unavailable.',
+  };
+  // --8<-- [end:strings]
   const download = (blob: Blob, name: string) => { const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); };
   const loaded: Record<string, Promise<unknown>> = {};
   // a failed load is not cached: the next render tries again
@@ -89,13 +208,8 @@ interface Window {
     return run as BuildGuideModuleMap[K];
   });
 
-  // the note of a step, a string or {level, text}, in a board step and in a text step
-  const noteLine = (note?: Note) => {
-    if (!note) return '';
-    const {level, text} = typeof note === 'string' ? {level: '', text: note} : note;
-    return `<p class="ag-step-note" data-level="${esc(level)}">${level ? `<strong>${esc(level)}</strong> ` : ''}${esc(text)}</p>`;
-  };
   const mounted = new WeakMap<HTMLElement, () => void>();
+  let tabSeq = 0;
   // Undo of a reset or import, one per page: until the next tick, a change elsewhere or 10 s
   let undo: { before: Progress; root: HTMLElement; timer: number } | null | undefined;
   const dropUndo = () => { clearTimeout(undo?.timer); undo?.root.querySelector('.ag-message')?.replaceChildren(); undo = null; };
@@ -118,9 +232,21 @@ interface Window {
   function mount(root: HTMLElement, D: Guide, options: BuildGuideMountOptions = {}): () => void {
     mounted.get(root)?.();
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
-    if (view === 'guide') return mountTabs(root, D, options);
     const board = view === 'board' ? own(D.boards, boardKey) : null;
-    if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : !board) { root.textContent = `Unknown guide component: ${view}${boardKey ? ' ' + boardKey : ''}.`; return () => {}; }
+    // guide data comes from anyone: a key without a text keeps the English one, String() keeps any other value from breaking the component
+    const S = {...EN, ...options.strings, ...D.strings, ...board?.strings};
+    const t: BuildGuideText = (key, vars = {}) => String(S[key] ?? EN[key]).replace(/\{(\w+)\}/g, (m, name: string) => String(vars[name] ?? m));
+    if (view === 'guide') {
+      // buildguide-tabs.js: scan() mounts once it is here, so the tabs draw at once; a mount before it loads returns an unmount that works meanwhile
+      let stop = () => {};
+      const destroy = () => { if (mounted.get(root) === destroy) { mounted.delete(root); stop(); } };
+      const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount, id: `ag-tabs-${++tabSeq}`}, root, D, options); };
+      mounted.set(root, destroy);
+      const tabs = window.BuildGuideModules?.tabs;
+      if (tabs) start(tabs); else ext('tabs').then(start).catch(error => { console.error(error); if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
+      return destroy;
+    }
+    if (view === 'bom' ? !D.bom : view === 'steps' ? !D.steps : !board) { root.textContent = t('unknown', {name: `${view}${boardKey ? ' ' + boardKey : ''}`}); return () => {}; }
     const ASSETS = new URL(options.assets ?? root.dataset.assets ?? 'assets/', location.href);
     const steps = board?.steps || [];
     // the key, title and prefix of a board; only a board view reads them
@@ -144,11 +270,17 @@ interface Window {
     const stepKey = (s: TextStep) => `step-${s.id}`;
     const all = () => steps.flatMap(s => s.connections);
     const tally = (): [number, number] => view === 'steps' ? [count(textSteps, stepKey), textSteps.length] : board ? [count(all(), connKey), all().length] : [count(items, bomKey), items.length];
-    const what = board ? 'connections' : view === 'steps' ? 'steps' : 'parts';
+    const what = t(board ? 'connections' : view === 'steps' ? 'steps' : 'parts');
     let wasDone: boolean | undefined;
-    const state: { step: number; wire: number; scope: string; zoom: number; expanded: boolean; search: string; filter: string; message: string; pageY?: number } =
+    const state: { step: number; wire: number; scope: string; zoom: number; expanded: boolean; search: string; filter: 'All' | 'Missing' | 'Done'; message: string; pageY?: number } =
       {step: 0, wire: 0, scope: board?.scope || 'step', zoom: 0, expanded: false, search: '', filter: 'All', message: ''};
     const end = (e: string) => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)] as const; };
+    // the note of a step, a string or {level, text}, in a board step and in a text step; a level the table lacks is shown as written
+    const noteLine = (note?: Note) => {
+      if (!note) return '';
+      const {level, text} = typeof note === 'string' ? {level: '', text: note} : note;
+      return `<p class="ag-step-note" data-level="${esc(level)}">${level ? `<strong>${esc(own(S, level) ?? level)}</strong> ` : ''}${esc(text)}</p>`;
+    };
     const label = (c: Connection, side: 'a' | 'b') => c[('l' + side) as 'la' | 'lb'] ?? (([id, pin]) => `${own(B().parts, id)?.name ?? id} · ${pin}`)(end(c[side]));
     const color = (c: Connection): Partial<ColorCode> => own(B().colors, c.color) || {};
     const hashOf = (s: BoardStep, c: Connection) => encodeURIComponent(s.id) + (s.connections.length > 1 ? '/' + encodeURIComponent(c.no) : '');
@@ -158,7 +290,7 @@ interface Window {
     const cleanups: (() => void)[] = [];
     const listen = <E extends Event>(target: EventTarget, type: string, handler: (e: E) => void) => { target.addEventListener(type, handler as EventListener); cleanups.push(() => target.removeEventListener(type, handler as EventListener)); };
     cleanups.push(() => undo?.root === root && dropUndo());
-    const line = (m: string) => m + (undo?.root === root ? ' ' + button('Undo', 'undo-progress') : '');
+    const line = (m: string) => esc(m) + (undo?.root === root ? ' ' + button(t('undo'), 'undo-progress') : '');
 
     function navigate(index = 0, wire = 0) {
       const s = stepAt(index);
@@ -201,11 +333,11 @@ interface Window {
       const [n, m] = tally(), done = m > 0 && n === m;
       // announced once, when the last tick arrives: not at mount and not on later renders
       const last = done && wasDone === false && !message;
-      if (last) message = `All ${what} checked`;
+      if (last) message = t('allChecked', {what});
       wasDone = done;
       root.toggleAttribute('data-complete', done);
-      root.innerHTML = `${board ? renderBoard() : view === 'steps' ? renderSteps() : renderBOM()}<p class="ag-status">${persistent ? 'Progress saved in this browser.' : 'Storage unavailable: progress is not saved.'}</p>
-        <div class="ag-progress-tools">${button('Export progress', 'export-progress')}${button('Import progress', 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="Progress file" hidden>${button('Reset progress', 'reset-progress')}<span class="ag-message" role="status">${message ? '' : line('')}</span></div>`;
+      root.innerHTML = `${board ? renderBoard() : view === 'steps' ? renderSteps() : renderBOM()}<p class="ag-status">${esc(t(persistent ? 'saved' : 'notSaved'))}</p>
+        <div class="ag-progress-tools">${button(t('exportProgress'), 'export-progress')}${button(t('importProgress'), 'import-progress')}<input type="file" accept=".json,application/json" data-role="import-file" aria-label="${esc(t('progressFile'))}" hidden>${button(t('resetProgress'), 'reset-progress')}<span class="ag-message" role="status">${message ? '' : line('')}</span></div>`;
       // a live region announces text added to an existing element, not text that arrives with it
       if (message) setTimeout(() => { const live = root.querySelector('.ag-message'); if (live && alive() && (!last || root.hasAttribute('data-complete'))) { live.innerHTML = line(message); bind(); } }, 50);
       bind();
@@ -215,10 +347,10 @@ interface Window {
         drawing = {destroy() { this.dead = true; this.inner?.destroy(); }, zoomBy(d) { return this.inner?.zoomBy(d) ?? state.zoom; }, fit() { this.inner?.fit(); }, highlight(...a) { this.inner?.highlight(...a); }}; const rendered = drawing;
         boardRenderer().then(mountBoard => {
           if (rendered.dead) return;
-          rendered.inner = mountBoard(canvas, board, {key: boardKey as string, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, zoomed: value => { state.zoom = value; }, base: new URL('vendor/libavoid/', HERE).href,
+          rendered.inner = mountBoard(canvas, board, {t, key: boardKey as string, name: board.label || title, step: state.step, wire: state.wire, scope: state.scope, zoom: state.zoom, zoomed: value => { state.zoom = value; }, base: new URL('vendor/libavoid/', HERE).href,
             focus: focusConn, done: no => checked(connKey(all().find(c => c.no === no) as Connection)),
             label, select(no) { const i = steps.findIndex(s => s.connections.some(c => c.no === no)); navigate(i, stepAt(i).connections.findIndex(c => c.no === no)); }});
-        }).catch(error => { console.error(error); canvas.textContent = 'Board renderer unavailable. Use the connection list below.'; canvas.dataset.ready = 'error'; });
+        }).catch(error => { console.error(error); canvas.textContent = t('noRenderer'); canvas.dataset.ready = 'error'; });
         root.querySelectorAll<HTMLElement>('[data-wire]').forEach(row => {
           const no = (stepAt(state.step).connections[Number(row.dataset.wire)] as Connection).no;
           row.onmouseenter = () => drawing?.highlight(no, true);
@@ -257,68 +389,68 @@ interface Window {
       return () => { observer.disconnect(); window.removeEventListener('resize', fit); cancelAnimationFrame(frame); };
     }
     function stepNavigation() {
-      return `<nav class="ag-steps" aria-label="${esc(title)} steps">${steps.map((s, i) => {
+      return `<nav class="ag-steps" aria-label="${esc(t('stepsOf', {title}))}">${steps.map((s, i) => {
         const total = s.connections.length, done = count(s.connections, connKey);
         return `<button type="button" data-step="${i}" ${i === state.step ? 'aria-current="step"' : ''}><span class="ag-step-id ${done === total ? 'complete' : ''}">${done === total ? '✓' : esc(s.id)}</span><span><b>${esc(s.title)}</b><small>${done} / ${total}</small></span></button>`;
       }).join('')}</nav>`;
     }
     function toolbar() {
-      return `<div class="ag-board-toolbar"><div class="ag-board-controls">${button('⛶ Fullscreen', 'fullscreen', 'class="ag-fullscreen-button"')}${button('−', 'zoom-out', 'aria-label="Zoom out"')}${button('Fit', 'zoom-fit')}${button('+', 'zoom-in', 'aria-label="Zoom in"')}</div><label>Show <select data-role="scope" aria-label="Visible connections"><option value="step">This step</option>${B().single ? '<option value="single">Selected connection</option>' : ''}<option value="all">All connections</option></select></label></div>`;
+      return `<div class="ag-board-toolbar"><div class="ag-board-controls">${button('⛶ ' + t('fullscreen'), 'fullscreen', 'class="ag-fullscreen-button"')}${button('−', 'zoom-out', `aria-label="${esc(t('zoomOut'))}"`)}${button(t('fit'), 'zoom-fit')}${button('+', 'zoom-in', `aria-label="${esc(t('zoomIn'))}"`)}</div><label>${esc(t('show'))} <select data-role="scope" aria-label="${esc(t('visible'))}"><option value="step">${esc(t('thisStep'))}</option>${B().single ? `<option value="single">${esc(t('selectedConnection'))}</option>` : ''}<option value="all">${esc(t('allConnections'))}</option></select></label></div>`;
     }
     function connectionSummary(c: Connection) {
       const diode = color(c).diode, key = connKey(c), cable = diode ? '' : [c.cable, c.size].filter(Boolean).join(' · ');
-      return `<div class="ag-connection-detail"><div><small>FROM${diode ? ' · RING END' : ''}</small><strong>${esc(label(c, 'a'))}</strong></div><span class="ag-detail-arrow">→</span><div><small>TO${diode ? ' · PLAIN END' : ''}</small><strong>${esc(label(c, 'b'))}</strong></div>${cable ? `<div class="ag-cable"><small>CABLE</small><strong>${esc(cable)}</strong></div>` : ''}<label class="ag-verify"><input type="checkbox" data-check="${esc(key)}" ${checked(key) ? 'checked' : ''}>${checked(key) ? 'Checked' : 'Mark checked'}</label></div>`;
+      return `<div class="ag-connection-detail"><div><small>${esc(t('from') + (diode ? ' · ' + t('ringEnd') : ''))}</small><strong>${esc(label(c, 'a'))}</strong></div><span class="ag-detail-arrow">→</span><div><small>${esc(t('to') + (diode ? ' · ' + t('plainEnd') : ''))}</small><strong>${esc(label(c, 'b'))}</strong></div>${cable ? `<div class="ag-cable"><small>${esc(t('cable'))}</small><strong>${esc(cable)}</strong></div>` : ''}<label class="ag-verify"><input type="checkbox" data-check="${esc(key)}" ${checked(key) ? 'checked' : ''}>${esc(t(checked(key) ? 'isChecked' : 'markChecked'))}</label></div>`;
     }
     const legendItem = (l: NonNullable<Board['legend']>[number]) => typeof l === 'string' ? `<span>${esc(l)}</span>` : `<span>${l.key === 'diode' ? '<i class="ag-diode-key"></i>' : ''}${esc(l.text)}</span>`;
     function progress() {
       const [n, m] = tally();
-      return `<span class="ag-progress">${m > 0 && n === m ? `All ${what} checked` : `${n} / ${m} checked`}<progress value="${n}" max="${m}" aria-label="${what} checked"></progress></span>`;
+      return `<span class="ag-progress">${esc(m > 0 && n === m ? t('allChecked', {what}) : t('checked', {n, m}))}<progress value="${n}" max="${m}" aria-label="${esc(t('whatChecked', {what}))}"></progress></span>`;
     }
-    const actions = () => `<div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}${button('↓ Export CSV', 'export', 'class="ag-primary"')}</div>`;
+    const actions = () => `<div class="ag-bom-actions">${progress()}${button(t('print'), 'print', 'class="ag-quiet"')}${button('↓ ' + t('exportCsv'), 'export', 'class="ag-primary"')}</div>`;
     function renderBoard() {
       const b = B(), s = stepAt(state.step), c = s.connections[state.wire] as Connection;
       const atEnd = state.step === steps.length - 1 && state.wire === s.connections.length - 1;
       const first = state.step === 0 && state.wire === 0;
-      const next = state.wire === s.connections.length - 1 ? 'Next step →' : 'Next connection →';
+      const next = t(state.wire === s.connections.length - 1 ? 'nextStep' : 'nextConnection') + ' →';
       const listed = b.listAll ? all() : s.connections;
       return `<section class="ag-workspace"><div class="ag-head">${actions()}</div>${stepNavigation()}<div class="ag-work"><div class="ag-work-heading"><h2>${esc(s.title)}</h2></div>
       ${toolbar()}
-      <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(b.label || title)}"><span class="ag-board-loading">Loading board…</span></div><div class="ag-board-legend">${(b.legend || []).map(legendItem).join('')}</div></div>
+      <div class="ag-panel ag-full-board"><div class="ag-board-canvas" tabindex="0" role="region" aria-label="${esc(b.label || title)}"><span class="ag-board-loading">${esc(t('loading'))}</span></div><div class="ag-board-legend">${(b.legend || []).map(legendItem).join('')}</div></div>
       ${connectionSummary(c)}
-      <div class="ag-wire-navigation">${button('← Previous', 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? 'Last connection' : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
+      <div class="ag-wire-navigation">${button('← ' + t('previous'), 'prev-wire', `class="ag-quiet" ${first ? 'disabled' : ''}`)}<span>${state.wire + 1} / ${s.connections.length}</span>${button(atEnd ? t('lastConnection') : next, 'next-wire', `class="ag-primary" ${atEnd ? 'disabled' : ''}`)}</div>
       ${noteLine(s.note)}
-      <div class="ag-list-heading"><h3>${b.listAll ? `All ${esc(title.toLowerCase())} connections` : 'Connections in this step'}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
+      <div class="ag-list-heading"><h3>${esc(b.listAll ? t('allOf', {title, lower: title.toLowerCase()}) : t('inStep'))}</h3></div><div class="ag-wire-list">${listed.map(v => connectionRow(v, v === c, s.connections.indexOf(v))).join('')}</div>
       <div class="ag-bom-table ag-print-list"></div></div></section>`;
     }
     function connectionRow(c: Connection, selected: boolean, index: number) {
       const key = connKey(c), done = checked(key), swatch = B().listColor !== false && !color(c).diode ? color(c).swatch || color(c).line : null, paint = swatch && CSS.supports('color', swatch);
       const target = `data-conn="${esc(c.no)}" ` + (index >= 0 ? `data-wire="${index}"` : `data-goto="${esc(c.no)}"`);
-      return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="Connection ${esc(c.no)}" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
+      return `<div class="ag-wire-row ${selected ? 'selected' : ''} ${done ? 'is-done' : ''}"><input type="checkbox" data-check="${esc(key)}" aria-label="${esc(t('connection', {no: c.no}))}" ${done ? 'checked' : ''}><button type="button" ${target} ${selected ? 'aria-current="true"' : ''}><span class="ag-wire-number">${esc(c.no)}</span><span>${esc(label(c, 'a'))}</span><span class="ag-row-arrow">→</span><span>${esc(label(c, 'b'))}</span>${paint ? `<span class="ag-row-color"><i style="--wire:${esc(swatch)}"></i>${esc(c.color)}</span>` : ''}</button></div>`;
     }
     const bom: Partial<Bom> = D.bom || {}, items = bom.items || [], textSteps = D.steps?.items || [];
     const filteredParts = () => items.filter(p => `${p.part} ${p.spec ?? ''} ${p.group}`.toLowerCase().includes(state.search.toLowerCase()) && (state.filter === 'All' || checked(bomKey(p)) === (state.filter === 'Done')));
     function renderBOM() {
-      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div>${actions()}</div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="Find a component…" aria-label="Search BOM" value="${esc(state.search)}"></label><select data-role="filter" aria-label="Show parts"><option>All</option><option>Missing</option><option>Done</option></select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
+      return `<section class="ag-bom"><div class="ag-head"><div>${bom.note ? `<p>${esc(bom.note)}</p>` : ''}</div>${actions()}</div><div class="ag-bom-tools"><label class="ag-search"><input type="search" data-role="search" placeholder="${esc(t('find'))}" aria-label="${esc(t('search'))}" value="${esc(state.search)}"></label><select data-role="filter" aria-label="${esc(t('showParts'))}">${(['All', 'Missing', 'Done'] as const).map(v => `<option value="${v}">${esc(t(v.toLowerCase() as Lowercase<typeof v>))}</option>`).join('')}</select></div><div class="ag-bom-results">${bomRows()}</div></section>`;
     }
     function renderSteps() {
       const row = (s: TextStep, i: number) => {
         const done = checked(stepKey(s)), parts = (s.parts || []).map(id => items.find(p => p.id === id)?.part ?? id);
-        return `<li class="ag-step-item ${done ? 'is-done' : ''}"><label class="ag-have"><input type="checkbox" data-check="${esc(stepKey(s))}" aria-label="${esc(s.title)}" ${done ? 'checked' : ''}></label><span class="ag-step-id ${done ? 'complete' : ''}" aria-hidden="true">${i + 1}</span><div class="ag-step-body"><strong class="ag-step-title">${esc(s.title)}</strong>${s.text ? `<p class="ag-step-text">${esc(s.text)}</p>` : ''}${noteLine(s.note)}${parts.length ? `<p class="ag-step-parts">Parts: ${esc(parts.join(', '))}</p>` : ''}</div></li>`;
+        return `<li class="ag-step-item ${done ? 'is-done' : ''}"><label class="ag-have"><input type="checkbox" data-check="${esc(stepKey(s))}" aria-label="${esc(s.title)}" ${done ? 'checked' : ''}></label><span class="ag-step-id ${done ? 'complete' : ''}" aria-hidden="true">${i + 1}</span><div class="ag-step-body"><strong class="ag-step-title">${esc(s.title)}</strong>${s.text ? `<p class="ag-step-text">${esc(s.text)}</p>` : ''}${noteLine(s.note)}${parts.length ? `<p class="ag-step-parts">${esc(t('usesParts', {parts: parts.join(', ')}))}</p>` : ''}</div></li>`;
       };
-      return `<section class="ag-text-steps"><div class="ag-head"><div>${D.steps?.note ? `<p>${esc(D.steps.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button('Print', 'print', 'class="ag-quiet"')}</div></div><ol class="ag-step-list">${textSteps.map(row).join('')}</ol></section>`;
+      return `<section class="ag-text-steps"><div class="ag-head"><div>${D.steps?.note ? `<p>${esc(D.steps.note)}</p>` : ''}</div><div class="ag-bom-actions">${progress()}${button(t('print'), 'print', 'class="ag-quiet"')}</div></div><ol class="ag-step-list">${textSteps.map(row).join('')}</ol></section>`;
     }
     const groupTally = (g: string) => { const of = items.filter(p => p.group === g); return `${count(of, bomKey)} / ${of.length}`; };
     function bomRows() {
       const parts = filteredParts();
-      if (!parts.length) return `<div class="ag-empty">No matching components.${state.filter === 'All' ? '' : ` Filter: ${esc(state.filter)}.`}</div>`;
+      if (!parts.length) return `<div class="ag-empty">${esc(t('noMatch') + (state.filter === 'All' ? '' : ' ' + t('filter', {filter: t(state.filter.toLowerCase() as Lowercase<typeof state.filter>)})))}</div>`;
       let group = '';
       const row = (p: BomItem) => {
         const head = p.group !== group ? `<tr class="ag-group"><th colspan="3" scope="rowgroup">${esc(p.group)} · ${groupTally(p.group)}</th></tr>` : ''; group = p.group;
-        const link = p.link ? ` <a class="ag-source-link" href="${esc(safeURL(p.link, location.href))}" target="_blank" rel="noopener">${esc(bom.linkLabel || 'Link')} ↗</a>` : '';
+        const link = p.link ? ` <a class="ag-source-link" href="${esc(safeURL(p.link, location.href))}" target="_blank" rel="noopener">${esc(bom.linkLabel || t('link'))} ↗</a>` : '';
         const done = checked(bomKey(p));
-        return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)}" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<button type="button" class="ag-zoom" data-zoom="${esc(p.id)}" aria-label="Enlarge image: ${esc(p.imageAlt || p.part)}"><img src="${esc(safeURL(p.image, ASSETS))}" alt="${esc(p.imageAlt)}" loading="lazy"></button>` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
+        return `${head}<tr class="${done ? 'is-done' : ''}"><td class="ag-qty"><label class="ag-have"><input type="checkbox" data-check="${esc(bomKey(p))}" aria-label="${esc(p.part)}" ${done ? 'checked' : ''}>${esc(p.qty)}</label></td><td><div class="ag-part-cell">${p.image ? `<button type="button" class="ag-zoom" data-zoom="${esc(p.id)}" aria-label="${esc(t('enlarge', {name: p.imageAlt || p.part}))}"><img src="${esc(safeURL(p.image, ASSETS))}" alt="${esc(p.imageAlt)}" loading="lazy"></button>` : ''}<div><strong>${esc(p.part)}</strong></div></div></td><td>${esc(p.spec)}${link}</td></tr>`;
       };
-      return `<div class="ag-bom-table"><table class="ag-table"><caption class="ag-sr">Bill of materials</caption><thead><tr><th scope="col">Qty</th><th scope="col">Component</th><th scope="col">Specification</th></tr></thead><tbody>${parts.map(row).join('')}</tbody></table></div><p class="ag-result-count">${parts.length} / ${items.length} components</p>`;
+      return `<div class="ag-bom-table"><table class="ag-table"><caption class="ag-sr">${esc(t('bom'))}</caption><thead><tr>${(['qty', 'component', 'specification'] as const).map(k => `<th scope="col">${esc(t(k))}</th>`).join('')}</tr></thead><tbody>${parts.map(row).join('')}</tbody></table></div><p class="ag-result-count">${esc(t('components', {n: parts.length, m: items.length}))}</p>`;
     }
     // progress files hold one object of true/false values
     const isProgress = (v: unknown): v is Progress => v !== null && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(x => typeof x === 'boolean');
@@ -336,15 +468,15 @@ interface Window {
     const alive = () => mounted.get(root) === destroy;
     const say = (m: string) => { state.message = m; render(); };
     // export, import, reset and undo: buildguide-progress.js, with the state of this component through accessors
-    const tools = (...a: BuildGuideProgressAction) => ext('progress').then<unknown, unknown>(run => alive() && run({D, root, download, isProgress, alive, say, share: shareProgress,
+    const tools = (...a: BuildGuideProgressAction) => ext('progress').then<unknown, unknown>(run => alive() && run({D, root, t, download, isProgress, alive, say, share: shareProgress,
       saved: () => ({...saved, ...load()}), ok: () => persistent, fail() { persistent = false; }}, ...a),
-    () => alive() && say('Progress tools did not load. Try again.'));
+    () => alive() && say(t('toolsFailed')));
     // a BOM image in a dialog: buildguide-zoom.js, which returns a function that closes it. A second click while the file loads does nothing
     let zooming: Promise<unknown> | null = null;
-    const zoom = (b: HTMLElement) => { if (!zooming) zooming = ext('zoom').then(run => alive() && cleanups.push(run({root}, b.dataset.zoom as string)), () => alive() && say('Image zoom did not load. Try again.')).finally(() => { zooming = null; }); };
+    const zoom = (b: HTMLElement) => { if (!zooming) zooming = ext('zoom').then(run => alive() && cleanups.push(run({root, t}, b.dataset.zoom as string)), () => alive() && say(t('zoomFailed'))).finally(() => { zooming = null; }); };
     // CSV of the BOM or a board and a board's print list: buildguide-export.js, loaded when a board renders (printing cannot wait for a load) or on Export CSV
-    const exporter = (action: 'csv' | 'print') => ext('export').then(run => alive() && run({root, board, boardKey, bom, esc, label, download, parts: filteredParts, checked, connKey, bomKey}, action),
-      () => action === 'csv' && alive() && say('Export did not load. Try again.'));
+    const exporter = (action: 'csv' | 'print') => ext('export').then(run => alive() && run({root, t, board, boardKey, bom, esc, label, download, parts: filteredParts, checked, connKey, bomKey}, action),
+      () => action === 'csv' && alive() && say(t('exportFailed')));
     function moveWire(dir: number) {
       let i = state.step, j = state.wire + dir;
       if (j < 0) { i--; if (i < 0) return; j = stepAt(i).connections.length - 1; }
@@ -352,7 +484,7 @@ interface Window {
       if (i >= steps.length) return;
       navigate(i, j);
     }
-    function updateScreenButton() { root.querySelectorAll('[data-action=fullscreen]').forEach(b => { b.textContent = state.expanded ? '⤢ Exit fullscreen' : '⛶ Fullscreen'; b.setAttribute('aria-pressed', String(state.expanded)); }); }
+    function updateScreenButton() { root.querySelectorAll('[data-action=fullscreen]').forEach(b => { b.textContent = state.expanded ? '⤢ ' + t('exitFullscreen') : '⛶ ' + t('fullscreen'); b.setAttribute('aria-pressed', String(state.expanded)); }); }
     function setExpanded(value: boolean) {
       if (value) state.pageY = scrollY;
       state.expanded = value;
@@ -377,7 +509,7 @@ interface Window {
       };
     }
     function bind() {
-      for (const select of root.querySelectorAll('select')) { const role = select.dataset.role as 'scope' | 'filter'; select.value = state[role]; select.onchange = () => { if (role === 'scope') state.scope = select.value; else state.filter = select.value; render(); }; }
+      for (const select of root.querySelectorAll('select')) { const role = select.dataset.role as 'scope' | 'filter'; select.value = state[role]; select.onchange = () => { if (role === 'scope') state.scope = select.value; else state.filter = select.value as typeof state.filter; render(); }; }
       for (const b of root.querySelectorAll<HTMLElement>('[data-step]')) b.onclick = () => navigate(Number(b.dataset.step));
       for (const b of root.querySelectorAll<HTMLElement>('[data-wire]')) b.onclick = () => navigate(state.step, Number(b.dataset.wire));
       for (const b of root.querySelectorAll<HTMLElement>('[data-goto]')) b.onclick = () => { const i = steps.findIndex(s => s.connections.some(c => c.no === b.dataset.goto)); navigate(i, stepAt(i).connections.findIndex(c => c.no === b.dataset.goto)); };
@@ -417,64 +549,6 @@ interface Window {
     return destroy;
   }
 
-  // The combined component: tabs over one panel. Only the shown tab is mounted, so a board is never drawn in a hidden box.
-  // Hash: one guide=<key> pair next to the boards' own pairs; 'bom' names the BOM.
-  let tabSeq = 0;
-  function mountTabs(root: HTMLElement, D: Guide, options: BuildGuideMountOptions) {
-    const asked = (options.board ?? root.dataset.board ?? '').split(/\s+/).filter(Boolean);
-    // 'bom' and, with steps data, 'steps' name the components; any other key is a board
-    const text = (k: string) => k === 'steps' && D.steps, component = (k: string) => k === 'bom' || text(k);
-    const keys = asked.length ? asked : [...(D.bom ? ['bom'] : []), ...(D.steps ? ['steps'] : []), ...Object.keys(D.boards ?? {})];
-    if (!keys.length || keys.some(k => k === 'bom' ? !D.bom : !text(k) && !own(D.boards, k))) { root.textContent = `Unknown guide component: guide${asked.map(k => ' ' + k).join('')}.`; return () => {}; }
-    const id = `ag-tabs-${++tabSeq}`, assets = options.assets ?? root.dataset.assets;
-    root.classList.add('ag-guide', 'ag-tabbed');
-    root.innerHTML = `<div class="ag-tabs" role="tablist" aria-label="Guide">${keys.map((k, i) => `<button type="button" role="tab" id="${id}-${i}" aria-controls="${id}">${esc(k === 'bom' ? 'Bill of materials' : text(k) ? D.steps?.title || 'Steps' : own(D.boards, k)?.title || k)}</button>`).join('')}</div><div id="${id}" role="tabpanel"></div>`;
-    const tabs = [...root.querySelectorAll<HTMLElement>('[role=tab]')], panel = root.lastElementChild as HTMLElement;
-    let active = -1, seen = new Map<string | null, string>(), handled: string | null = null;
-    const show = (i: number) => {
-      active = i;
-      tabs.forEach((tab, j) => { tab.setAttribute('aria-selected', String(j === i)); tab.tabIndex = j === i ? 0 : -1; });
-      panel.setAttribute('aria-labelledby', (tabs[i] as HTMLElement).id);
-      const key = keys[i] as string;
-      mount(panel, D, component(key) ? {view: key as 'bom' | 'steps', assets} : {view: 'board', board: key, assets});
-    };
-    // seen: the pairs and handled: the hash this component acted on last
-    const sync = () => { seen = read(); handled = location.hash; };
-    const select = (i: number) => { if (putPair('guide', encodeURIComponent(keys[i] as string))) { sync(); if (i !== active) show(i); } };
-    tabs.forEach((tab, i) => { tab.onclick = () => select(i); });
-    (root.firstElementChild as HTMLElement).onkeydown = e => {
-      const i = ({ArrowRight: active + 1, ArrowLeft: active - 1, Home: 0, End: keys.length - 1} as Record<string, number | undefined>)[e.key];
-      // Alt+Arrow is the browser's history shortcut
-      if (typeof i !== 'number' || e.altKey || e.ctrlKey || e.metaKey) return;
-      e.preventDefault(); const to = (i + keys.length) % keys.length; select(to); tabs[to]?.focus();
-    };
-    const read = () => new Map(pairs().filter(p => nameOf(p)).map(p => [nameOf(p), pairValue(p)] as const));
-    // Which tab the hash asks for: the one the guide pair names, else the board whose pair changed since the last look (on load: the first pair).
-    // Else an anchor or the shown board's own pair leaves the tab as it is, else the first board pair opens its tab, else the first tab shows.
-    function follow() {
-      // a hash set from outside fires popstate and hashchange: the second finds it handled
-      if (location.hash === handled) return;
-      const now = read(), named = keys.indexOf(decode(now.get('guide') ?? ''));
-      const moved = keys.findIndex((k, i) => i !== active && !component(k) && now.has(k) && now.get(k) !== seen.get(k));
-      const stay = pairs().some(p => !nameOf(p)) || now.has(keys[active] as string);
-      const target = Math.max(named >= 0 ? named : moved >= 0 ? moved : stay ? active : keys.findIndex(k => !component(k) && now.has(k)), 0);
-      sync();
-      if (target !== active) show(target);
-    }
-    // the shown component's listeners come after these, so a changed tab is replaced before the old board hears the event
-    window.addEventListener('hashchange', follow); window.addEventListener('popstate', follow);
-    follow();
-    const destroy = () => {
-      if (mounted.get(root) !== destroy) return;
-      window.removeEventListener('hashchange', follow); window.removeEventListener('popstate', follow);
-      mounted.get(panel)?.();
-      root.replaceChildren(); root.classList.remove('ag-guide', 'ag-tabbed');
-      mounted.delete(root);
-    };
-    mounted.set(root, destroy);
-    return destroy;
-  }
-
   // elements that name the same data-src share one request
   const auto = new Map<HTMLElement, { dead: boolean; stop?: () => void }>(), requests: Record<string, Promise<Guide>> = {};
   const fetchData = (src: string) => { const url = new URL(src, location.href).href; requests[url] ||= fetch(url).then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); }).catch(error => { delete requests[url]; throw error; }); return requests[url] as Promise<Guide>; };
@@ -487,8 +561,10 @@ interface Window {
       if (auto.has(root)) continue;
       const entry: { dead: boolean; stop?: () => void } = {dead: false};
       auto.set(root, entry);
+      // a guide's tabs file loads while the data does, and the guide mounts once both are here: the scroll below then finds it drawn
+      const tabs = root.dataset.buildguide === 'guide' && ext('tabs').catch(ignore);
       const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent as string));
-      pending.push(data.then(D => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = 'Guide data unavailable.'; }));
+      pending.push(Promise.all([data, tabs]).then(([D]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = EN.unavailable; }));
     }
     // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
     if (pending.length) Promise.allSettled(pending).then(() => {

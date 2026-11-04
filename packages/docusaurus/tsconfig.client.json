@@ -4,7 +4,10 @@
     "module": "esnext",
     "moduleResolution": "bundler",
     "lib": ["es2023", "dom", "dom.iterable"],
-    "types": [],
+    // @docusaurus/useGlobalData and the other aliases the site's bundler resolves; like the Node part, their declarations pull in
+    // React, MDX and bundler declarations that do not check on their own
+    "types": ["@docusaurus/module-type-aliases"],
+    "skipLibCheck": true,
     "rootDir": "src",
     "outDir": "lib",
     "tsBuildInfoFile": ".tsbuild/client.tsbuildinfo"

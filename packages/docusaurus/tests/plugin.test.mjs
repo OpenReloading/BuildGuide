@@ -62,11 +62,14 @@ test('a misspelt key or a wrong type fails the build with the file and the key',
   const guide = JSON.parse(readFileSync(example, 'utf8'));
   guide.bom.items[0].quantity = 1;
   guide.boards.wiring.steps[0].note = 1;
+  guide.strings = { colour: 'Farbe' };
   const file = guideFile(guide);
   await assert.rejects(site(file).loadContent(), (error) => {
     assert.ok(error.message.startsWith(`${file}:\n`), error.message);
     assert.match(error.message, /^\/bom\/items\/0\/quantity: /m);
     assert.match(error.message, /^\/boards\/wiring\/steps\/0\/note: must be string,object$/m);
+    assert.match(error.message, /^\/strings\/colour: must be equal to one of the allowed values$/m);
+    assert.doesNotMatch(error.message, /^\/strings: /m);
     return true;
   });
 });
@@ -152,4 +155,17 @@ test('guides: the same storage key as data, or as another guide, fails the build
 test('guides: an id is a file name and a URL segment', () => {
   for (const id of ['../x', 'a/b', 'a b', '', 'a.json']) assert.throws(() => site(example, { guides: { [id]: minimal } }), /guides id .* may only hold letters, digits, - and _/);
   site(example, { guides: { 'a-B_9': minimal } });
+});
+
+test('the theme component gets the noscript text and the failure text of each guide from its strings, and nothing else of them', async () => {
+  const guide = JSON.parse(readFileSync(example, 'utf8'));
+  const german = { ...guide, strings: { noScript: 'Diese Anleitung braucht JavaScript.', unavailable: 'Anleitungsdaten nicht verfügbar.', print: 'Drucken' } };
+  const plugin = site(guideFile(german), { guides: { english: guideFile({ ...guide, storage: 'english' }), short: guideFile({ ...guide, storage: 'short', strings: { unavailable: 'Keine Daten.' } }) } });
+  await plugin.loadContent();
+  let data;
+  await plugin.contentLoaded({ actions: { setGlobalData: (value) => { data = value; } } });
+  // Docusaurus writes the global data as JSON: keys without a value drop out
+  assert.deepEqual(JSON.parse(JSON.stringify(data)), {
+    noScript: 'Diese Anleitung braucht JavaScript.', unavailable: 'Anleitungsdaten nicht verfügbar.', guides: { english: {}, short: { unavailable: 'Keine Daten.' } },
+  });
 });
