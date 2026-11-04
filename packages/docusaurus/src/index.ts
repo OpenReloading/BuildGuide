@@ -81,10 +81,11 @@ function buildguide(context: Pick<LoadContext, 'siteDir' | 'baseUrl'>, options: 
       if (isServer) return {};
       // required here, not imported: an rspack build never loads it. Docusaurus types the instance as webpack's, rspack brings its own copy plugin
       const Copy: typeof CopyPlugin = currentBundler.name === 'rspack' ? (currentBundler.instance as unknown as { CopyRspackPlugin: typeof CopyPlugin }).CopyRspackPlugin : require('copy-webpack-plugin');
-      // minimized: the vendored files ship unmodified; the declarations and the check's source map are for Node, not the page
+      // minimized: the vendored files ship unmodified; the declarations and the check's source map are for Node, not the page.
+      // context: webpack matches the ignore patterns from it (by default the build's working directory, which need not hold core/); rspack matches them against absolute paths
       return {
         plugins: [new Copy({ patterns: [
-          { from: CORE, to: 'assets/buildguide', info: { minimized: true }, globOptions: { ignore: ['**/*.d.ts', '**/*.d.mts', '**/*.map'] } },
+          { from: CORE, context: CORE, to: 'assets/buildguide', info: { minimized: true }, globOptions: { ignore: ['**/*.d.ts', '**/*.d.mts', '**/*.map'] } },
           // `from` makes the build watch the data file; the content is the validated data without its whitespace
           { from: data, to: 'assets/buildguide/guide.json', transform: () => JSON.stringify(guide) },
           ...named.map((g) => ({ from: g.path, to: `assets/buildguide/guides/${g.id}.json`, transform: () => JSON.stringify(guides[g.id]) })),

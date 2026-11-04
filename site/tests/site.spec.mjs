@@ -27,6 +27,13 @@ const settled = async (page) => {
   for (const canvas of await page.locator('.ag-board-canvas').all()) await expect(canvas).toHaveAttribute('data-ready', 'true')
 }
 
+test('the site serves core without its declarations and source map, which are for Node only', async ({ request }) => {
+  expect((await request.get(`${BASE}assets/buildguide/buildguide.js`)).ok()).toBe(true)
+  for (const file of ['buildguide.d.ts', 'buildguide-check.d.mts', 'buildguide-check.mjs.map']) {
+    expect((await request.get(`${BASE}assets/buildguide/${file}`)).status(), file).toBe(404)
+  }
+})
+
 test('home: the board ticks a connection of its own guide, kept over a reload, with the progress tools', async ({ page }) => {
   const [c] = HOME.boards.wiring.steps[0].connections
   const box = page.getByRole('checkbox', { name: `Connection ${c.no}`, exact: true })
