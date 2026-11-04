@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "lint": "biome check . && node scripts/text-check.mjs && uv run --project packages/mkdocs ruff check packages/mkdocs && npm run typecheck",
-    "typecheck": "tsc -p packages/core && npm run typecheck -w site",
+    "typecheck": "npm run compile -w packages/docusaurus && npm run typecheck -w site",
     "test": "npm test --workspaces --if-present && uv run --project packages/mkdocs pytest packages/mkdocs --cov --cov-config=packages/mkdocs/pyproject.toml --cov-report=term --cov-report=xml:coverage.xml",
     "test:browser": "npm run test:browser --workspaces --if-present && uv run --project packages/mkdocs mkdocs build --strict -f packages/mkdocs/example/mkdocs.yml && BUILDGUIDE_SITE=../mkdocs/example/site npm run test:browser -w packages/core && npm run build -w packages/docusaurus && BUILDGUIDE_SITE=../docusaurus/example/build npm run test:browser -w packages/core",
     "docs": "npm run build -w site",

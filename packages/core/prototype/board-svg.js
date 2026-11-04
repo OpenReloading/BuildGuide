@@ -1,5 +1,5 @@
 // Prototype of the BuildGuide board renderer without third-party code: plain SVG parts and an orthogonal A* router with a nudging pass.
-// Same entry point (window.BuildGuideBoard(root, board, options)), same options, same DOM hooks as src/buildguide-board.js,
+// Same entry point (window.BuildGuideBoard(root, board, options)), same options, same DOM hooks as src/buildguide-board.ts,
 // so the component and the browser tests run against it as they are. See README.md for how to try it.
 (() => {
   const FONT = 'inherit';   // the drawing's text follows --ag-font through the canvas

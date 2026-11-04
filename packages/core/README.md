@@ -1,7 +1,7 @@
 # BuildGuide core
 
 <!-- --8<-- [start:about] -->
-Browser components (BOM checklist, text steps, wiring and tubing boards), JSON Schema and check CLI for any static site. Plain JavaScript and CSS, no build step.
+Browser components (BOM checklist, text steps, wiring and tubing boards), JSON Schema and check CLI for any static site. The release archive holds classic scripts and CSS, ready to copy: the site needs no build step.
 <!-- --8<-- [end:about] -->
 Docs: https://openreloading.github.io/BuildGuide/
 
@@ -24,7 +24,7 @@ Docs: https://openreloading.github.io/BuildGuide/
    //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
    ```
 
-   then `npm install @openreloading/buildguide` and copy `node_modules/@openreloading/buildguide/src/` into the site's assets.
+   then `npm install @openreloading/buildguide` and copy `node_modules/@openreloading/buildguide/lib/` into the site's assets (versions from GitHub Packages carry `src/` instead).
 
 2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist, the text steps or one board (wiring or tubing). Use as many as you like on one page, each board once:
 
@@ -54,7 +54,7 @@ Docs: https://openreloading.github.io/BuildGuide/
 
 ## Development
 
-`npm run serve` serves `example/`; the other commands are in [CONTRIBUTING.md](../../CONTRIBUTING.md). `npm run dist` builds `dist/buildguide-<version>.tar.gz` and `SHA256SUMS`, reproducible: the same commit gives the same checksum.
+The source is strict TypeScript in `src/`. `npm run build` compiles it into `lib/`, the folder that ships: classic scripts without import or export, their type declarations, the stylesheet and the unmodified third-party files. `npm run serve` builds and serves `example/`; the other commands are in [CONTRIBUTING.md](../../CONTRIBUTING.md). `npm run dist` builds `dist/buildguide-<version>.tar.gz` and `SHA256SUMS`, reproducible: the same commit gives the same checksum.
 
 ## Licenses
 

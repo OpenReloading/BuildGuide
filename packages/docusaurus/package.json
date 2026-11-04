@@ -11,16 +11,17 @@
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },
-  "main": "src/index.js",
+  "main": "lib/index.js",
   "files": [
-    "src",
+    "lib",
     "core"
   ],
   "scripts": {
-    "test": "node scripts/copy-core.mjs && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
-    "build": "node scripts/copy-core.mjs && docusaurus build example",
-    "start": "node scripts/copy-core.mjs && docusaurus start example --host 0.0.0.0 --port 8080",
-    "prepack": "node scripts/copy-core.mjs",
+    "compile": "npm run build -w @openreloading/buildguide && node scripts/copy-core.mjs && tsc -b",
+    "test": "npm run compile && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
+    "build": "npm run compile && docusaurus build example",
+    "start": "npm run compile && docusaurus start example --host 0.0.0.0 --port 8080",
+    "prepack": "npm run compile",
     "dist": "mkdir -p dist && npm pack --pack-destination dist"
   },
   "dependencies": {
@@ -34,7 +35,12 @@
   "devDependencies": {
     "@docusaurus/core": "3.10.2",
     "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/types": "3.10.2",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
-  }
+    "react-dom": "19.3.1",
+    "typescript": "7.0.2"
+  },
+  "types": "lib/index.d.ts"
 }

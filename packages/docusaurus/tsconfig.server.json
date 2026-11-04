@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "lib": ["es2023"],
+    "types": ["node"],
+    // the Docusaurus types pull in React, MDX and bundler declarations that do not check on their own
+    "skipLibCheck": true,
+    "rootDir": "src",
+    "outDir": "lib",
+    "tsBuildInfoFile": ".tsbuild/server.tsbuildinfo"
+  },
+  "files": ["src/index.ts"]
+}

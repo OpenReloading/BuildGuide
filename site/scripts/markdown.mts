@@ -12,7 +12,8 @@ import { fileURLToPath } from 'node:url'
 import { gzipSync } from 'node:zlib'
 
 export const ROOT = fileURLToPath(new URL('../..', import.meta.url))
-export const SRC = join(ROOT, 'packages/core/src')
+// the shipped core files: the emitted lib/ (npm run build -w packages/core)
+export const SRC = join(ROOT, 'packages/core/lib')
 const SCHEMA = join(ROOT, 'packages/core/schema/buildguide.schema.json')
 const SNIPPET = /^([ \t]*)--8<-- "([^"]+)"[ \t]*$/gm
 const MARKER = /<!-- generated: (schema|tokens|files|precache)(?: (\S+))? -->/g

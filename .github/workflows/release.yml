@@ -60,6 +60,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://npm.pkg.github.com
+      # the TypeScript compiler builds lib/, the folder the archive and the package ship
+      - run: npm ci --ignore-scripts
       - run: npm run dist -w packages/core
       - name: Attach the archive and its checksum
         env:
@@ -110,7 +112,8 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://npm.pkg.github.com
-      # prepack copies packages/core/src into the package (#7)
+      - run: npm ci --ignore-scripts
+      # prepack builds core, copies its lib/ into the package (#7) and compiles the plugin
       - run: npm run dist -w packages/docusaurus
       - name: Attach the package
         env:

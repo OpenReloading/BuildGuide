@@ -1,4 +1,4 @@
-"""Copies core (packages/core/src and the schema) into the package. An sdist already carries the copy."""
+"""Copies core (packages/core/lib, built by npm run build -w packages/core, and the schema) into the package. An sdist already carries the copy."""
 
 import shutil
 from pathlib import Path
@@ -13,6 +13,9 @@ class CoreHook(BuildHookInterface):
             if not target.is_dir():
                 raise FileNotFoundError(f"neither {core} nor the copy in {target}")
             return
+        # core not built yet (uv sync before npm): the editable install is rebuilt once lib/ exists (cache-keys in pyproject.toml)
+        if not (core / "lib").is_dir():
+            return
         shutil.rmtree(target, ignore_errors=True)
-        shutil.copytree(core / "src", target)
+        shutil.copytree(core / "lib", target, ignore=shutil.ignore_patterns("*.d.ts", "*.d.mts"))
         shutil.copy(core / "schema/buildguide.schema.json", target)

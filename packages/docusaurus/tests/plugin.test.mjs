@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import buildguide from '../src/index.js';
+import buildguide from '../lib/index.js';
 
 const example = new URL('../../core/example/guide.json', import.meta.url).pathname;
 const site = (data, options = {}) => buildguide({ siteDir: '/', baseUrl: '/docs/' }, { data, ...options });

@@ -1,13 +1,12 @@
 /* BuildGuide progress tools: export, import, reset and undo of the saved ticks. buildguide.js loads this file on the first click
    and calls the function with the context of one component (its state through accessors), the action and its argument. */
-window.BuildGuideModules = {...window.BuildGuideModules, progress: async (c, action, arg) => {
-  'use strict';
+window.BuildGuideModules = {...window.BuildGuideModules, progress: async (c, ...[action, arg]) => {
   const {storage} = c.D;
-  const store = progress => { try { localStorage.setItem(storage, JSON.stringify(progress)); } catch { c.fail(); } };
+  const store = (progress: BuildGuideProgress) => { try { localStorage.setItem(storage, JSON.stringify(progress)); } catch { c.fail(); } };
   const before = c.saved();
   if (action === 'export') c.download(new Blob([JSON.stringify(before, null, 2)], {type: 'application/json'}), `${storage}.json`);
   if (action === 'import') {
-    let progress;
+    let progress: unknown;
     try { progress = arg.size < 1e6 && JSON.parse(await arg.text()); } catch {}
     if (!c.alive()) return;
     if (!c.isProgress(progress)) { c.say(arg.size < 1e6 ? 'Not imported: the file is not a progress export.' : 'Not imported: the file is larger than 1 MB.'); return; }
@@ -22,7 +21,7 @@ window.BuildGuideModules = {...window.BuildGuideModules, progress: async (c, act
   }
   if (action === 'undo') {
     store(arg);
-    c.root.querySelector('[data-action=reset-progress]').focus();
+    c.root.querySelector<HTMLElement>('[data-action=reset-progress]')?.focus();
     c.share(arg, c.ok() ? 'Progress restored.' : 'Restored for this visit: storage is unavailable.');
   }
 }};

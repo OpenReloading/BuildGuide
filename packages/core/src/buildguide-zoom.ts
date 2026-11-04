@@ -2,7 +2,7 @@
    first click on an image and calls the function with the component's context and the image's data-zoom key (the item id); it returns a function
    that closes the dialog. */
 window.BuildGuideModules = {...window.BuildGuideModules, zoom: (c, key) => {
-  const {root} = c, find = () => root.querySelector(`[data-zoom="${CSS.escape(key)}"]`), small = find()?.querySelector('img');
+  const {root} = c, find = () => root.querySelector<HTMLElement>(`[data-zoom="${CSS.escape(key)}"]`), small = find()?.querySelector('img');
   if (!small) return () => {};   // a render hid the row while this file loaded
   const dialog = document.createElement('dialog'), close = document.createElement('button'), figure = document.createElement('figure'), image = new Image();
   // in the body, so a render of the component keeps it; .ag-guide, the component's own token values and colour scheme give it the component's look
@@ -18,7 +18,7 @@ window.BuildGuideModules = {...window.BuildGuideModules, zoom: (c, key) => {
   dialog.append(close, figure);
   // a click on the backdrop closes it too; the focus returns to the image button (a render may have replaced it), or to the filter that hid its row
   dialog.onclick = e => { if (e.target === dialog) dialog.close(); };
-  dialog.onclose = () => { dialog.remove(); (find() ?? root.querySelector('[data-role=filter]'))?.focus(); };
+  dialog.onclose = () => { dialog.remove(); (find() ?? root.querySelector<HTMLElement>('[data-role=filter]'))?.focus(); };
   document.body.append(dialog);
   dialog.showModal();
   return () => dialog.open && dialog.close();

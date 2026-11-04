@@ -13,22 +13,25 @@
   },
   "type": "module",
   "bin": {
-    "buildguide-check": "src/buildguide-check.mjs"
+    "buildguide-check": "lib/buildguide-check.mjs"
   },
   "files": [
-    "src",
+    "lib",
     "schema",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
-    "test": "node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=95 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
-    "test:browser": "playwright test",
-    "serve": "node tests/serve.mjs 8080",
-    "dist": "node scripts/dist.mjs"
+    "build": "tsc -b && node scripts/assets.mjs",
+    "test": "npm run build && node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=95 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
+    "test:browser": "npm run build && playwright test",
+    "serve": "npm run build && node tests/serve.mjs 8080",
+    "dist": "npm run build && node scripts/dist.mjs",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
+    "@joint/core": "4.3.3",
     "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "ajv": "8.20.0",

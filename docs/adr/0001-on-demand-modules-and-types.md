@@ -1,6 +1,6 @@
 # On-demand modules for core, and types as a check only
 
-Status: proposed (spike #129, for the owner's decision).
+Status: proposed (spike #129, for the owner's decision). Decision 3 and the TypeScript section are superseded by [0003](0003-typescript-source-emitted-as-classic-scripts.md).
 
 ## Decision
 

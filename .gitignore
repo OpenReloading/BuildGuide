@@ -11,6 +11,9 @@ packages/mkdocs/src/mkdocs_buildguide/core/
 .docusaurus/
 /packages/docusaurus/example/build/
 packages/docusaurus/core/
+# TypeScript output and its build info
+/packages/*/lib/
+/packages/*/.tsbuild/
 .coverage
 coverage.xml
 lcov.info
