@@ -86,7 +86,7 @@ function checkBoard(key: string, board: Board): string[] {
       const id = end.slice(0, at), pin = end.slice(at + 1), part = has(parts, id) ? parts[id] : undefined;
       if (!part) { found.push(`${key} ${c.no}: no part ${id}`); continue; }
       if (!Object.values(part.ports || {}).flat().includes(pin)) { found.push(`${key} ${c.no}: ${id} has no terminal ${pin}`); continue; }
-      if (!exemptKinds.includes(part.kind) && !(exempt.colors || []).includes(c.color)) ends[end] = [...(ends[end] ?? []), c.no];
+      if (!exemptKinds.includes(part.kind) && !(exempt.colors || []).includes(c.color)) { const nos = ends[end] ?? []; nos.push(c.no); ends[end] = nos; }
     }
     const color = has(colors, c.color) ? colors[c.color] : undefined;
     if (!color) found.push(`${key} ${c.no}: unknown colour ${c.color}`);

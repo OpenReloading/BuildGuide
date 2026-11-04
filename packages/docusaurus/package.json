@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "compile": "npm run build -w @openreloading/buildguide && node scripts/copy-core.mjs && tsc -b",
-    "test": "npm run compile && node --test --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
+    "test": "npm run compile && node --test --enable-source-maps --experimental-test-coverage --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
     "build": "npm run compile && docusaurus build example",
     "start": "npm run compile && docusaurus start example --host 0.0.0.0 --port 8080",
     "prepack": "npm run compile",

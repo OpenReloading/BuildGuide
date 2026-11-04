@@ -13,9 +13,11 @@ class CoreHook(BuildHookInterface):
             if not target.is_dir():
                 raise FileNotFoundError(f"neither {core} nor the copy in {target}")
             return
-        # core not built yet (uv sync before npm): the editable install is rebuilt once lib/ exists (cache-keys in pyproject.toml)
         if not (core / "lib").is_dir():
-            return
+            # uv sync before npm: the editable install is rebuilt once lib/ exists (cache-keys in pyproject.toml)
+            if version == "editable":
+                return
+            raise FileNotFoundError(f"{core / 'lib'} is missing: build core first (npm run build -w packages/core)")
         shutil.rmtree(target, ignore_errors=True)
         shutil.copytree(core / "lib", target, ignore=shutil.ignore_patterns("*.d.ts", "*.d.mts"))
         shutil.copy(core / "schema/buildguide.schema.json", target)

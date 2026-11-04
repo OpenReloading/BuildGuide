@@ -22,8 +22,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -b && node scripts/assets.mjs",
-    "test": "npm run build && node --test --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=95 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "npm run build && node --test --enable-source-maps --experimental-test-coverage --test-coverage-lines=95 --test-coverage-branches=85 --test-coverage-functions=95 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=lcov.info tests/*.test.mjs",
     "test:browser": "npm run build && playwright test",
     "serve": "npm run build && node tests/serve.mjs 8080",
     "dist": "npm run build && node scripts/dist.mjs",

@@ -24,7 +24,7 @@ Docs: https://openreloading.github.io/BuildGuide/
    //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
    ```
 
-   then `npm install @openreloading/buildguide` and copy `node_modules/@openreloading/buildguide/lib/` into the site's assets (versions from GitHub Packages carry `src/` instead).
+   then `npm install @openreloading/buildguide` and copy `node_modules/@openreloading/buildguide/lib/` into the site's assets (versions released before the TypeScript build carry `src/` instead).
 
 2. Put the components into your own pages. The page owns its title, notices, text and navigation: a component draws only a BOM checklist, the text steps or one board (wiring or tubing). Use as many as you like on one page, each board once:
 
