@@ -1,7 +1,7 @@
 {
   "problems": [
     "wiring: connection 1 used twice",
-    "wiring 1: unknown colour BK"
+    "wiring 1: unknown color BK"
   ],
   "guide": {
     "storage": "test-guide",

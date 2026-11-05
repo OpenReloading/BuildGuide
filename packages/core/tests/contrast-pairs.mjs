@@ -1,4 +1,4 @@
-// the pairs of --ag-* colours the stylesheet puts on each other, shared by the unit test of the defaults and the browser test of the host recipes
+// the pairs of --ag-* colors the stylesheet puts on each other, shared by the unit test of the defaults and the browser test of the host recipes
 // text pairs need 4.5, controls, focus rings and drawn parts 3 (WCAG 2.2 AA, 1.4.3 and 1.4.11)
 export const TEXT = [['ink', 'surface'], ['ink', 'page'], ['muted', 'surface'], ['muted', 'page'], ['muted', 'surface-head'], ['muted', 'surface-soft'], ['muted', 'step-current-bg'],
   ['text', 'surface'], ['text', 'bom-hover'], ['accent', 'surface'], ['accent', 'page'], ['surface', 'primary'], ['surface', 'primary-hover'], ['surface', 'done'],

@@ -1,4 +1,4 @@
-/* Docusaurus signals its colour mode on <html>: dark gets the dark tokens, light the light ones, whatever the browser prefers. */
+/* Docusaurus signals its color mode on <html>: dark gets the dark tokens, light the light ones, whatever the browser prefers. */
 @media screen {
   html[data-theme='dark'] .ag-guide {
     color-scheme: dark;

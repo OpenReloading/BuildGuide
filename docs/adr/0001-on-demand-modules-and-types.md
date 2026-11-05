@@ -82,4 +82,4 @@ Effect on the published packages: none. No emit, no change to the files that shi
 4. Type check with `tsc --checkJs`, non-strict.
 5. #76 (`zoom` module and its CSS) and #77 (English table in core, one file per language) follow 1; their own issues stay.
 
-Unmeasured: behaviour of any prototype in a browser, the context object for the board interface, the CSS of the zoom dialog, the requests of a cold `file:` page.
+Unmeasured: behavior of any prototype in a browser, the context object for the board interface, the CSS of the zoom dialog, the requests of a cold `file:` page.

@@ -86,7 +86,7 @@ const config = async (): Promise<Config> => ({
       copyright: 'MIT license. Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified.',
     },
     colorMode: { respectPrefersColorScheme: true },
-    // code in the token colours: one colour for every token keeps 4.5:1 in both schemes
+    // code in the token colors: one color for every token keeps 4.5:1 in both schemes
     prism: { theme: { plain: { color: 'var(--ink)', backgroundColor: 'var(--surface-alt)' }, styles: [] } },
   } satisfies UserThemeConfig,
 })

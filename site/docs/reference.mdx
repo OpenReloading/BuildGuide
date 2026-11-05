@@ -23,7 +23,7 @@ The surface a site may style or test against. Anything not listed here can chang
 | `data-ag-scheme` | `dark` forces the dark tokens and board filter, `light` opts out of the browser's dark preference (it wins over `dark`), `auto` follows the host's scheme when it has a signal and otherwise the browser; set on the component or an ancestor, see [Light and dark](theming.mdx#light-and-dark) |
 | `--ag-font`, `--ag-text-small` | font family (default the system sans-serif stack) and the smallest font size (default `11px`) of the component, the board drawing included, see [Font and size](theming.mdx#font-and-size) |
 | `--ag-board-filter` | filter applied to the board drawing |
-| `--ag-board-terminal`, `--ag-board-terminal-bg`, `--ag-board-terminal-ink`, `--ag-board-outline` | ring, fill and name of the selected connection's terminals and the outline of the selected connection in the board drawing, single colours that the board filter darkens, see [Board selection](theming.mdx#board-selection) |
+| `--ag-board-terminal`, `--ag-board-terminal-bg`, `--ag-board-terminal-ink`, `--ag-board-outline` | ring, fill and name of the selected connection's terminals and the outline of the selected connection in the board drawing, single colors that the board filter darkens, see [Board selection](theming.mdx#board-selection) |
 | `--ag-board-ratio` | set by the component on a board's `.ag-guide`: the board size from the guide data as `<width> / <height>` (`1360 / 860`), a valid `aspect-ratio` value, see [Board size](theming.mdx#board-size) |
 | `--ag-done-opacity`, `--ag-done-decoration` | opacity (default `1`; applies to a done BOM cell or wire button and its contents, the checkbox in the BOM cell included) and `text-decoration` (default `none`) of a ticked BOM, step or wire row's text, see [Done state](theming.mdx#done-state) |
 
@@ -79,7 +79,7 @@ npx buildguide-check guide.json [more.json ...]
 node assets/buildguide-<version>/buildguide-check.mjs guide.json
 ```
 
-It prints one line per problem and exits 1, or 2 without a file. `check(data)` from `buildguide-check.mjs` returns the list of problems. It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colours, diodes with both ends on one part, the per-terminal limit, a board `title`, and tick prefixes that are unique across boards and not `bom`. The MkDocs plugin runs the same checks (`check.py`) and stops the build on a problem.
+It prints one line per problem and exits 1, or 2 without a file. `check(data)` from `buildguide-check.mjs` returns the list of problems. It checks what the schema cannot: unique ids, numbers and terminal names, ends that name an existing part and terminal, defined colors, diodes with both ends on one part, the per-terminal limit, a board `title`, and tick prefixes that are unique across boards and not `bom`. The MkDocs plugin runs the same checks (`check.py`) and stops the build on a problem.
 
 ## Types
 

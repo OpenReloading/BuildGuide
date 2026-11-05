@@ -79,7 +79,7 @@
     const holder = document.createElement('div');
     const paper = new dia.Paper({
       el: holder, model: graph, width: W, height: H, cellViewNamespace: ns, interactive: false,
-      background: {color: 'transparent'}, async: false,   // the canvas behind it carries the surface colour
+      background: {color: 'transparent'}, async: false,   // the canvas behind it carries the surface color
       labelsLayer: true,   // connection numbers above the parts, never hidden under a terminal
       preventDefaultViewAction: false, preventDefaultBlankAction: false,   // by default the paper cancels the touch that starts on it, so the board would trap the page scroll
     });
@@ -264,7 +264,7 @@
       el.attr('root/opacity', used.has(id) ? 1 : .65);
       for (const port of el.getPorts()) {
         if (terms.has(id + ':' + port.id)) {
-          // colours from --ag-board-terminal, -bg and -ink (buildguide.css): a rule outranks the attribute
+          // colors from --ag-board-terminal, -bg and -ink (buildguide.css): a rule outranks the attribute
           el.portProp(port.id as string, 'attrs/pb', {class: 'ag-terminal', strokeWidth: 3});
           el.portProp(port.id as string, 'attrs/pt/class', 'ag-terminal');
         }
