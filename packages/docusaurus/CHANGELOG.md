@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.6.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.5.1...docusaurus-v1.6.0) (2026-11-05)
+
+
+### Features
+
+* **core:** tabs as an on-demand module, UI strings with a German test ([d3793da](https://github.com/OpenReloading/BuildGuide/commit/d3793daef5b43c0f64b86234d67aa9fc9a152ece))
+* **docusaurus:** the noscript text and the failure text follow the strings of each guide ([d3793da](https://github.com/OpenReloading/BuildGuide/commit/d3793daef5b43c0f64b86234d67aa9fc9a152ece))
+
+
+### Bug fixes
+
+* **core:** US spelling in two English texts: the board CSV column Colour is now Color, and the router message says labeled ([d3793da](https://github.com/OpenReloading/BuildGuide/commit/d3793daef5b43c0f64b86234d67aa9fc9a152ece))
+
+
+### Documentation
+
+* move the docs site to Docusaurus in slate and blue ([#197](https://github.com/OpenReloading/BuildGuide/issues/197)) ([487fd3e](https://github.com/OpenReloading/BuildGuide/commit/487fd3e2b341d70e32e5739d471f1dad1cfcc3fe))
+
 ## [1.5.1](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.5.0...docusaurus-v1.5.1) (2026-11-01)
 
 
