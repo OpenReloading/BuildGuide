@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.5...mkdocs-v0.1.6) (2026-11-05)
+
+
+### Documentation
+
+* move the docs site to Docusaurus in slate and blue ([#197](https://github.com/OpenReloading/BuildGuide/issues/197)) ([487fd3e](https://github.com/OpenReloading/BuildGuide/commit/487fd3e2b341d70e32e5739d471f1dad1cfcc3fe))
+
 ## [0.1.5](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.4...mkdocs-v0.1.5) (2026-11-01)
 
 
