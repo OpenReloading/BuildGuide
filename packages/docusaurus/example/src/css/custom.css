@@ -1,6 +1,6 @@
 /* The recipe of docs/theming.md for Docusaurus, loaded by the example site (customCss) so that its build and tests exercise it. */
 /* --8<-- [start:recipe] */
-/* the site's brand, one value per colour mode (Infima's default blue is 4.23:1 under white text) */
+/* the site's brand, one value per color mode (Infima's default blue is 4.23:1 under white text) */
 :root{--ifm-color-primary:#277548}
 [data-theme='dark']{--ifm-color-primary:#25c2a0}
 

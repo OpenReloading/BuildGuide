@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/OpenReloading/BuildGuide/schema/buildguide.schema.json",
   "title": "BuildGuide guide data",
-  "description": "One object per guide: the data of the BOM component and of the board components. Cross references (terminals, colours, limits) are checked by buildguide-check.mjs.",
+  "description": "One object per guide: the data of the BOM component and of the board components. Cross references (terminals, colors, limits) are checked by buildguide-check.mjs.",
   "type": "object",
   "required": ["storage"],
   "properties": {
@@ -92,7 +92,7 @@
         "scope": { "enum": ["step", "all"], "description": "connections shown at first" },
         "single": { "type": "boolean", "description": "offer the Selected connection scope" },
         "listAll": { "type": "boolean", "description": "list every connection, not only the step's" },
-        "listColor": { "type": "boolean", "description": "show the colour code in the list; default true" },
+        "listColor": { "type": "boolean", "description": "show the color code in the list; default true" },
         "legend": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "key": { "enum": ["diode"] } }, "additionalProperties": false }] } },
         "colors": {
           "type": "object",
@@ -120,7 +120,7 @@
               "round": { "type": "boolean", "description": "a round part filled with the part's color" },
               "inset": { "type": "number", "description": "left and right terminals sit this far inside the part" },
               "offset": { "type": "object", "properties": { "top": { "type": "number" }, "bottom": { "type": "number" } }, "additionalProperties": false },
-              "pins": { "type": "object", "additionalProperties": { "type": "string" }, "description": "terminal name to colour: a coloured dot without text" },
+              "pins": { "type": "object", "additionalProperties": { "type": "string" }, "description": "terminal name to color: a colored dot without text" },
               "band": { "type": ["boolean", "string"], "description": "a band on the right edge, true for silver" },
               "diodeLoop": { "enum": ["around"], "description": "a diode across two terminals loops around the part" }
             },

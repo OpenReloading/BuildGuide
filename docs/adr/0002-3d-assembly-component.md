@@ -6,7 +6,7 @@ Status: proposed (spike #130 for #47, for the owner's decision).
 
 Derived from the issue body and the owner's comment on #130 (the comment overrides the body):
 
-1. An option table with gzip size, licence and offline behaviour per option, and whether it loads only on a page with an assembly block.
+1. An option table with gzip size, license and offline behavior per option, and whether it loads only on a page with an assembly block.
 2. A prototype on a branch (not merged) that moves one AutoLever part into place, with its byte cost.
 3. A recommendation (go, change scope or drop) and follow-up issues.
 4. Answers to the questions of the issue: own file and own budget, the keys of #47 against AutoLever's guide and the smallest first version, accessibility.
@@ -26,7 +26,7 @@ This changes the line of #47 that reads "three.js bundled or pinned" to "no thir
 
 Gzip level 6 as in `packages/core/tests/size.test.mjs`, 2026-10-28. Library bundles built with esbuild 0.28.2 (`--bundle --minify --format=iife`) from the npm release named, the entry file importing only the listed names. "Alone" is what a page with an assembly block downloads for the renderer, without models.
 
-| Option | Alone, gzipped | Licence (npm metadata) | Loads on demand | Offline | Notes |
+| Option | Alone, gzipped | License (npm metadata) | Loads on demand | Offline | Notes |
 |---|---|---|---|---|---|
 | Own WebGL renderer (prototype) | 4187, plus 155 in `buildguide.js` and 140 in `buildguide.css` | MIT (this repository) | yes, `loadScript` from the call site | yes, no request but the models | STL only; camera, step motion, keyboard, step list included |
 | three.js 0.186.1, tree-shaken: renderer, standard material, two lights, STL loader, orbit controls | 142591 | MIT | yes, if bundled as one classic file | yes | the 0.186.1 package has no classic (non-module) build, so the file is a generated bundle; the scene, camera and step logic are still ours |
@@ -44,7 +44,7 @@ How the library numbers were made: `npm install --legacy-peer-deps` of the relea
 
 ## Prototype
 
-A page with two clamp halves and two bolts: the lower half rises into place, the upper half lowers onto it, the bolts drop in along their axes ([screenshots](https://github.com/OpenReloading/BuildGuide/tree/9bc055d89bc5926a23cddcf44d0000cede655374/packages/core/prototype/assembly)). The clamp halves are the handle clamp of `cad/` in OpenReloading/AutoLever (MIT, commit `d31a866`), rendered with OpenSCAD 2021.01 in about 2 seconds for both halves; the bolt is invented. Struts, nuts and washers are not modelled.
+A page with two clamp halves and two bolts: the lower half rises into place, the upper half lowers onto it, the bolts drop in along their axes ([screenshots](https://github.com/OpenReloading/BuildGuide/tree/9bc055d89bc5926a23cddcf44d0000cede655374/packages/core/prototype/assembly)). The clamp halves are the handle clamp of `cad/` in OpenReloading/AutoLever (MIT, commit `d31a866`), rendered with OpenSCAD 2021.01 in about 2 seconds for both halves; the bolt is invented. Struts, nuts and washers are not modeled.
 
 | Part | Raw | Gzipped |
 |---|---|---|
@@ -58,7 +58,7 @@ A page with two clamp halves and two bolts: the lower half rises into place, the
 
 The models are three quarters of the transfer. They are unindexed binary STL (50 bytes per triangle); indexing the vertices would shrink them (not measured). Whether a host compresses `.stl` files is not measured; a host that serves them as plain binary sends 146 kB raw for this assembly.
 
-Checked in headless Chromium in the dev container (software WebGL, no flags): five new browser tests (mount draws a non-empty canvas and requests each model once, step buttons and list, camera by arrow keys and `Home`, reduced motion, no request of the renderer or a model on a page without a block), no request outside the test server, no console error; the whole core browser suite (177 passed, 6 skipped, run before the fifth test was added), `npm run lint` and `npm test` pass on the prototype branch. Not checked: Firefox and WebKit, touch, forced colours, a lost context, `file:` pages, the MkDocs and Docusaurus wrappers, the schema.
+Checked in headless Chromium in the dev container (software WebGL, no flags): five new browser tests (mount draws a non-empty canvas and requests each model once, step buttons and list, camera by arrow keys and `Home`, reduced motion, no request of the renderer or a model on a page without a block), no request outside the test server, no console error; the whole core browser suite (177 passed, 6 skipped, run before the fifth test was added), `npm run lint` and `npm test` pass on the prototype branch. Not checked: Firefox and WebKit, touch, forced colors, a lost context, `file:` pages, the MkDocs and Docusaurus wrappers, the schema.
 
 ## Own file and own budget
 
@@ -79,9 +79,9 @@ What the keys need beyond #47's list:
 
 - `step` on a part or fastener as a step id (the prototype uses an index), checked against `steps`.
 - `explode` as a vector (direction times distance in model units).
-- `materials`: colour and opacity per key, because bought parts are drawn as ghosts in AutoLever's CAD (colour with alpha 0.8) and `colour or material key` is ambiguous otherwise.
+- `materials`: color and opacity per key, because bought parts are drawn as ghosts in AutoLever's CAD (color with alpha 0.8) and `color or material key` is ambiguous otherwise.
 - `models` values as relative paths that stay on the site: the renderer fetches only URLs of the page's own origin (an absolute URL to another origin would break the rule of no requests outside the site, and guide data may come from anyone), and the check rejects a value with a scheme or host. `safeURL` is not enough for this, it admits `https:` and `file:` URLs.
-- Matrices column-major with 16 finite numbers, rigid (no scale or shear), because the shader lights with the upper 3x3 of the matrix: the check rejects anything else. Z up, millimetres, stated once in the format description (STL has no units).
+- Matrices column-major with 16 finite numbers, rigid (no scale or shear), because the shader lights with the upper 3x3 of the matrix: the check rejects anything else. Z up, millimeters, stated once in the format description (STL has no units).
 - `views`: `azimuth`, `elevation` and a distance factor of the fitted size.
 
 Wanted by the reference page of the first consumer (`feeder/viewer.html` in OpenReloading/Feeder: instanced fasteners that ride with their host part, tool parts visible in one step only, a section cut, per-kind opacity, a tilt of the body about an axis) but not by AutoLever, so not in the first version: `tool`, `clip`, a `rotate` motion. They are estimates of a few hundred bytes each in an own renderer (unmeasured), and they decide whether the Feeder can move to the component (OpenReloading/Feeder#24 states "same steps, parts, fasteners and animation as today").
@@ -98,7 +98,7 @@ Done in the prototype and tested unless marked:
 - Text alternative: every step is text in the DOM (title and text), the current one is `aria-current="step"`, a `role="status"` line announces "Step n of m", and the canvas label repeats the step text and the keys. When #72's text steps exist, the assembly's step text should point at them by id instead of repeating them (a follow-up, not decided here).
 - Reduced motion: with `prefers-reduced-motion: reduce` the final position is drawn at once; the setting is read at each draw, so a change applies without a reload. Tested.
 - No WebGL: the canvas is replaced by a sentence and the step list stays. Not tested.
-- Open: pointer drag on a touch screen with `touch-action: none` captures vertical scrolling over the canvas, so a page can become hard to scroll past it (a rotate toggle or a two-finger gesture is the usual answer, untested); model colours are fixed hex values on a transparent canvas, so contrast against a dark theme is the author's job; forced colours do not change canvas pixels, so the text list is the access path; no axe run on the prototype page.
+- Open: pointer drag on a touch screen with `touch-action: none` captures vertical scrolling over the canvas, so a page can become hard to scroll past it (a rotate toggle or a two-finger gesture is the usual answer, untested); model colors are fixed hex values on a transparent canvas, so contrast against a dark theme is the author's job; forced colors do not change canvas pixels, so the text list is the access path; no axe run on the prototype page.
 
 ## Follow-up issues
 
@@ -108,7 +108,7 @@ Drafted, not filed.
 2. **Assembly component in core**: the renderer as `buildguide-assembly.js` with its budget, the loader call site, the biome override and the file list. Done when: `<div data-buildguide="assembly">` mounts from the example guide, with a "play all" over the steps, ticks use the `storage` key with the tick keys `asm-<step id>`, the prefix `asm` reserved next to `bom` and `step` (this issue adds it to the stable list of reserved prefixes, makes both checkers reject a board prefix of `asm` as they do for the other reserved prefixes, and adds a shared fixture), the hash holds the step (`#assembly=<step>`, `<step>` percent-encoded as for boards; the key `assembly` is fixed, so a page holds one assembly block, a second one shows an unknown-component line, and both checkers reject a board key `assembly` as they do `steps`), a browser test mounts it with no request outside the site, and a page without a block requests neither script nor model. Blocked by 1 and, for the module contract, by ADR 0001.
 3. **Assembly in the MkDocs and Docusaurus wrappers**: markup, model files copied next to the data, the offline page lists them. Done when: the docs site and the Docusaurus example host `/example/assembly/` and the browser tests pass for both. Blocked by 2.
 4. **Assembly renderer extras**: transparency for ghost parts, tool parts visible in one step, a rotating motion, a section cut, each measured in gzip bytes. Done when: the Feeder's current page can be expressed in the data, or the missing feature is named. Blocked by 2.
-5. **Assembly accessibility pass**: touch scrolling, no-WebGL fallback test, forced colours and dark theme, axe, a screen reader pass, step text shared with #72. Blocked by 2.
+5. **Assembly accessibility pass**: touch scrolling, no-WebGL fallback test, forced colors and dark theme, axe, a screen reader pass, step text shared with #72. Blocked by 2.
 6. **AutoLever mesh export and assembly steps** (in OpenReloading/AutoLever): an STL export from `cad/` in the build and step texts for the clamp and the control box. Blocked by 1.
 
 ## Not decided here

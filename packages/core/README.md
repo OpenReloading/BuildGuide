@@ -44,7 +44,7 @@ Docs: https://openreloading.github.io/BuildGuide/
    | `data-src` | URL of the guide data. Components with the same URL share one request | the JSON in an element with the id `guide-data` |
    | `data-assets` | folder of BOM images, relative to the page | `assets/` (or the `data-assets` of `#guide-data`) |
 
-   Colours and dark mode: [Theming](https://openreloading.github.io/BuildGuide/theming/). The script, hash and storage details: [Reference](https://openreloading.github.io/BuildGuide/reference/).
+   Colors and dark mode: [Theming](https://openreloading.github.io/BuildGuide/theming/). The script, hash and storage details: [Reference](https://openreloading.github.io/BuildGuide/reference/).
 
 3. Write the guide data: [Data format](https://openreloading.github.io/BuildGuide/data-format/) describes every key, `buildguide.schema.json` (JSON Schema 2020-12) is the formal definition.
 

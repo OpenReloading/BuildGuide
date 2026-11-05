@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { TEXT, GRAPHICS } from './contrast-pairs.mjs';
 
-// every --ag-* colour is light-dark(light, dark) in buildguide.css; contrast-pairs.mjs lists the ones the stylesheet puts on each other
+// every --ag-* color is light-dark(light, dark) in buildguide.css; contrast-pairs.mjs lists the ones the stylesheet puts on each other
 const css = readFileSync(new URL('../src/buildguide.css', import.meta.url), 'utf8');
 const tokens = { light: {}, dark: {} };
 for (const [, name, light, dark] of css.matchAll(/--ag-([\w-]+):light-dark\((#[0-9a-f]+), (#[0-9a-f]+)\)/g)) { tokens.light[name] = light; tokens.dark[name] = dark; }

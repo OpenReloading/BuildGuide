@@ -23,13 +23,13 @@ const touch = async (page, fingers) => {
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 };
 const STEPS = 12, line = (from, to) => Array.from({ length: STEPS + 1 }, (_, i) => ({ x: from.x + (to.x - from.x) * i / STEPS, y: from.y + (to.y - from.y) * i / STEPS }));
-const centre = box => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
+const center = box => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 });
 // two fingers 60 px apart that move to `scale` times that distance, around the middle of the box
 const pinch = (page, box, scale) => {
-  const c = centre(box), half = 30;
+  const c = center(box), half = 30;
   return touch(page, [-1, 1].map(side => line({ x: c.x + side * half, y: c.y }, { x: c.x + side * half * scale, y: c.y })));
 };
-const swipe = (page, box, dy) => { const c = centre(box); return touch(page, [line(c, { x: c.x, y: c.y + dy })]); };
+const swipe = (page, box, dy) => { const c = center(box); return touch(page, [line(c, { x: c.x, y: c.y + dy })]); };
 const widthOf = page => page.locator('.ag-board-canvas .joint-paper').evaluate(el => el.getBoundingClientRect().width);
 // the page scrolled and the browser's own pinch zoom did not happen
 const pageZoom = page => page.evaluate(() => visualViewport.scale);
@@ -83,7 +83,7 @@ test('pinch keeps the board point under the fingers', async ({ page }) => {
   await page.locator('[data-action=zoom-fit]').click();
   const box = await canvas.boundingBox(), paper = page.locator('.ag-board-canvas .joint-paper');
   const before = await paper.boundingBox();
-  // the pinch centre is the middle of the canvas: the board point there stays put
+  // the pinch center is the middle of the canvas: the board point there stays put
   const at = b => ({ x: (box.x + box.width / 2 - b.x) / b.width, y: (box.y + box.height / 2 - b.y) / b.height });
   const from = at(before);
   await pinch(page, box, 2);
@@ -92,13 +92,13 @@ test('pinch keeps the board point under the fingers', async ({ page }) => {
   expect(after.y).toBeCloseTo(from.y, 1);
 });
 
-test('pinch: the centre may drift while the fingers spread, the second finger may land after the first', async ({ page }) => {
+test('pinch: the center may drift while the fingers spread, the second finger may land after the first', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${BASE}${boards[0]}/`); await ready(page);
   const canvas = page.locator('.ag-board-canvas');
   await canvas.scrollIntoViewIfNeeded();
   await page.locator('[data-action=zoom-fit]').click();
-  const fit = await widthOf(page), c = centre(await canvas.boundingBox()), y = await page.evaluate(() => scrollY);
+  const fit = await widthOf(page), c = center(await canvas.boundingBox()), y = await page.evaluate(() => scrollY);
   const from = side => ({ x: c.x + side * 30, y: c.y });
   await touch(page, [-1, 1].map(side => line(from(side), { x: c.x + side * 120, y: c.y - 40 })));
   expect(await widthOf(page)).toBeGreaterThan(fit * 1.5);
@@ -130,7 +130,7 @@ test('mouse: dragging a zoomed board pans it and selects no text', async ({ page
   await page.locator('[data-action=zoom-in]').click();
   await canvas.scrollIntoViewIfNeeded();
   await page.evaluate(() => { document.querySelector('.ag-board-canvas').scrollLeft = 200; });
-  const c = centre(await canvas.boundingBox()), left = await canvas.evaluate(el => el.scrollLeft);
+  const c = center(await canvas.boundingBox()), left = await canvas.evaluate(el => el.scrollLeft);
   await page.mouse.move(c.x, c.y); await page.mouse.down(); await page.mouse.move(c.x + 80, c.y, { steps: 6 }); await page.mouse.up();
   expect(await canvas.evaluate(el => el.scrollLeft)).toBeLessThan(left);
   expect(await page.evaluate(() => getSelection().isCollapsed)).toBe(true);

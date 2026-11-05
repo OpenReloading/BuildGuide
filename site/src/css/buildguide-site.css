@@ -1,7 +1,7 @@
 /* BuildGuide site layout on the brand tokens of brand.css. The home page is the doc "index": Docusaurus puts
    docs-doc-id-index on <html>, which scopes its rules. Every control is a 44 px target (site/tests/site.spec.mjs). */
 
-/* Links in running text are underlined, so they do not rely on colour against the text around them */
+/* Links in running text are underlined, so they do not rely on color against the text around them */
 .markdown :is(p, li, td) > a:not(.button) {
   text-decoration: underline;
 }
@@ -16,7 +16,7 @@
   outline-color: var(--header-ink);
 }
 
-/* Navbar: a page-coloured bar with a line under it, the wordmark as the title */
+/* Navbar: a page-colored bar with a line under it, the wordmark as the title */
 .navbar {
   --ifm-navbar-item-padding-vertical: 9px;
   border-bottom: 1px solid var(--line);
@@ -159,7 +159,7 @@ a[href$="__docusaurus_skipToContent_fallback"],
   width: 100%;
 }
 
-/* The current page in the sidebar and the breadcrumbs, and code in a link: the link colour on the accent tint, which
+/* The current page in the sidebar and the breadcrumbs, and code in a link: the link color on the accent tint, which
    keeps 4.5:1 in both schemes (on --surface-alt, Infima's choice through brand.css, it is 4.4:1 in light) */
 html[data-theme] {
   --ifm-menu-color-background-active: var(--accent-tint);
@@ -257,7 +257,7 @@ html[data-theme] {
   text-transform: uppercase;
 }
 
-/* Each component in a card on the page colour, which the component's sticky bars also paint (brand.css); nothing
+/* Each component in a card on the page color, which the component's sticky bars also paint (brand.css); nothing
    clips it, so its sticky step navigation stays on screen */
 .bg-card {
   margin: 0 0 32px;

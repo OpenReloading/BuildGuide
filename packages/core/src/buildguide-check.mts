@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks a guide's data before it is published: BOM lines, text steps, and every board connection
-// against its parts, terminals, colours and the board's per-terminal limit.
+// against its parts, terminals, colors and the board's per-terminal limit.
 // Use: node buildguide-check.mjs guide.json [...]   (exit 1 and one line per problem)
 import { readFileSync, realpathSync } from 'node:fs';
 import { basename } from 'node:path';
@@ -106,7 +106,7 @@ function checkBoard(key: string, board: Board): string[] {
       if (!exemptKinds.includes(part.kind) && !(exempt.colors || []).includes(c.color)) { const nos = ends[end] ?? []; nos.push(c.no); ends[end] = nos; }
     }
     const color = has(colors, c.color) ? colors[c.color] : undefined;
-    if (!color) found.push(`${key} ${c.no}: unknown colour ${c.color}`);
+    if (!color) found.push(`${key} ${c.no}: unknown color ${c.color}`);
     else if (color.diode && String(c.a).split(':')[0] !== String(c.b).split(':')[0]) found.push(`${key} ${c.no}: diode ends on two parts`);
   }
   const limit = board.rules?.perTerminal;
