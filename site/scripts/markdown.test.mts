@@ -59,7 +59,7 @@ test('a pipe is escaped in and outside code, braces and < only outside', () => {
   assert.equal(table(['A'], [['`a|{b}` c|{d}<e>']]).split('\n')[2], '| `a\\|{b}` c\\|\\{d\\}\\<e> |')
 })
 
-test('token table lists every colour with both schemes, and fails on one it cannot read', () => {
+test('token table lists every color with both schemes, and fails on one it cannot read', () => {
   assert.deepEqual(rows(tokenTable(':root{--ag-ink:light-dark(#111, #eee);\n --ag-page:light-dark(#fff, #000);}')), [
     ['--ag-ink', '#111', '#eee'],
     ['--ag-page', '#fff', '#000'],
@@ -69,7 +69,7 @@ test('token table lists every colour with both schemes, and fails on one it cann
   assert.throws(() => tokenTable(':root{--ag-ink:light-dark(#111, #eee); --ag-x:light-dark(rgb(0,0,0), #000);}'), /light-dark/)
 })
 
-test('files table and precache list the shipped files with sizes, licences and notes left out', () => {
+test('files table and precache list the shipped files with sizes, licenses and notes left out', () => {
   const dir = mkdtempSync(join(tmpdir(), 'core-'))
   mkdirSync(join(dir, 'libs/lib'), { recursive: true })
   for (const name of ['buildguide.css', 'buildguide.js', 'buildguide-board.js', 'buildguide-progress.js', 'libs/lib/a.wasm', 'libs/lib/LICENSE', 'libs/README.txt'])

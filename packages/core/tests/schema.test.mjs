@@ -59,7 +59,7 @@ test('the schema knows the keys of the string table, accepts strings in the guid
   guide.strings = german;
   guide.boards.tubing.strings = { cable: 'Schlauch' };
   assert.equal(validate(guide), true, JSON.stringify(validate.errors));
-  for (const [change, path] of [[g => { g.strings.colour = 'Farbe'; }, '/strings'], [g => { g.boards.tubing.strings.cable = 1; }, '/boards/tubing/strings/cable']]) {
+  for (const [change, path] of [[g => { g.strings.Color = 'Farbe'; }, '/strings'], [g => { g.boards.tubing.strings.cable = 1; }, '/boards/tubing/strings/cable']]) {
     const copy = structuredClone(guide);
     change(copy);
     assert.equal(validate(copy), false);

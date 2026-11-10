@@ -77,11 +77,11 @@ for (const key of PAGES) {
   }
 }
 
-// computed colours of a done row, measured: text 4.5:1 on the row (3:1 for the check mark), nothing translucent. In forced colours the system picks the colours.
+// computed colors of a done row, measured: text 4.5:1 on the row (3:1 for the check mark), nothing translucent. In forced colors the system picks the colors.
 // a host's color-mix() computes to color(srgb r g b) with channels from 0 to 1, rgb() has 0 to 255
 const luminance = rgb => rgb.match(/[\d.]+/g).slice(0, 3).map(v => { v /= rgb.startsWith('color(') ? 1 : 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i], 0);
 const contrast = (a, b) => { const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x); return (hi + 0.05) / (lo + 0.05); };
-for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { colorScheme: 'dark' }], ['forced colours', { forcedColors: 'active' }]]) {
+for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { colorScheme: 'dark' }], ['forced colors', { forcedColors: 'active' }]]) {
   test(`a done row stays legible: BOM, step and wire rows, ${name}`, async ({ page }) => {
     await page.emulateMedia(media);
     const measure = (row, text) => row.evaluate((tr, sel) => {
@@ -108,9 +108,9 @@ for (const [name, media] of [['light', { colorScheme: 'light' }], ['dark', { col
   });
 }
 
-// forced colours: the markers of the selected row, the done row and the current step are borders and outlines, measured on the computed styles:
-// non-zero width, 3:1 against what is behind them (WCAG 1.4.11), text 4.5:1. Without forced colours the same elements keep their look.
-test('selected, done and current are visible in forced colours', async ({ page }) => {
+// forced colors: the markers of the selected row, the done row and the current step are borders and outlines, measured on the computed styles:
+// non-zero width, 3:1 against what is behind them (WCAG 1.4.11), text 4.5:1. Without forced colors the same elements keep their look.
+test('selected, done and current are visible in forced colors', async ({ page }) => {
   const measure = (el, props) => el.evaluate((node, names) => {
     const behind = e => { for (; e; e = e.parentElement) { const bg = getComputedStyle(e).backgroundColor; if (!/rgba?\(.*, 0\)$/.test(bg) && bg !== 'transparent') return bg; } return 'rgb(255, 255, 255)'; };
     const style = getComputedStyle(node);
@@ -274,9 +274,9 @@ test('a step note is text, not markup', async ({ page }) => {
   expect(await page.evaluate(() => window.hit)).toBeUndefined();
 });
 
-// acceptance (#71): the level word is text in the note, each level has its own border (so print and forced colours still tell them apart),
+// acceptance (#71): the level word is text in the note, each level has its own border (so print and forced colors still tell them apart),
 // the text stays text, and the note fits a 390 px screen in the light and the dark scheme
-test('a leveled note shows its level word as text, with a border of its own, also printed and in forced colours', async ({ page }) => {
+test('a leveled note shows its level word as text, with a border of its own, also printed and in forced colors', async ({ page }) => {
   const d = structuredClone(D);
   const levels = ['note', 'caution', 'warning'];
   d.boards.wiring.steps.forEach((step, i) => { step.note = i < 3 ? { level: levels[i], text: `<b>Mind</b> level ${levels[i]} & more` } : step.note; });
@@ -348,7 +348,7 @@ for (const [key, b] of boards) for (const width of [390, 1440]) {
   });
 }
 
-test('colour: --ag-page paints the component', async ({ page }) => {
+test('color: --ag-page paints the component', async ({ page }) => {
   await page.goto(url('bom'));
   await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(1, 2, 3)'));
   expect(await page.locator('.ag-guide').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(1, 2, 3)');
@@ -370,7 +370,7 @@ test('host styles do not restyle the components', async ({ page }) => {
   expect(await page.locator('.ag-bom-table td').nth(1).evaluate(el => getComputedStyle(el).paddingLeft)).toBe('17px');
 });
 
-// the stylesheet's own colours: --ag-<name>:light-dark(light, dark)
+// the stylesheet's own colors: --ag-<name>:light-dark(light, dark)
 const css = readFileSync(new URL('../src/buildguide.css', import.meta.url), 'utf8');
 const rgb = hex => { const full = hex.length === 4 ? '#' + [...hex.slice(1)].map(c => c + c).join('') : hex, n = parseInt(full.slice(1), 16); return `rgb(${n >> 16}, ${(n >> 8) & 255}, ${n & 255})`; };
 const token = (name, scheme) => rgb(css.match(new RegExp(`--ag-${name}:light-dark\\((#[0-9a-f]+), (#[0-9a-f]+)\\)`))[scheme === 'dark' ? 2 : 1]);
@@ -385,7 +385,7 @@ const signal = (page, want) => page.evaluate(scheme => {
 }, want);
 
 for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
-  test(`colour scheme: a ${want} host in a browser preferring ${os}`, async ({ page }) => {
+  test(`color scheme: a ${want} host in a browser preferring ${os}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: os });
     await page.goto(url('wiring')); await ready(page);
     const kind = await signal(page, want);
@@ -402,12 +402,12 @@ for (const os of ['light', 'dark']) for (const want of ['light', 'dark']) {
 }
 
 // the selected terminal and the selected connection's outline take the --ag-board-* tokens, defaults in buildguide.css, the MkDocs example its accent.
-// The drawing is light and --ag-board-filter darkens it in dark: the measured colour is filtered (sRGB matrices of invert(.9) and hue-rotate(180deg))
+// The drawing is light and --ag-board-filter darkens it in dark: the measured color is filtered (sRGB matrices of invert(.9) and hue-rotate(180deg))
 // and needs 3:1 against the canvas in both schemes
 const BOARD = { 'board-terminal': '#237b33', 'board-terminal-bg': '#e1f7df', 'board-terminal-ink': '#173d23', 'board-outline': '#198b47' };
-const filtered = (colour, dark) => {
-  const c = colour.match(/[\d.]+/g).slice(0, 3).map(v => v / 255);
-  if (!dark) return colour;
+const filtered = (color, dark) => {
+  const c = color.match(/[\d.]+/g).slice(0, 3).map(v => v / 255);
+  if (!dark) return color;
   const v = c.map(x => 0.9 - 0.8 * x), m = [[-0.574, 1.43, 0.144], [0.426, 0.43, 0.144], [0.426, 1.43, -0.856]];
   return `rgb(${m.map(r => Math.round(255 * Math.min(1, Math.max(0, r[0] * v[0] + r[1] * v[1] + r[2] * v[2])))).join(', ')})`;
 };
@@ -457,7 +457,7 @@ const setScheme = (page, where, value) => page.evaluate(([w, v]) => (w === 'ance
 
 for (const os of ['light', 'dark']) {
   for (const where of ['component', 'ancestor']) {
-    test(`colour scheme: data-ag-scheme="dark" on the ${where} in a browser preferring ${os}`, async ({ page }) => {
+    test(`color scheme: data-ag-scheme="dark" on the ${where} in a browser preferring ${os}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: os });
       await page.goto(url('wiring')); await ready(page);
       await signal(page, 'dark');
@@ -465,14 +465,14 @@ for (const os of ['light', 'dark']) {
       await expectScheme(page, 'dark');
     });
   }
-  test(`colour scheme: data-ag-scheme="auto" follows the host or, without one, the browser preferring ${os}`, async ({ page }) => {
+  test(`color scheme: data-ag-scheme="auto" follows the host or, without one, the browser preferring ${os}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: os });
     await page.goto(url('wiring')); await ready(page);
     const kind = await signal(page, 'light');
     await setScheme(page, 'ancestor', 'auto');
     await expectScheme(page, kind === 'host' ? 'light' : os);
   });
-  test(`colour scheme: light wins over dark in either nesting, browser preferring ${os}`, async ({ page }) => {
+  test(`color scheme: light wins over dark in either nesting, browser preferring ${os}`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: os });
     await page.goto(url('wiring')); await ready(page);
     await signal(page, 'light');
@@ -483,7 +483,7 @@ for (const os of ['light', 'dark']) {
   });
 }
 
-test('colour scheme: data-ag-scheme="dark" prints light', async ({ page }) => {
+test('color scheme: data-ag-scheme="dark" prints light', async ({ page }) => {
   await page.goto(url('wiring')); await ready(page);
   await signal(page, 'dark');
   await setScheme(page, 'component', 'dark');
@@ -491,7 +491,7 @@ test('colour scheme: data-ag-scheme="dark" prints light', async ({ page }) => {
   expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
 });
 
-test('colour scheme: a component prints light on a dark host', async ({ page }) => {
+test('color scheme: a component prints light on a dark host', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(url('wiring')); await ready(page);
   await signal(page, 'dark');
@@ -499,7 +499,7 @@ test('colour scheme: a component prints light on a dark host', async ({ page }) 
   expect(await page.locator('.ag-guide').evaluate(el => [getComputedStyle(el).backgroundColor, getComputedStyle(el).colorScheme])).toEqual(['rgb(255, 255, 255)', 'light']);
 });
 
-test('colour scheme: a host sets a token itself in both schemes', async ({ page }) => {
+test('color scheme: a host sets a token itself in both schemes', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto(url('bom'));
   await page.locator('.ag-guide').evaluate(el => el.style.setProperty('--ag-page', 'rgb(9, 8, 7)'));
@@ -507,11 +507,11 @@ test('colour scheme: a host sets a token itself in both schemes', async ({ page 
 });
 
 // the host recipes of the theming page (packages/mkdocs/example/docs/assets/buildguide-material.css, packages/docusaurus/example/src/css/custom.css) are
-// loaded by the MkDocs and the Docusaurus example: the component takes the host's font, brand colour and background, and every pair keeps its contrast in both schemes
+// loaded by the MkDocs and the Docusaurus example: the component takes the host's font, brand color and background, and every pair keeps its contrast in both schemes
 const RECIPE = { material: { brand: '--md-typeset-a-color', background: '--md-default-bg-color' },
   docusaurus: { brand: '--ifm-color-primary', background: '--ifm-background-surface-color' } };
-// the colours of CSS values (var(), light-dark(), color-mix()) as rgba() strings, resolved on the component through a canvas
-const colours = (page, values) => page.locator('.ag-guide').first().evaluate((el, values) => {
+// the colors of CSS values (var(), light-dark(), color-mix()) as rgba() strings, resolved on the component through a canvas
+const colors = (page, values) => page.locator('.ag-guide').first().evaluate((el, values) => {
   const probe = el.appendChild(document.createElement('span')), pixel = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
   const out = Object.fromEntries(values.map(v => { probe.style.color = v; pixel.clearRect(0, 0, 1, 1); pixel.fillStyle = getComputedStyle(probe).color; pixel.fillRect(0, 0, 1, 1); const [r, g, b, a] = pixel.getImageData(0, 0, 1, 1).data; return [v, `rgba(${r}, ${g}, ${b}, ${a / 255})`]; }));
   probe.remove();
@@ -519,7 +519,7 @@ const colours = (page, values) => page.locator('.ag-guide').first().evaluate((el
 }, values);
 
 for (const scheme of ['light', 'dark']) {
-  test(`host recipe: ${scheme} font, brand colour and background of the host, contrast kept`, async ({ page }) => {
+  test(`host recipe: ${scheme} font, brand color and background of the host, contrast kept`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await page.goto(url('bom'));
     const host = await page.evaluate(() => document.body.hasAttribute('data-md-color-scheme') ? 'material' : document.documentElement.hasAttribute('data-theme') ? 'docusaurus' : null);
@@ -527,8 +527,8 @@ for (const scheme of ['light', 'dark']) {
     await signal(page, scheme);
     const { brand, background } = RECIPE[host];
     const names = [...new Set([...TEXT, ...GRAPHICS].flat())], values = [`var(${brand})`, `var(${background})`, ...names.map(n => `var(--ag-${n})`)];
-    const c = await colours(page, values), at = n => c[`var(--ag-${n})`];
-    // the font, the brand colour and the background are the host's own
+    const c = await colors(page, values), at = n => c[`var(--ag-${n})`];
+    // the font, the brand color and the background are the host's own
     const fonts = await page.evaluate(() => [getComputedStyle(document.querySelector('.ag-guide')).fontFamily, getComputedStyle(document.body).fontFamily]);
     expect(fonts[0]).toBe(fonts[1]);
     expect(at('accent')).toEqual(c[`var(${brand})`]);
@@ -718,14 +718,14 @@ for (const key of Object.keys(tickKeys)) {
 }
 
 // the engines paint the fill through their own pseudo-elements, which getComputedStyle does not report: the stylesheet is read
-test('the progress fill uses --ag-done in every engine and system colours in forced colours', () => {
+test('the progress fill uses --ag-done in every engine and system colors in forced colors', () => {
   expect(css).toContain('progress::-webkit-progress-value{background:var(--ag-done)}');
   expect(css).toContain('progress::-moz-progress-bar{background:var(--ag-done)}');
   expect(css).toMatch(/forced-colors:active\)\{[\s\S]*progress::-webkit-progress-value\{background:CanvasText\}[\s\S]*progress::-moz-progress-bar\{background:CanvasText\}/);
 });
 
-// the bar sits in the head on a phone and stays visible in forced colours
-for (const [name, media, scheme] of [['light', { colorScheme: 'light' }, 'light'], ['dark', { colorScheme: 'dark' }, 'dark'], ['forced colours', { forcedColors: 'active' }]]) {
+// the bar sits in the head on a phone and stays visible in forced colors
+for (const [name, media, scheme] of [['light', { colorScheme: 'light' }, 'light'], ['dark', { colorScheme: 'dark' }, 'dark'], ['forced colors', { forcedColors: 'active' }]]) {
   test(`the progress bar fits the head of a phone, ${name}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia(media);
@@ -876,7 +876,7 @@ test('BOM: filter missing and done with search and ticks, group counts, empty st
   expect(csv.slice(1).filter(r => r.endsWith(',"Yes"')).length).toBe(3);
 });
 
-test('BOM: the filter fits a 390 px phone and keeps its border and contrast in forced colours and dark', async ({ page }) => {
+test('BOM: the filter fits a 390 px phone and keeps its border and contrast in forced colors and dark', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
   for (const media of [{}, { forcedColors: 'active' }, { colorScheme: 'dark' }]) {
     await page.emulateMedia({ forcedColors: 'none', colorScheme: 'light', ...media });

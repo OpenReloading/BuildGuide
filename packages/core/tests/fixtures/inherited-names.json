@@ -1,7 +1,7 @@
 {
   "problems": [
     "wiring 2: no part constructor",
-    "wiring 2: unknown colour constructor"
+    "wiring 2: unknown color constructor"
   ],
   "guide": {
     "storage": "test-guide",

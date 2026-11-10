@@ -1,6 +1,6 @@
 /* OpenMarksman brand for Docusaurus sites, version 1 (from OpenMarksman/Brand, docusaurus/brand.css; copy, do not link): the palette tokens and their mapping to Infima, Pagefind's search modal
-   and BuildGuide components. Colours only, no layout: each site adds its own layout file.
-   Slate neutrals from the Mantine colour generator (seed #63687C), Mantine blue as the one accent (blue.8 light,
+   and BuildGuide components. Colors only, no layout: each site adds its own layout file.
+   Slate neutrals from the Mantine color generator (seed #63687C), Mantine blue as the one accent (blue.8 light,
    blue.4 dark, as primaryColor in the Ballistics app), amber only for safety. Docusaurus sets data-theme on <html>.
    The light tokens are the first rule, so a site's tools can read them (AutoLever: tools/social_card.py). */
 :root,
@@ -137,7 +137,7 @@ html[data-theme] {
 }
 
 /* BuildGuide components sit on the page: no slab of their own (the expanded view and the sticky bar keep --ag-page as
-   an opaque fill); every other component colour comes from the tokens, so none of BuildGuide's greens remain */
+   an opaque fill); every other component color comes from the tokens, so none of BuildGuide's greens remain */
 html[data-theme] .ag-guide {
   background: transparent;
   --ag-font: var(--ifm-font-family-base);
@@ -175,9 +175,9 @@ html[data-theme] .ag-guide {
   --ag-done-bg: var(--accent-tint);
 }
 
-/* Dark scheme: the board panel stays a light card and the drawing keeps its true colours. BuildGuide's dark filter
+/* Dark scheme: the board panel stays a light card and the drawing keeps its true colors. BuildGuide's dark filter
    (invert and hue-rotate) turns black wires light grey and red ones pink, against a legend that says red and black,
-   and no filtered colour gives a bright selection highlight. */
+   and no filtered color gives a bright selection highlight. */
 html[data-theme="dark"] .ag-guide .ag-full-board {
   color-scheme: light;
   --ag-board-filter: none;
@@ -193,8 +193,8 @@ html[data-theme="dark"] .ag-guide .ag-full-board {
 }
 
 /* Board drawing: BuildGuide draws the selected connection and the done wire numbers in green as SVG attributes
-   (buildguide-board.js); CSS outranks them. The selected wire gets a yellow highlighter, which no wire colour (red,
-   black, brown, blue) shares, and the done numbers the blue tint. Literal colours: the drawing stays light in both
+   (buildguide-board.js); CSS outranks them. The selected wire gets a yellow highlighter, which no wire color (red,
+   black, brown, blue) shares, and the done numbers the blue tint. Literal colors: the drawing stays light in both
    schemes. */
 .ag-guide .ag-board-canvas [stroke="#198b47"] {
   stroke: #ffd43b;

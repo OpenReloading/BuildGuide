@@ -1,4 +1,4 @@
-/* Colours are --ag-* custom properties on .ag-guide: a site overrides them there. Each is light-dark(light, dark): the dark value
+/* Colors are --ag-* custom properties on .ag-guide: a site overrides them there. Each is light-dark(light, dark): the dark value
    applies where the component's color-scheme is dark (see the end of this file).
    BuildGuide styles. Everything is scoped to .ag-guide, the class a mounted component carries. Layout follows the width of
    the component (container queries), not of the window. */
@@ -42,7 +42,7 @@
  --ag-diode-body:light-dark(#202d28, #cfd6d1);
  --ag-diode-band:light-dark(#c4cdd0, #4a554e);
 }
-/* the selected terminal and the outline of the selected connection in the board drawing: plain colours, since the drawing is light
+/* the selected terminal and the outline of the selected connection in the board drawing: plain colors, since the drawing is light
    and --ag-board-filter darkens it as a whole in dark */
 .ag-guide{--ag-board-terminal:#237b33;--ag-board-terminal-bg:#e1f7df;--ag-board-terminal-ink:#173d23;--ag-board-outline:#198b47}
 .ag-guide{--ag-done-opacity:1;--ag-done-decoration:none;--ag-font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;--ag-text-small:11px}
@@ -106,7 +106,7 @@
 .ag-guide .ag-wire-navigation{position:sticky;bottom:0;z-index:10;display:flex;justify-content:space-between;align-items:center;margin:8px 0 20px;padding:6px 0;background:var(--ag-page);font-size:var(--ag-text-small);color:var(--ag-muted)}
 .ag-guide .ag-step-note{margin:14px 0 0;padding:9px 12px;border-left:4px solid var(--ag-step-current-line);border-radius:0 6px 6px 0;background:var(--ag-surface-soft);font-size:13px}
 .ag-guide .ag-step-note strong{margin-right:.4em;text-transform:uppercase;letter-spacing:.04em}
-/* The level word is text; the border width and style tell the levels apart where colour or background is dropped (print, forced colours). */
+/* The level word is text; the border width and style tell the levels apart where color or background is dropped (print, forced colors). */
 .ag-guide .ag-step-note[data-level=caution]{border-left:6px double var(--ag-caution-line);background:var(--ag-caution-bg)}
 .ag-guide .ag-step-note[data-level=warning]{border-left:8px solid var(--ag-warning-line);background:var(--ag-warning-bg)}
 .ag-guide .ag-list-heading{margin:14px 0 10px}
@@ -267,8 +267,8 @@ body.ag-no-scroll{overflow:hidden}
  .ag-guide .ag-print-list .ag-group{break-after:avoid}
  .ag-guide .is-done td,.ag-guide .is-done button,.ag-guide .is-done .ag-step-title,.ag-guide .is-done .ag-step-text{opacity:1}
 }
-/* Dark: --ag-board-filter turns the drawing, whose colours come from the data, to a dark one (white paper to near black,
-   wire and part colours keep their hue). A host that signals dark sets color-scheme:dark and the filter on .ag-guide;
+/* Dark: --ag-board-filter turns the drawing, whose colors come from the data, to a dark one (white paper to near black,
+   wire and part colors keep their hue). A host that signals dark sets color-scheme:dark and the filter on .ag-guide;
    without a host signal the browser preference decides. data-ag-scheme on the component or an ancestor picks the side without
    a plugin: dark forces dark, light opts out (light wins when both are set), auto leaves it to the browser. A light host signal on
    .ag-guide (the plugins' rules, which are more specific) still wins over dark. */
@@ -281,8 +281,8 @@ body.ag-no-scroll{overflow:hidden}
 @media print{
  .ag-guide{color-scheme:light}
 }
-/* Forced colours drop box-shadow and background tints: the selected wire row gets an outline, a done row a start border,
-   the current step a thicker border (padding makes up the width, so nothing shifts). CanvasText is the one colour a forced-colours
+/* Forced colors drop box-shadow and background tints: the selected wire row gets an outline, a done row a start border,
+   the current step a thicker border (padding makes up the width, so nothing shifts). CanvasText is the one color a forced-colors
    palette guarantees to read on Canvas; the shapes tell the markers apart. */
 @media(forced-colors:active){
  .ag-guide .ag-progress progress{forced-color-adjust:none;border:1px solid CanvasText;background:Canvas}

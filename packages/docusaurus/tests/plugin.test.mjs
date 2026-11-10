@@ -62,13 +62,13 @@ test('a misspelt key or a wrong type fails the build with the file and the key',
   const guide = JSON.parse(readFileSync(example, 'utf8'));
   guide.bom.items[0].quantity = 1;
   guide.boards.wiring.steps[0].note = 1;
-  guide.strings = { colour: 'Farbe' };
+  guide.strings = { Color: 'Farbe' };
   const file = guideFile(guide);
   await assert.rejects(site(file).loadContent(), (error) => {
     assert.ok(error.message.startsWith(`${file}:\n`), error.message);
     assert.match(error.message, /^\/bom\/items\/0\/quantity: /m);
     assert.match(error.message, /^\/boards\/wiring\/steps\/0\/note: must be string,object$/m);
-    assert.match(error.message, /^\/strings\/colour: must be equal to one of the allowed values$/m);
+    assert.match(error.message, /^\/strings\/Color: must be equal to one of the allowed values$/m);
     assert.doesNotMatch(error.message, /^\/strings: /m);
     return true;
   });

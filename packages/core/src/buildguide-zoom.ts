@@ -5,7 +5,7 @@ window.BuildGuideModules = {...window.BuildGuideModules, zoom: (c, key) => {
   const {root, t} = c, find = () => root.querySelector<HTMLElement>(`[data-zoom="${CSS.escape(key)}"]`), small = find()?.querySelector('img');
   if (!small) return () => {};   // a render hid the row while this file loaded
   const dialog = document.createElement('dialog'), close = document.createElement('button'), figure = document.createElement('figure'), image = new Image();
-  // in the body, so a render of the component keeps it; .ag-guide, the component's own token values and colour scheme give it the component's look
+  // in the body, so a render of the component keeps it; .ag-guide, the component's own token values and color scheme give it the component's look
   dialog.className = 'ag-guide ag-zoom-dialog';
   const style = getComputedStyle(root);
   for (const name of style) if (name.startsWith('--ag-')) dialog.style.setProperty(name, style.getPropertyValue(name));

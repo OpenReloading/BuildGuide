@@ -58,7 +58,7 @@ def check_board(key, board):
             if parts[pid].get("kind") not in (exempt.get("kinds") or []) and c.get("color") not in (exempt.get("colors") or []):
                 ends.setdefault(end, []).append(c["no"])
         if c.get("color") not in colors:
-            found.append(f"{key} {c['no']}: unknown colour {c.get('color')}")
+            found.append(f"{key} {c['no']}: unknown color {c.get('color')}")
         elif colors[c["color"]].get("diode") and str(c.get("a")).split(":")[0] != str(c.get("b")).split(":")[0]:
             found.append(f"{key} {c['no']}: diode ends on two parts")
     limit = (board.get("rules") or {}).get("perTerminal")

@@ -36,7 +36,7 @@ async function drawn(page) {
         }
         if (c === 'C' && i === cmds.length - 1) pts.push(cur);
       });
-      // the bends only: a point on a straight line between its neighbours is dropped
+      // the bends only: a point on a straight line between its neighbors is dropped
       const same = (p, q, k) => Math.abs(p[k] - q[k]) < 0.01;
       return pts.filter((p, i) => !i || i === pts.length - 1 || !(same(p, pts[i - 1], 0) && same(p, pts[i + 1], 0) || same(p, pts[i - 1], 1) && same(p, pts[i + 1], 1)));
     };

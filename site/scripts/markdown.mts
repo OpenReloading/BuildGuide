@@ -4,7 +4,7 @@
 //   `--8<-- [start:name]` and `--8<-- [end:name]` (dedented), or lines from to to; paths are from the repository root.
 //   The syntax is pymdownx.snippets', which the READMEs' section markers were written for.
 // - <!-- generated: schema NAME -->, <!-- generated: tokens -->, <!-- generated: files --> and
-//   <!-- generated: precache --> become tables walked from the data schema, from the --ag-* colours of the stylesheet
+//   <!-- generated: precache --> become tables walked from the data schema, from the --ag-* colors of the stylesheet
 //   and from the shipped files of core.
 import { readdirSync, readFileSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
@@ -108,7 +108,7 @@ export function schemaTable(name: string): string {
 
 export function tokenTable(css: string): string {
   const found = [...css.matchAll(TOKEN)]
-  if (!found.length || found.length !== [...css.matchAll(DECLARED)].length) throw new Error('an --ag-* colour of the stylesheet is not written as light-dark(#hex, #hex)')
+  if (!found.length || found.length !== [...css.matchAll(DECLARED)].length) throw new Error('an --ag-* color of the stylesheet is not written as light-dark(#hex, #hex)')
   return table(['Token', 'Light', 'Dark'], found.map(([, name, light, dark]) => [`\`--ag-${name}\``, `\`${light}\``, `\`${dark}\``]))
 }
 
