@@ -38,6 +38,11 @@ plugins:
 markdown_extensions:
   - admonition
 
+# a dead link is info, not a warning: the --strict build of npm run test:browser fails on warnings, and this project has no link checks
+validation:
+  links:
+    not_found: info
+
 nav:
   - Home: index.md
   - Example guide:

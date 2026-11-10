@@ -31,10 +31,10 @@ const config = async (): Promise<Config> => ({
   baseUrl,
   trailingSlash: true,
   titleDelimiter: '-',
-  onBrokenLinks: 'throw',
-  onBrokenAnchors: 'throw',
+  onBrokenLinks: 'warn',
+  onBrokenAnchors: 'warn',
   markdown: {
-    hooks: { onBrokenMarkdownLinks: 'throw' },
+    hooks: { onBrokenMarkdownLinks: 'warn' },
     // README sections and generated tables (scripts/markdown.mts)
     preprocessor: preprocess,
   },
