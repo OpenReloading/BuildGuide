@@ -178,6 +178,7 @@ test('text contrast without data-theme, as on a page without JavaScript', async 
     await settled(page)
     await page.locator('html').evaluate((html) => html.removeAttribute('data-theme'))
     const { violations } = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme')
     found.push(...violations.flatMap((v) => v.nodes.map((n) => `${path}: ${n.target.join(' ')}: ${n.failureSummary?.split('\n').at(-1)}`)))
   }
   expect(found).toEqual([])
