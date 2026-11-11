@@ -60,7 +60,14 @@
   ],
   "packages": {
     "packages/core": {
-      "component": "core"
+      "component": "core",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "/package-lock.json",
+          "jsonpath": "$.packages['packages/core'].version"
+        }
+      ]
     },
     "packages/mkdocs": {
       "component": "mkdocs",
@@ -75,7 +82,14 @@
       ]
     },
     "packages/docusaurus": {
-      "component": "docusaurus"
+      "component": "docusaurus",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "/package-lock.json",
+          "jsonpath": "$.packages['packages/docusaurus'].version"
+        }
+      ]
     }
   }
 }
