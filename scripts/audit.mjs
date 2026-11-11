@@ -4,8 +4,8 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 
 const ALLOWED = [];
-// npm runs from the folder of this node binary, not from PATH (shortcut: the Unix layout of a Node install, add Windows when CI needs it)
-const npm = join(dirname(process.execPath), '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js');
+// npm runs from the folder of this node binary, not from PATH (shortcut: the npm link next to node in a Unix install, add Windows when CI needs it)
+const npm = join(dirname(process.execPath), 'npm');
 const { stdout } = spawnSync(process.execPath, [npm, 'audit', '--json'], { encoding: 'utf8' });
 const report = JSON.parse(stdout);
 // a failed audit (network, registry) has no vulnerabilities key: fail instead of passing unchecked
