@@ -30,7 +30,7 @@ The compiler reprints the code (four-space indentation, one statement per line).
 
 - TypeScript 7.0.2 emits script-mode files as classic scripts, builds project references with `tsc -b` and emits declarations for scripts and modules alike.
 - `removeComments` also strips the doc comments from the emitted declarations of the browser scripts; the check module keeps them, since its configuration keeps comments.
-- The JointJS types come from `@joint/core` at the vendored version (4.3.3), a dev dependency used for types only. The published declarations of libavoid-js 0.5.0-beta.5 name a file in `exports` that the package does not contain and type the library as `any`, so the board renderer declares the dozen members it uses itself.
+- The JointJS types come from `@joint/core` at the vendored version (4.3.4), a dev dependency used for types only. The published declarations of libavoid-js 0.5.0-beta.5 name a file in `exports` that the package does not contain and type the library as `any`, so the board renderer declares the dozen members it uses itself.
 - The Docusaurus types need `skipLibCheck` for the plugin's Node part: they pull in React, MDX and bundler declarations that do not check on their own.
 
 ## Rejected

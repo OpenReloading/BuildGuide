@@ -58,4 +58,4 @@ The source is strict TypeScript in `src/`. `npm run build` compiles it into `lib
 
 ## Licenses
 
-MIT (`LICENSE`). Vendored unmodified in `src/vendor/` (`src/vendor/README.txt`): [JointJS](https://github.com/clientIO/joint) `@joint/core` 4.3.3 (MPL-2.0) and [libavoid-js](https://github.com/Aksem/libavoid-js) 0.5.0-beta.5 (LGPL-2.1-or-later).
+MIT (`LICENSE`). Vendored unmodified in `src/vendor/` (`src/vendor/README.txt`): [JointJS](https://github.com/clientIO/joint) `@joint/core` 4.3.4 (MPL-2.0) and [libavoid-js](https://github.com/Aksem/libavoid-js) 0.5.0-beta.5 (LGPL-2.1-or-later).
