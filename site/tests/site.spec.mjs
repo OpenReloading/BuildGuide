@@ -170,6 +170,20 @@ for (const scheme of ['light', 'dark'])
     expect(found).toEqual([])
   })
 
+// a page without JavaScript has no data-theme, which an inline script sets; axe needs scripts, so the test takes the attribute away
+test('text contrast without data-theme, as on a page without JavaScript', async ({ page }) => {
+  const found = []
+  for (const path of ['docusaurus/', 'data-format/', '404.html']) {
+    await page.goto(`${BASE}${path}`)
+    await settled(page)
+    await page.locator('html').evaluate((html) => html.removeAttribute('data-theme'))
+    const { violations } = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze()
+    await expect(page.locator('html')).not.toHaveAttribute('data-theme')
+    found.push(...violations.flatMap((v) => v.nodes.map((n) => `${path}: ${n.target.join(' ')}: ${n.failureSummary?.split('\n').at(-1)}`)))
+  }
+  expect(found).toEqual([])
+})
+
 test('search: the index of the built site answers a query', async ({ page }) => {
   await page.goto(`${BASE}`)
   const hits = await page.evaluate(async (base) => {

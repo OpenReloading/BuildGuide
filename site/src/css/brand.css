@@ -70,9 +70,11 @@ html[data-theme="dark"] {
   }
 }
 
-/* Infima from the tokens. html[data-theme] outranks Infima's own html[data-theme="dark"] block. The primary shades
+/* Infima from the tokens. html[data-theme] outranks Infima's own html[data-theme="dark"] block, and :root alone holds
+   the mapping when no script sets data-theme (a local change against Brand's file). The primary shades
    are mixed from the accent with Docusaurus's steps (10, 15 and 30 %), so they follow the scheme. The emphasis scale
    runs from the page to the ink in both schemes, as Infima's does. */
+:root,
 html[data-theme] {
   --ifm-color-primary: var(--accent);
   --ifm-color-primary-dark: color-mix(in srgb, var(--accent), #000 10%);

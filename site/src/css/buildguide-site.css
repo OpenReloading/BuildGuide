@@ -161,6 +161,7 @@ a[href$="__docusaurus_skipToContent_fallback"],
 
 /* The current page in the sidebar and the breadcrumbs, and code in a link: the link color on the accent tint, which
    keeps 4.5:1 in both schemes (on --surface-alt, Infima's choice through brand.css, it is 4.4:1 in light) */
+:root,
 html[data-theme] {
   --ifm-menu-color-background-active: var(--accent-tint);
   --ifm-breadcrumb-item-background-active: var(--accent-tint);
