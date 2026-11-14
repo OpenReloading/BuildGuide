@@ -1,6 +1,6 @@
 # Board renderer without third-party code (prototype)
 
-`board-svg.js` draws the boards of a guide with plain SVG and routes the connections with an own orthogonal router, so a board needs no JointJS and no libavoid. It is a prototype for [#1](https://github.com/OpenReloading/BuildGuide/issues/1): it is not shipped, not loaded by the component and not part of any package. The third-party files under `src/vendor/` stay as they are until the owner decides.
+`board-svg.js` draws the boards of a guide with plain SVG and routes the connections with an own orthogonal router, so a board needs no JointJS and no libavoid. It is a prototype for [#1](https://github.com/OpenReloading/BuildGuide/issues/1): it is not shipped, not loaded by the component and not part of any package. The third-party files under `src/vendor/` stay as they are.
 
 It has the entry point, the options and the DOM hooks of the shipped board renderer (`src/buildguide-board.ts`) (`data-connection`, `role`, `tabindex`, the `aria-label` texts, `data-ready`, the `joint-*` hooks and `model-id` attributes the browser tests read, the `✓ ` mark and `; checked`), so the component and the browser tests run against it as they are.
 
