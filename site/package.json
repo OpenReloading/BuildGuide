@@ -16,7 +16,7 @@
     "@docusaurus/plugin-sitemap": "3.10.2",
     "@docusaurus/theme-classic": "3.10.2",
     "@openreloading/docusaurus-plugin-buildguide": "*",
-    "pagefind": "1.5.2",
+    "pagefind": "1.6.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
