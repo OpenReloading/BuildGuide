@@ -1,10 +1,10 @@
 # 3D assembly component: own renderer, on demand
 
-Status: proposed (spike #130 for #47, for the owner's decision).
+Status: proposed (spike #130 for #47).
 
 ## Acceptance criteria
 
-Derived from the issue body and the owner's comment on #130 (the comment overrides the body):
+Derived from the issue body and the comment on #130 that overrides it:
 
 1. An option table with gzip size, license and offline behavior per option, and whether it loads only on a page with an assembly block.
 2. A prototype on a branch (not merged) that moves one AutoLever part into place, with its byte cost.
@@ -113,6 +113,6 @@ Drafted, not filed.
 
 ## Not decided here
 
-- Whether the Feeder needs a lit, physically based look; if so, the three.js route (142591 bytes gzipped, a generated file in the third-party folder, an owner decision on the convention) is the alternative to follow-up 4.
+- Whether the Feeder needs a lit, physically based look; if so, the three.js route (142591 bytes gzipped, a generated file in the third-party folder, which needs a convention) is the alternative to follow-up 4.
 - A compressed model format (gzip through `DecompressionStream`, indexed vertices, quantized positions): worth measuring when a real model exceeds the numbers above.
 - A size limit for models in the check (triangles per file).
