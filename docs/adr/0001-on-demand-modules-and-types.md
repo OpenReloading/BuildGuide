@@ -1,6 +1,6 @@
 # On-demand modules for core, and types as a check only
 
-Status: proposed (spike #129, for the owner's decision). Decision 3 and the TypeScript section are superseded by [0003](0003-typescript-source-emitted-as-classic-scripts.md).
+Status: proposed (spike #129). Decision 3 and the TypeScript section are superseded by [0003](0003-typescript-source-emitted-as-classic-scripts.md).
 
 ## Decision
 
@@ -18,7 +18,7 @@ Base `f39be44`, gzip level 6 as in `packages/core/tests/size.test.mjs`.
 | `buildguide-board.js` | 9052 | 9900 | 848 |
 | `buildguide.css` | 5770 | 6300 | 530 |
 
-The issue text quotes 11555 of 11600 for `buildguide.js`: the budget was raised since (#141, #145). The owner decision "split, do not raise" stands.
+The issue text quotes 11555 of 11600 for `buildguide.js`: the budget was raised since (#141, #145). The rule "split, do not raise" stands.
 
 ## Measured candidates
 
@@ -31,7 +31,7 @@ The issue text quotes 11555 of 11600 for `buildguide.js`: the budget was raised 
 | Tabs (`mountTabs`) | 1783 | -1256 | prototype, helpers passed in |
 | Progress and tabs together | | -1885 | prototype; leaves 2368 bytes of the 12700 |
 | CSV of the BOM (exists today) | 279 | -90 | prototype; too small to move alone |
-| Print all connections and CSV of boards (#75) | about 650 | about +100 | estimate; the owner measured +261 when inline (comment on #75) |
+| Print all connections and CSV of boards (#75) | about 650 | about +100 | estimate; +261 measured when inline (comment on #75) |
 | Image zoom dialog (#76) | 333 | +104 | prototype of the module; the call site was measured in the file; needs about 300 bytes of CSS too |
 | UI strings (#77): English table kept in core | | about +300 | estimate: 66 distinct literals, 1001 bytes raw, 534 gzipped as text, 723 as a keyed table, plus the lookups |
 | UI strings: one more language | about 550 | 0 | estimate, loaded only when a language is set |
