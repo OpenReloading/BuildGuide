@@ -2,7 +2,7 @@
   "name": "@openreloading/docusaurus-plugin-buildguide",
   "version": "1.6.0",
   "description": "Docusaurus plugin for BuildGuide: interactive build guides (BOM checklist, wiring and tubing boards) from one JSON file",
-  "license": "MIT",
+  "license": "ISC",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OpenReloading/BuildGuide.git",
