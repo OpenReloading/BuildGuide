@@ -1,4 +1,4 @@
-<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="site/static/assets/buildguide-dark.svg"><img src="site/static/assets/buildguide-light.svg" width="320" alt="OpenReloading BuildGuide"></picture></p>
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="site/static/assets/buildguide-dark.svg"><img src="site/static/assets/buildguide-light.svg" width="320" alt="RangeFoundry BuildGuide"></picture></p>
 
 # BuildGuide
 
@@ -20,4 +20,4 @@ Install with [`core`](packages/core/) (plain HTML), [`mkdocs`](packages/mkdocs/)
 
 [Releases](https://github.com/OpenReloading/BuildGuide/releases). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [policy](https://github.com/OpenReloading/.github/blob/main/SECURITY.md).
 
-MIT (`LICENSE`). Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified, see its [licenses](packages/core/README.md#licenses).
+ISC (`LICENSE`). Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified, see its [licenses](packages/core/README.md#licenses).

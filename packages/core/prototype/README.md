@@ -12,7 +12,7 @@ node prototype/compare.mjs            # screenshots, counts, size and time into 
 SKIP_SPECS=1 node prototype/compare.mjs
 ```
 
-The script copies the package twice per guide into `test-results/compare/`, puts `board-svg.js` in place of the emitted `lib/buildguide-board.js` in one copy (run `npm run build` first) and empties the third-party script there, serves each copy and reads the drawn geometry the way `tests/board-layout.spec.mjs` does. `dense-guide.json` is the 52-wire wiring board and the tubing board of a published build guide of the same organisation (MIT, notes and bill of materials left out, one part kind renamed). To run only the unchanged browser tests against the prototype, run `npx playwright test` in `test-results/compare/prototype-demo`.
+The script copies the package twice per guide into `test-results/compare/`, puts `board-svg.js` in place of the emitted `lib/buildguide-board.js` in one copy (run `npm run build` first) and empties the third-party script there, serves each copy and reads the drawn geometry the way `tests/board-layout.spec.mjs` does. `dense-guide.json` is the 52-wire wiring board and the tubing board of a published build guide of the same organisation (ISC, notes and bill of materials left out, one part kind renamed). To run only the unchanged browser tests against the prototype, run `npx playwright test` in `test-results/compare/prototype-demo`.
 
 `tests/board-route.test.mjs` covers the router with a few small cases.
 

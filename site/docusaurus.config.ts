@@ -45,7 +45,7 @@ const config = async (): Promise<Config> => ({
   themes: [
     [
       '@docusaurus/theme-classic',
-      // brand.css: tokens and their mapping, shared by the OpenReloading sites; buildguide-site.css: this site's layout
+      // brand.css: tokens and their mapping, shared by the RangeFoundry sites; buildguide-site.css: this site's layout
       { customCss: ['./src/css/brand.css', './src/css/buildguide-site.css'] } satisfies ThemeOptions,
     ],
   ],
@@ -83,7 +83,7 @@ const config = async (): Promise<Config> => ({
         { label: 'Security policy', href: 'https://github.com/OpenReloading/.github/blob/main/SECURITY.md' },
       ],
       // keep it in step with the third-party notice in packages/core/src
-      copyright: 'MIT license. Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified.',
+      copyright: 'ISC license. Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified.',
     },
     colorMode: { respectPrefersColorScheme: true },
     // code in the token colors: one color for every token keeps 4.5:1 in both schemes

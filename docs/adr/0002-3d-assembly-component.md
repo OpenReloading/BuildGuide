@@ -28,7 +28,7 @@ Gzip level 6 as in `packages/core/tests/size.test.mjs`, 2026-10-28. Library bund
 
 | Option | Alone, gzipped | License (npm metadata) | Loads on demand | Offline | Notes |
 |---|---|---|---|---|---|
-| Own WebGL renderer (prototype) | 4187, plus 155 in `buildguide.js` and 140 in `buildguide.css` | MIT (this repository) | yes, `loadScript` from the call site | yes, no request but the models | STL only; camera, step motion, keyboard, step list included |
+| Own WebGL renderer (prototype) | 4187, plus 155 in `buildguide.js` and 140 in `buildguide.css` | ISC (this repository) | yes, `loadScript` from the call site | yes, no request but the models | STL only; camera, step motion, keyboard, step list included |
 | three.js 0.186.1, tree-shaken: renderer, standard material, two lights, STL loader, orbit controls | 142591 | MIT | yes, if bundled as one classic file | yes | the 0.186.1 package has no classic (non-module) build, so the file is a generated bundle; the scene, camera and step logic are still ours |
 | three.js 0.186.1, whole namespace | 191625 | MIT | as above | yes | `three.module.js` plus `three.core.js` unbundled: 131382 plus 288150, modules only |
 | OGL 1.0.11: renderer, camera, mesh, program, geometry, orbit | 15844 | Unlicense | yes, if bundled | yes | no loader, no lighting: shader and STL parser are still ours, so nothing is saved over the prototype |
