@@ -1,10 +1,11 @@
-// Browser checks of the texts: a guide in German shows and speaks no English, and strings from the mount options, the guide and a
-// board replace the English texts in that order. Runs against the same hosts as guide.spec.mjs (BUILDGUIDE_SITE, BUILDGUIDE_PREFIX).
+// Browser checks of the texts: a guide in German (the shipped buildguide-de.js) shows and speaks no English, the nearest lang
+// attribute or the lang mount option picks the language, and strings from the mount options, the guide and a board replace the texts in that order. Runs against the same hosts as guide.spec.mjs (BUILDGUIDE_SITE, BUILDGUIDE_PREFIX).
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { STRING_KEYS } from '../lib/buildguide-check.mjs';
 
 const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.url)));
+// the German texts the components show (expected values; the shipped table is src/buildguide-de.ts)
 const DE = JSON.parse(readFileSync(new URL('./strings-de.json', import.meta.url)));
 const PREFIX = process.env.BUILDGUIDE_PREFIX ?? '';
 const ORIGIN = 'http://127.0.0.1:8080', BASE = `${ORIGIN}${PREFIX}/example/`;
@@ -20,8 +21,8 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(() => expect(problems).toEqual({ errors: [], missing: [] }));
 
-const inlinePage = (page, path, data, components) => page.route(BASE + path, r => r.fulfill({ contentType: 'text/html', body:
-  `<!doctype html><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css">${components}
+const inlinePage = (page, path, data, components, lang = '') => page.route(BASE + path, r => r.fulfill({ contentType: 'text/html', body:
+  `<!doctype html><html lang="${lang}"><meta charset="utf-8"><link rel="stylesheet" href="${CORE}buildguide.css">${components}
    <script type="application/json" id="guide-data" data-assets="../assets/">${JSON.stringify(data).replace(/</g, '\\u003c')}</script><script src="${CORE}buildguide.js" defer></script>` }));
 const ready = scope => expect(scope.locator('.ag-board-canvas[data-ready=true]')).toHaveCount(1);
 const csv = async (page, scope) => {
@@ -56,9 +57,9 @@ const germanGuide = () => {
 };
 
 // Not opened here, so not covered by this test: the error texts (a file that did not load, an unknown component) and storage being unavailable
-test('a guide with German strings shows and speaks no English text in its components and in the states the test opens', async ({ page }) => {
-  const guide = germanGuide(), data = { ...guide, strings: DE }, texts = [];
-  await inlinePage(page, 'german/', data, `<div lang="de">${['bom', 'steps', 'board" data-board="wiring', 'board" data-board="tubing', 'guide'].map(v => `<div data-buildguide="${v}"></div>`).join('')}</div>`);
+test('a guide in a German element takes the shipped German texts and shows and speaks no English text in its components and in the states the test opens', async ({ page }) => {
+  const guide = germanGuide(), texts = [];
+  await inlinePage(page, 'german/', guide, `<div lang="de">${['bom', 'steps', 'board" data-board="wiring', 'board" data-board="tubing', 'guide'].map(v => `<div data-buildguide="${v}"></div>`).join('')}</div>`);
   // the wiring board opens on its diode, whose ends have words of their own
   const wiringSteps = D.boards.wiring.steps, step = wiringSteps.find(s => s.connections.some(c => D.boards.wiring.colors[c.color].diode));
   const diode = step.connections.find(c => D.boards.wiring.colors[c.color].diode);
@@ -115,6 +116,36 @@ test('a guide with German strings shows and speaks no English text in its compon
     expect(all).toContain(text);
   expect(all).toContain('"Gruppe","Bauteil","Spezifikation","Menge","Inhalt","Erledigt"');
   expect(all).toContain('"Nr.","Von","Nach","Farbe","Kabel","Größe","Erledigt"');
+});
+
+test('the nearest lang attribute picks the language (de-CH is German, en and any other English), and the lang mount option wins over it', async ({ page }) => {
+  await inlinePage(page, 'lang/', D, '<div data-buildguide="bom" id="page"></div><div lang="en"><div data-buildguide="bom" id="english"></div></div><div lang="fr"><div id="option"></div></div>', 'de-CH');
+  await page.goto(BASE + 'lang/');
+  const print = id => page.locator(`#${id} [data-action=print]`);
+  await expect(print('page')).toHaveText(DE.print);
+  await expect(print('english')).toHaveText('Print');
+  await page.evaluate(D => {
+    window.BuildGuide.mount(document.getElementById('option'), D, { view: 'bom', lang: 'de' });
+    window.BuildGuide.mount(document.getElementById('english'), D, { lang: 'de' });
+    window.BuildGuide.mount(document.getElementById('page'), D, { lang: 'en' });
+  }, D);
+  await expect(print('option')).toHaveText(DE.print);
+  await expect(print('english')).toHaveText(DE.print);
+  await expect(print('page')).toHaveText('Print');
+});
+
+test('a key the language file lacks keeps its English text, and a language file that does not load leaves the English texts', async ({ page }) => {
+  await page.route('**/buildguide-de.js', r => r.fulfill({ contentType: 'text/javascript', body: `window.BuildGuideModules = {...window.BuildGuideModules, de: {print: 'Drucken'}};` }));
+  await inlinePage(page, 'partial/', D, '<div data-buildguide="bom"></div>', 'de');
+  await page.goto(BASE + 'partial/');
+  const bom = page.locator('[data-buildguide=bom]');
+  await expect(bom.locator('[data-action=print]')).toHaveText('Drucken');
+  await expect(bom.locator('[data-action=export]')).toHaveText('↓ Export CSV');
+  await page.unroute('**/buildguide-de.js');
+  await page.route('**/buildguide-de.js', r => r.abort());
+  await inlinePage(page, 'failed/', D, '<div data-buildguide="bom"></div>', 'de');
+  await page.goto(BASE + 'failed/');
+  await expect(bom.locator('[data-action=print]')).toHaveText('Print');
 });
 
 test('strings of the mount options, the guide and a board replace the English texts in that order, as text, with their placeholders filled', async ({ page }) => {
