@@ -585,7 +585,12 @@ interface Window {
       // data that fails to load waits for the language's texts too, so its message is in the component's language
       // a language file that did not load leaves the English texts, without a second request
       pending.push(Promise.all([data.catch(ignore), tabs, texts]).then(([D, , table]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets, lang: lang && !table ? 'en' : undefined}); })
-        .catch(() => { root.textContent = (lang && window.BuildGuideModules?.[lang]?.unavailable) || EN.unavailable; }));
+        .catch(() => {
+          if (entry.dead) return;
+          const table = lang && window.BuildGuideModules?.[lang];
+          if (lang && !table) root.lang = 'en';
+          root.textContent = table?.unavailable || EN.unavailable;
+        }));
     }
     // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
     if (pending.length) Promise.allSettled(pending).then(() => {
