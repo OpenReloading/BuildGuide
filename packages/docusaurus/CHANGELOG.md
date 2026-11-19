@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.6.0...docusaurus-v1.7.0) (2026-11-19)
+
+
+### Features
+
+* **core:** ship German texts, picked by the nearest lang attribute or the lang mount option ([#224](https://github.com/OpenReloading/BuildGuide/issues/224)) ([b9cf9db](https://github.com/OpenReloading/BuildGuide/commit/b9cf9db4c777948c60d1f8122aecea0d5c9dc28f))
+
 ## [1.6.0](https://github.com/OpenReloading/BuildGuide/compare/docusaurus-v1.5.1...docusaurus-v1.6.0) (2026-11-05)
 
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.8](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.7...core-v0.2.8) (2026-11-19)
+
+
+### Features
+
+* **core:** ship German texts, picked by the nearest lang attribute or the lang mount option ([#224](https://github.com/OpenReloading/BuildGuide/issues/224)) ([b9cf9db](https://github.com/OpenReloading/BuildGuide/commit/b9cf9db4c777948c60d1f8122aecea0d5c9dc28f))
+
+
+### Documentation
+
+* neutral wording without decision history ([#216](https://github.com/OpenReloading/BuildGuide/issues/216)) ([c046a3d](https://github.com/OpenReloading/BuildGuide/commit/c046a3dbcdfd3ffe2b8f67e838171614c404adc6))
+
 ## [0.2.7](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.6...core-v0.2.7) (2026-11-05)
 
 
