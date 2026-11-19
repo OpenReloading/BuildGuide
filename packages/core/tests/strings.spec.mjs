@@ -118,18 +118,22 @@ test('a guide in a German element takes the shipped German texts and shows and s
   expect(all).toContain('"Nr.","Von","Nach","Farbe","Kabel","Größe","Erledigt"');
 });
 
-test('the nearest lang attribute picks the language (de-CH is German, en and any other English), and the lang mount option wins over it', async ({ page }) => {
+test('the nearest lang attribute picks the language (de-CH is German, en and any other English), and the lang mount option wins over it and sets the element\'s lang', async ({ page }) => {
   await inlinePage(page, 'lang/', D, '<div data-buildguide="bom" id="page"></div><div lang="en"><div data-buildguide="bom" id="english"></div></div><div lang="fr"><div id="option"></div></div>', 'de-CH');
   await page.goto(BASE + 'lang/');
   const print = id => page.locator(`#${id} [data-action=print]`);
   await expect(print('page')).toHaveText(DE.print);
   await expect(print('english')).toHaveText('Print');
   await page.evaluate(D => {
-    window.BuildGuide.mount(document.getElementById('option'), D, { view: 'bom', lang: 'de' });
+    window.BuildGuide.mount(document.getElementById('option'), D, { view: 'guide', lang: 'de' });
     window.BuildGuide.mount(document.getElementById('english'), D, { lang: 'de' });
     window.BuildGuide.mount(document.getElementById('page'), D, { lang: 'en' });
   }, D);
+  // the panel of a guide follows the guide's language
+  await expect(page.locator('#option').getByRole('tab').first()).toHaveText(DE.bom);
   await expect(print('option')).toHaveText(DE.print);
+  await expect(page.locator('#option')).toHaveAttribute('lang', 'de');
+  await expect(page.locator('#page')).toHaveAttribute('lang', 'en');
   await expect(print('english')).toHaveText(DE.print);
   await expect(print('page')).toHaveText('Print');
 });
@@ -146,6 +150,7 @@ test('a key the language file lacks keeps its English text, and a language file 
   await inlinePage(page, 'failed/', D, '<div data-buildguide="bom"></div>', 'de');
   await page.goto(BASE + 'failed/');
   await expect(bom.locator('[data-action=print]')).toHaveText('Print');
+  await expect(bom).toHaveAttribute('lang', 'en');
 });
 
 test('strings of the mount options, the guide and a board replace the English texts in that order, as text, with their placeholders filled', async ({ page }) => {

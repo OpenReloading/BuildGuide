@@ -206,7 +206,7 @@ interface Window {
   // a feature loaded on first use: buildguide-<name>.js next to this file sets window.BuildGuideModules[name]; a file that does not is not cached
   const ext = <K extends keyof BuildGuideModuleMap>(name: K, src = new URL(`buildguide-${name}.js`, HERE).href) => loadScript(src).then(() => {
     const run = window.BuildGuideModules?.[name];
-    if (!run) { delete loaded[src]; throw Error('no module in ' + src); }
+    if (typeof run !== ((LANGUAGES as readonly string[]).includes(name) ? 'object' : 'function')) { delete loaded[src]; throw Error('no module in ' + src); }
     return run as BuildGuideModuleMap[K];
   });
 
@@ -238,6 +238,8 @@ interface Window {
   function mount(root: HTMLElement, D: Guide, options: BuildGuideMountOptions = {}): () => void {
     mounted.get(root)?.();
     const lang = language(root, options), texts = lang && window.BuildGuideModules?.[lang];
+    // the option is the element's language too: screen readers, the panels of a guide and the zoom dialog follow it
+    if (options.lang) root.lang = options.lang;
     if (lang && !texts) {
       // the language's file loads before the component draws, so it never shows English in between; a file that fails leaves the English texts
       let stop = () => {};
@@ -581,7 +583,8 @@ interface Window {
       const tabs = root.dataset.buildguide === 'guide' && ext('tabs').catch(ignore), lang = language(root, {}), texts = lang && ext(lang).catch(ignore);
       const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent as string));
       // data that fails to load waits for the language's texts too, so its message is in the component's language
-      pending.push(Promise.all([data.catch(ignore), tabs, texts]).then(([D]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); })
+      // a language file that did not load leaves the English texts, without a second request
+      pending.push(Promise.all([data.catch(ignore), tabs, texts]).then(([D, , table]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets, lang: lang && !table ? 'en' : undefined}); })
         .catch(() => { root.textContent = (lang && window.BuildGuideModules?.[lang]?.unavailable) || EN.unavailable; }));
     }
     // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
