@@ -138,7 +138,7 @@ test('the nearest lang attribute picks the language (de-CH is German, en and any
   await expect(print('page')).toHaveText('Print');
 });
 
-test('a key the language file lacks keeps its English text, and a language file that does not load leaves the English texts', async ({ page }) => {
+test('a key the language file lacks keeps its English text, and a language file that does not load leaves the English texts and the element\'s language, and the next mount loads it', async ({ page }) => {
   await page.route('**/buildguide-de.js', r => r.fulfill({ contentType: 'text/javascript', body: `window.BuildGuideModules = {...window.BuildGuideModules, de: {print: 'Drucken'}};` }));
   await inlinePage(page, 'partial/', D, '<div data-buildguide="bom"></div>', 'de');
   await page.goto(BASE + 'partial/');
@@ -147,10 +147,16 @@ test('a key the language file lacks keeps its English text, and a language file 
   await expect(bom.locator('[data-action=export]')).toHaveText('↓ Export CSV');
   await page.unroute('**/buildguide-de.js');
   await page.route('**/buildguide-de.js', r => r.abort());
-  await inlinePage(page, 'failed/', D, '<div data-buildguide="bom"></div>', 'de');
+  // the guide's own content is German, so screen readers must keep reading it in German
+  await inlinePage(page, 'failed/', { ...D, strings: { bom: 'Stückliste' } }, '<div data-buildguide="bom"></div>', 'de');
   await page.goto(BASE + 'failed/');
   await expect(bom.locator('[data-action=print]')).toHaveText('Print');
-  await expect(bom).toHaveAttribute('lang', 'en');
+  await expect(bom).not.toHaveAttribute('lang');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+  await page.unroute('**/buildguide-de.js');
+  await page.route('**/buildguide-de.js', r => r.fulfill({ contentType: 'text/javascript', body: `window.BuildGuideModules = {...window.BuildGuideModules, de: {print: 'Drucken'}};` }));
+  await page.evaluate(D => window.BuildGuide.mount(document.querySelector('[data-buildguide=bom]'), D), D);
+  await expect(bom.locator('[data-action=print]')).toHaveText('Drucken');
 });
 
 test('strings of the mount options, the guide and a board replace the English texts in that order, as text, with their placeholders filled', async ({ page }) => {

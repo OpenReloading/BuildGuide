@@ -235,17 +235,19 @@ interface Window {
     return true;
   }
 
-  function mount(root: HTMLElement, D: Guide, options: BuildGuideMountOptions = {}): () => void {
+  // table: the language's texts once loaded, {} after a failed load (English, no new request); not part of the public call
+  function mount(root: HTMLElement, D: Guide, options: BuildGuideMountOptions = {}, table?: BuildGuideModuleMap['de']): () => void {
     mounted.get(root)?.();
-    const lang = language(root, options), texts = lang && window.BuildGuideModules?.[lang];
+    const lang = language(root, options), texts = table ?? (lang && window.BuildGuideModules?.[lang]);
     // the option is the element's language too: screen readers, the panels of a guide and the zoom dialog follow it
     if (options.lang) root.lang = options.lang;
     if (lang && !texts) {
-      // the language's file loads before the component draws, so it never shows English in between; a file that fails leaves the English texts
+      // the language's file loads before the component draws, so it never shows English in between
+      // a file that fails leaves the English texts and the element's lang: the guide's own content is still in that language
       let stop = () => {};
       const destroy = () => { if (mounted.get(root) === destroy) mounted.delete(root); stop(); };
       mounted.set(root, destroy);
-      ext(lang).then(() => options, error => { console.error(error); return {...options, lang: 'en'}; }).then(next => { if (mounted.get(root) === destroy) stop = mount(root, D, next); }).catch(ignore);
+      ext(lang).catch(error => { console.error(error); return {}; }).then(next => { if (mounted.get(root) === destroy) stop = mount(root, D, options, next); }).catch(ignore);
       return destroy;
     }
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
@@ -257,7 +259,7 @@ interface Window {
       // buildguide-tabs.js: scan() mounts once it is here, so the tabs draw at once; a mount before it loads returns an unmount that works meanwhile
       let stop = () => {};
       const destroy = () => { if (mounted.get(root) === destroy) { mounted.delete(root); stop(); } };
-      const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount, id: `ag-tabs-${++tabSeq}`}, root, D, options); };
+      const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount: (r, d, o) => mount(r, d, o, texts), id: `ag-tabs-${++tabSeq}`}, root, D, options); };
       mounted.set(root, destroy);
       const tabs = window.BuildGuideModules?.tabs;
       if (tabs) start(tabs); else ext('tabs').then(start).catch(error => { console.error(error); if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
@@ -583,14 +585,9 @@ interface Window {
       const tabs = root.dataset.buildguide === 'guide' && ext('tabs').catch(ignore), lang = language(root, {}), texts = lang && ext(lang).catch(ignore);
       const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent as string));
       // data that fails to load waits for the language's texts too, so its message is in the component's language
-      // a language file that did not load leaves the English texts, without a second request
-      pending.push(Promise.all([data.catch(ignore), tabs, texts]).then(([D, , table]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets, lang: lang && !table ? 'en' : undefined}); })
-        .catch(() => {
-          if (entry.dead) return;
-          const table = lang && window.BuildGuideModules?.[lang];
-          if (lang && !table) root.lang = 'en';
-          root.textContent = table?.unavailable || EN.unavailable;
-        }));
+      // a language file that did not load leaves the English texts and the element's lang, without a second request
+      pending.push(Promise.all([data.catch(ignore), tabs, texts]).then(([D, , table]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}, table || {}); })
+        .catch(() => { if (!entry.dead) root.textContent = (lang && window.BuildGuideModules?.[lang])?.unavailable || EN.unavailable; }));
     }
     // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
     if (pending.length) Promise.allSettled(pending).then(() => {
