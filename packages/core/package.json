@@ -1,6 +1,6 @@
 {
   "name": "@openreloading/buildguide",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Interactive build guides for hardware: BOM checklist, wiring and tubing boards from one JSON file",
   "license": "ISC",
   "repository": {
