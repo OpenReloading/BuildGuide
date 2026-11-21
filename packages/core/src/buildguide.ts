@@ -6,9 +6,10 @@
 /** The saved ticks of one guide, stored as one JSON object under its `storage` key: tick key to ticked or not. */
 type BuildGuideProgress = Record<string, boolean>;
 /** The options of `BuildGuide.mount`; view, board and assets fall back to the root's `data-buildguide`, `data-board` and `data-assets`.
-    `strings` replaces the English texts of the keys it names; the guide's and the board's `strings` win over it. */
+    `lang` (a language tag such as `de` or `en`) picks the shipped table of texts instead of the root's nearest `lang` attribute.
+    `strings` replaces the texts of the keys it names; the guide's and the board's `strings` win over it. */
 interface BuildGuideMountOptions {
-  view?: 'bom' | 'steps' | 'board' | 'guide' | undefined; board?: string | undefined; assets?: string | undefined;
+  view?: 'bom' | 'steps' | 'board' | 'guide' | undefined; board?: string | undefined; assets?: string | undefined; lang?: string | undefined;
   strings?: Partial<Omit<import('./buildguide-check.mjs').Strings, 'noScript'>> | undefined;
 }
 /** The detail of the `buildguide-progress` event, sent on `document` when a component imports, resets or restores progress. */
@@ -44,8 +45,9 @@ interface BuildGuideTabsContext {
   pairs(): string[]; nameOf(pair: string): string | null; pairValue(pair: string): string; putPair(name: string, value: string): boolean;
   mount(root: HTMLElement, data: import('./buildguide-check.mjs').Guide, options: BuildGuideMountOptions): () => void; id: string;
 }
-/** The features loaded on first use: buildguide-<name>.js sets window.BuildGuideModules[name]. */
+/** The features loaded on first use: buildguide-<name>.js sets window.BuildGuideModules[name]; a language's texts are buildguide-<lang>.js. */
 interface BuildGuideModuleMap {
+  de: Partial<Omit<import('./buildguide-check.mjs').Strings, 'noScript'>>;
   progress: (context: BuildGuideProgressContext, ...action: BuildGuideProgressAction) => Promise<void>;
   zoom: (context: { root: HTMLElement; t: BuildGuideText }, key: string) => () => void;
   export: (context: BuildGuideExportContext, action: 'csv' | 'print') => void;
@@ -204,9 +206,13 @@ interface Window {
   // a feature loaded on first use: buildguide-<name>.js next to this file sets window.BuildGuideModules[name]; a file that does not is not cached
   const ext = <K extends keyof BuildGuideModuleMap>(name: K, src = new URL(`buildguide-${name}.js`, HERE).href) => loadScript(src).then(() => {
     const run = window.BuildGuideModules?.[name];
-    if (typeof run !== 'function') { delete loaded[src]; throw Error('no module in ' + src); }
+    if (typeof run !== ((LANGUAGES as readonly string[]).includes(name) ? 'object' : 'function')) { delete loaded[src]; throw Error('no module in ' + src); }
     return run as BuildGuideModuleMap[K];
   });
+
+  // the languages with a shipped table: the primary subtag of the lang option or of the root's nearest lang attribute (de-CH is de); any other is English
+  const LANGUAGES = ['de'] as const;
+  const language = (root: HTMLElement, options: BuildGuideMountOptions) => LANGUAGES.find(l => l === (options.lang ?? root.closest<HTMLElement>('[lang]')?.lang ?? '').toLowerCase().split('-')[0]);
 
   const mounted = new WeakMap<HTMLElement, () => void>();
   let tabSeq = 0;
@@ -229,18 +235,31 @@ interface Window {
     return true;
   }
 
-  function mount(root: HTMLElement, D: Guide, options: BuildGuideMountOptions = {}): () => void {
+  // table: the language's texts once loaded, {} after a failed load (English, no new request); not part of the public call
+  function mount(root: HTMLElement, D: Guide, options: BuildGuideMountOptions = {}, table?: BuildGuideModuleMap['de']): () => void {
     mounted.get(root)?.();
+    const lang = language(root, options), texts = table ?? (lang && window.BuildGuideModules?.[lang]);
+    // the option is the element's language too: screen readers, the panels of a guide and the zoom dialog follow it
+    if (options.lang) root.lang = options.lang;
+    if (lang && !texts) {
+      // the language's file loads before the component draws, so it never shows English in between
+      // a file that fails leaves the English texts and the element's lang: the guide's own content is still in that language
+      let stop = () => {};
+      const destroy = () => { if (mounted.get(root) === destroy) mounted.delete(root); stop(); };
+      mounted.set(root, destroy);
+      ext(lang).catch(error => { console.error(error); return {}; }).then(next => { if (mounted.get(root) === destroy) stop = mount(root, D, options, next); }).catch(ignore);
+      return destroy;
+    }
     const view = options.view ?? root.dataset.buildguide, boardKey = options.board ?? root.dataset.board;
     const board = view === 'board' ? own(D.boards, boardKey) : null;
     // guide data comes from anyone: a key without a text keeps the English one, String() keeps any other value from breaking the component
-    const S = {...EN, ...options.strings, ...D.strings, ...board?.strings};
+    const S = {...EN, ...texts, ...options.strings, ...D.strings, ...board?.strings};
     const t: BuildGuideText = (key, vars = {}) => String(S[key] ?? EN[key]).replace(/\{(\w+)\}/g, (m, name: string) => String(vars[name] ?? m));
     if (view === 'guide') {
       // buildguide-tabs.js: scan() mounts once it is here, so the tabs draw at once; a mount before it loads returns an unmount that works meanwhile
       let stop = () => {};
       const destroy = () => { if (mounted.get(root) === destroy) { mounted.delete(root); stop(); } };
-      const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount, id: `ag-tabs-${++tabSeq}`}, root, D, options); };
+      const start = (run: BuildGuideModuleMap['tabs']) => { if (mounted.get(root) === destroy) stop = run({t, esc, own, decode, pairs, nameOf, pairValue, putPair, mount: (r, d, o) => mount(r, d, o, texts), id: `ag-tabs-${++tabSeq}`}, root, D, options); };
       mounted.set(root, destroy);
       const tabs = window.BuildGuideModules?.tabs;
       if (tabs) start(tabs); else ext('tabs').then(start).catch(error => { console.error(error); if (mounted.get(root) === destroy) root.textContent = t('tabsFailed'); });
@@ -562,9 +581,13 @@ interface Window {
       const entry: { dead: boolean; stop?: () => void } = {dead: false};
       auto.set(root, entry);
       // a guide's tabs file loads while the data does, and the guide mounts once both are here: the scroll below then finds it drawn
-      const tabs = root.dataset.buildguide === 'guide' && ext('tabs').catch(ignore);
+      // and the language's texts load while the data does
+      const tabs = root.dataset.buildguide === 'guide' && ext('tabs').catch(ignore), lang = language(root, {}), texts = lang && ext(lang).catch(ignore);
       const data = root.dataset.src ? fetchData(root.dataset.src) : Promise.resolve().then(() => inlineData ||= inline && JSON.parse(inline.textContent as string));
-      pending.push(Promise.all([data, tabs]).then(([D]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}); }).catch(() => { root.textContent = EN.unavailable; }));
+      // data that fails to load waits for the language's texts too, so its message is in the component's language
+      // a language file that did not load leaves the English texts and the element's lang, without a second request
+      pending.push(Promise.all([data.catch(ignore), tabs, texts]).then(([D, , table]) => { if (!D) throw new Error('no guide data'); if (!entry.dead) entry.stop = mount(root, D, {assets: root.dataset.assets ?? inline?.dataset.assets}, table || {}); })
+        .catch(() => { if (!entry.dead) root.textContent = (lang && window.BuildGuideModules?.[lang])?.unavailable || EN.unavailable; }));
     }
     // a fragment such as #top&wiring=B/1 names no element, so the browser does not scroll: do it once the components have their height
     if (pending.length) Promise.allSettled(pending).then(() => {

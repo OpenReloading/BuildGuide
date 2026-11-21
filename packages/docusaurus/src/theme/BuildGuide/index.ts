@@ -51,9 +51,10 @@ export default function BuildGuide({ view, board, guide }: Props): React.ReactEl
   const noScript = texts?.noScript ?? 'This guide needs JavaScript.', unavailable = texts?.unavailable ?? 'Guide data unavailable.';
   useEffect(() => {
     const { core: url, assets, src } = (document.querySelector('meta[name="buildguide"]') as HTMLMetaElement).dataset;
-    // core requests the tabs file of a guide only when it mounts: fetch it now, together with core and the data
-    const tabs = `${url}buildguide-tabs.js`;
-    if (view === 'guide' && !document.querySelector(`link[href="${tabs}"]`)) document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'preload', as: 'script', href: tabs }));
+    // core requests the tabs file of a guide and the German texts only when it mounts: fetch them now, together with core and the data
+    const preload = (href: string) => document.querySelector(`link[href="${href}"]`) || document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'preload', as: 'script', href }));
+    if (view === 'guide') preload(`${url}buildguide-tabs.js`);
+    if (document.documentElement.lang.toLowerCase().split('-')[0] === 'de') preload(`${url}buildguide-de.js`);
     let unmount: (() => void) | undefined;
     let gone = false;
     Promise.all([loadCore(`${url}buildguide.js`), loadData(guide ? `${url}guides/${encodeURIComponent(guide)}.json` : `${src}`)])
