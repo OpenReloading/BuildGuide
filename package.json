@@ -16,7 +16,7 @@
     "dist": "npm run dist --workspaces --if-present && uv build packages/mkdocs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.6.6"
+    "@biomejs/biome": "2.6.8"
   },
   "overrides": {
     "postcss-selector-parser": "7.1.7",
