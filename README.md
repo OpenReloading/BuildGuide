@@ -21,4 +21,4 @@ Install with [`core`](packages/core/) (plain HTML), [`mkdocs`](packages/mkdocs/)
 
 [Releases](https://github.com/OpenReloading/BuildGuide/releases). Contributing: [CONTRIBUTING.md](CONTRIBUTING.md). Security: [policy](https://github.com/OpenReloading/.github/blob/main/SECURITY.md).
 
-ISC (`LICENSE`). Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified, see its [licenses](packages/core/README.md#licenses).
+MIT (`LICENSE`). Core bundles JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later) unmodified, see its [licenses](packages/core/README.md#licenses).
