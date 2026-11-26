@@ -71,4 +71,4 @@ From the repository root, in the dev container: `npm test` (plugin tests), `npm 
 
 ## Licenses
 
-ISC (`LICENSE`). The package bundles core with its vendored JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later), see `core/vendor/README.txt` in the package.
+MIT (`LICENSE`). The package bundles core with its vendored JointJS (MPL-2.0) and libavoid-js (LGPL-2.1-or-later), see `core/vendor/README.txt` in the package.
