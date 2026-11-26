@@ -39,6 +39,7 @@
   const DEFAULT_KIND = {fill: '#f1f5f9', stroke: '#17202a'};
   const SMALLEST = 8.5, PHONE = 560;   // px: smallest font size drawn below, canvas width of a phone
   const DIR = {top: 1, bottom: 2, left: 4, right: 8};   // libavoid ConnDirFlags
+  const GLAND = 36;   // px: half the width of a gland's opening in the top wall of its area
   // text on a dark part: light ink (hex fills only, anything else keeps the dark ink)
   const inkOn = (fill: string | undefined) => { const n = fill && /^#[0-9a-f]{6}$/i.test(fill) ? Number.parseInt(fill.slice(1), 16) : 0xffffff; return .299 * (n >> 16) + .587 * (n >> 8 & 255) + .114 * (n & 255) < 128 ? {fill: '#e2e8f0'} : {}; };
   const end = (e: string) => { const at = e.indexOf(':'); return [e.slice(0, at), e.slice(at + 1)] as const; };
@@ -95,8 +96,10 @@
       for (const [x, name] of a.glands || []) graph.addCell(new Caption({id: 'gland-' + name, z: 2, position: {x: x + 26, y: a.at[1] - 9},
         size: {width: 22, height: 18}, attrs: {label: {text: name, fill: a.color, fontSize: 12}}}));
     }
+    // props and parts get z 3 below the connections (5.5): without one, JointJS stacks each new cell on top, so a connection
+    // would cover the first parts and hide under the later ones, short of a terminal set into its part (kind inset)
     for (const [i, p] of (B.props || []).entries()) graph.addCell(new shapes.standard.Rectangle({
-      id: 'prop-' + i, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
+      id: 'prop-' + i, z: 3, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
       attrs: {body: {fill: '#e5e7eb', stroke: '#475569', rx: 4}, label: {text: p.name, fontSize: 12, fontWeight: 600, fill: '#475569', fontFamily: FONT}},
     }));
 
@@ -121,7 +124,7 @@
       }
       const body = k.round ? {fill: p.color || k.fill, stroke: k.stroke, rx: p.size[0] / 2} : {fill: k.fill, stroke: k.stroke, ...(k.rx != null && {rx: k.rx})};
       graph.addCell(new PartShape({
-        id, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
+        id, z: 3, position: {x: p.at[0], y: p.at[1]}, size: {width: p.size[0], height: p.size[1]},
         ports: {groups, items},
         // a title or label on a side with terminals is drawn inside the part, so no connection has to cross it
         attrs: {body, title: {text: p.name || '', y: p.ports?.top ? 24 : -10, ...(p.ports?.top && inkOn(body.fill))},
@@ -148,17 +151,19 @@
       return {id, x0, y0, x1, y1, pins};
     });
     // the walls of a box with glands: connections leave it only through the gaps, and
-    // tall fences between the glands outside keep each cable in its own gland's channel
-    for (const [key, a] of Object.entries(areas)) {
-      if (!a.glands) continue;
-      const [x0, y0] = a.at, x1 = x0 + a.size[0], y1 = y0 + a.size[1], t = 4, gap = 36;
-      const wall = (xa: number, ya: number, xb: number, yb: number) => obstacles.push({id: 'wall-' + key + obstacles.length, x0: xa, y0: ya, x1: xb, y1: yb, pins: []});
+    // tall fences between the glands outside keep each cable in its own gland's channel.
+    // The router keeps `buffer` off every wall, so the wall ends step back by it: the opening stays GLAND wide on each side.
+    const walls = (buffer: number) => Object.entries(areas).flatMap(([key, a]) => {
+      if (!a.glands) return [];
+      const [x0, y0] = a.at, x1 = x0 + a.size[0], y1 = y0 + a.size[1], t = 4, gap = GLAND + buffer, list: Obstacle[] = [];
+      const wall = (xa: number, ya: number, xb: number, yb: number) => list.push({id: 'wall-' + key + list.length, x0: xa, y0: ya, x1: xb, y1: yb, pins: []});
       const gx = a.glands.map(g => g[0]).sort((p, q) => p - q);
       let x = x0 - t;
       for (const g of gx) { wall(x, y0 - t, g - gap, y0 + t); x = g + gap; }
       wall(x, y0 - t, x1 + t, y0 + t); wall(x0 - t, y1 - t, x1 + t, y1 + t); wall(x0 - t, y0 - t, x0 + t, y1 + t); wall(x1 - t, y0 - t, x1 + t, y1 + t);
       for (let i = 1; i < gx.length; i++) { const m = ((gx[i - 1] as number) + (gx[i] as number)) / 2; wall(m - 2, -5000, m + 2, y0); }
-    }
+      return list;
+    });
 
     // libavoid returns a straight line between the terminals when it finds no way round: such a route is not orthogonal
     const orthogonal = (pts: XY[]) => pts.every((p, i) => { const q = pts[i - 1]; return !q || Math.abs(p.x - q.x) < .5 || Math.abs(p.y - q.y) < .5; });
@@ -180,7 +185,7 @@
       r.setRoutingOption(option('performUnifyingNudgingPreprocessingStep'), true);
       const shapeOf: Record<string, object> = {}, pinOf: Record<string, number> = {};
       let cls = 1;
-      for (const o of obstacles) {
+      for (const o of [...obstacles, ...walls(buffer)]) {
         const shape = new Avoid.ShapeRef(r, new Avoid.Rectangle(new Avoid.Point(o.x0, o.y0), new Avoid.Point(o.x1, o.y1)));
         shapeOf[o.id] = shape;
         for (const p of o.pins) {
@@ -217,7 +222,7 @@
       const [pa, a] = end(c.a), [pb, b] = end(c.b), col = colorOf(c), diode = col.diode, done = options.done?.(c.no), mark = done ? '✓ ' : '';
       const l = new shapes.standard.DoubleLink({
         id: 'c' + c.no, source: {id: pa, port: a}, target: {id: pb, port: b},
-        z: 5.5,   // above the area frames, below the parts: terminal numbers stay readable
+        z: 5.5,   // above the area frames and the parts; it ends at the ring of its terminal, so the terminal number stays readable
         vertices: diode ? diodeVertices(pa, a, b) : vertices,
         connector: {name: 'rounded', args: {radius: 8}},
         attrs: {line: {stroke: col.line, strokeWidth: col.width || 4, targetMarker: {type: 'path', d: ''}},
@@ -306,7 +311,7 @@
       const placed: Box[] = [];
       visible.forEach((c, i) => {
         if (colorOf(c).diode) return;
-        const own = lines[i] as XY[], hw = options.done?.(c.no) ? 24 : 15, fixed = [...obstacles, ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
+        const own = lines[i] as XY[], hw = options.done?.(c.no) ? 24 : 15, fixed = [...obstacles, ...walls(0), ...placed], near = lines.flatMap((line, j) => j === i ? [] : stretches(line, 5));
         const spots = own.slice(1).flatMap((q, k) => {
           const p = own[k] as XY, long = Math.hypot(q.x - p.x, q.y - p.y);
           return [.5, .35, .65, .2, .8].map(t => ({x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t, long, room: long * Math.min(t, 1 - t)}));
