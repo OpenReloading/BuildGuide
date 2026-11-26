@@ -7,6 +7,7 @@ const D = JSON.parse(readFileSync(new URL('../example/guide.json', import.meta.u
 const ORIGIN = 'http://127.0.0.1:8080' + (process.env.BUILDGUIDE_PREFIX ?? '');
 const OUTLINE = 3;   // the outline of a connection is this much wider than its line (renderer)
 const SLACK = 1.5;   // drawing tolerance in pixels: rounded corners, part borders
+const GAP = 2;   // background in pixels between two parallel connections, so their outlines do not merge into one track
 
 // the geometry of the board on the page, in the board's own coordinates
 async function drawn(page) {
@@ -94,7 +95,7 @@ function problems(b, g, shown) {
       if (a === undefined) continue;
       const along = Math.min(Math.max(x.p[z], x.q[z]), Math.max(y.p[z], y.q[z])) - Math.max(Math.min(x.p[z], x.q[z]), Math.min(y.p[z], y.q[z]));
       const apart = Math.abs(x.p[a] - y.p[a]);
-      if (along > SLACK && apart < near - 0.5) found.push(`${c.no} and ${d.no}: parallel ${apart.toFixed(1)} px apart, at least ${near} needed`);
+      if (along > SLACK && apart < near + GAP) found.push(`${c.no} and ${d.no}: parallel ${apart.toFixed(1)} px apart, at least ${near + GAP} needed`);
     }
   }
   const badges = g.badges.map(x => ({ ...x, ...inside(x) }));
@@ -108,6 +109,28 @@ function problems(b, g, shown) {
   return found;
 }
 
+// each end of a connection lies on the ring of its own terminal, and the connection is painted there, not hidden under a part
+async function loose(page, shown) {
+  await page.locator('.ag-board-canvas').scrollIntoViewIfNeeded();
+  return page.evaluate(list => {
+    const found = [], canvas = document.querySelector('.ag-board-canvas');
+    for (const c of list) {
+      const line = canvas.querySelector(`[data-connection="${c.no}"] [joint-selector=line]`), m = line.getScreenCTM(), len = line.getTotalLength();
+      for (const [end, at, back] of [[c.a, 0, 4], [c.b, len, len - 4]]) {
+        const id = end.slice(0, end.indexOf(':')), port = end.slice(end.indexOf(':') + 1);
+        const r = canvas.querySelector(`g[model-id="${CSS.escape(id)}"] [port="${CSS.escape(port)}"] circle`).getBoundingClientRect();
+        const p = line.getPointAtLength(at).matrixTransform(m), q = line.getPointAtLength(back).matrixTransform(m);
+        const off = Math.hypot(p.x - (r.x + r.width / 2), p.y - (r.y + r.height / 2)) - r.width / 2;
+        if (Math.abs(off) > 1.5) found.push(`${c.no}: ends ${off.toFixed(1)} px off the ring of ${end}`);
+        // a connection that shares the terminal may lie on top
+        const top = document.elementFromPoint(q.x, q.y)?.closest('[model-id]')?.getAttribute('model-id');
+        if (!list.some(d => 'c' + d.no === top && [d.a, d.b].includes(end))) found.push(`${c.no}: hidden under ${top} at ${end}`);
+      }
+    }
+    return found;
+  }, shown.map(({ no, a, b }) => ({ no, a, b })));
+}
+
 // the tick keys of a board's connections, stored as the component stores them
 const ticks = (key, b, list) => Object.fromEntries(list.map(c => [`${b.prefix || key}-${c.no}:${c.a}:${c.b}`, true]));
 const tick = (page, key, b, list) => page.addInitScript(([storage, saved]) => localStorage.setItem(storage, JSON.stringify(saved)), [D.storage, ticks(key, b, list)]);
@@ -117,13 +140,14 @@ for (const [key, b] of Object.entries(D.boards)) {
   const views = [{ name: 'all connections', shown: all, go: async page => { await page.goto(`${ORIGIN}/example/${key}/`); if ((b.scope || 'step') !== 'all') await page.locator('[data-role=scope]').selectOption('all'); } },
     ...b.steps.map(s => ({ name: `step ${s.id}`, shown: s.connections, go: async page => { await page.goto(`${ORIGIN}/example/${key}/#${encodeURIComponent(key)}=${encodeURIComponent(s.id)}`); } }))];
   for (const ticked of [false, true]) for (const v of (b.scope === 'all' ? views.slice(0, 1) : views)) {
-    test(`${key}, ${v.name}${ticked ? ', all ticked' : ''}: wires are orthogonal, apart, clear of parts, labels and each other's numbers`, async ({ page }) => {
+    test(`${key}, ${v.name}${ticked ? ', all ticked' : ''}: wires reach their terminals, are orthogonal, apart, clear of parts, labels and each other's numbers`, async ({ page }) => {
       if (ticked) await tick(page, key, b, all);
       await v.go(page);
       await expect(page.locator('.ag-board-canvas')).toHaveAttribute('data-ready', 'true');
       await expect(page.locator('[data-connection]')).toHaveCount(v.shown.length);
       const g = await drawn(page);
       expect(problems(key, g, v.shown)).toEqual([]);
+      expect(await loose(page, v.shown)).toEqual([]);
       // the wider label of a ticked connection is a check mark before the number
       expect(g.badges.map(x => x.text)).toEqual(expect.arrayContaining(v.shown.map(c => (ticked ? '\u2713 ' : '') + c.no)));
     });
