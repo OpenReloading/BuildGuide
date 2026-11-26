@@ -1,5 +1,7 @@
 # Contributing
 
+Bugs, ideas and questions: open an issue with the matching form. A vulnerability goes privately through the [security policy](https://github.com/OpenReloading/.github/blob/main/SECURITY.md), never into an issue.
+
 1. Branch `<type>/<issue>-<slug>` from `main`.
 2. Before the pull request, in the dev container (`.devcontainer/`, Playwright image with uv):
 
@@ -14,7 +16,10 @@
 
    Run at least `npm run lint`, `npm test` and `npm run test:browser`. Audit exceptions (advisories without a fix) are in `scripts/audit.mjs`.
 3. Pull request title in [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) form, with the component as scope: `feat(core): ...`, `fix(mkdocs): ...`, `feat(docusaurus): ...`. Pull requests target `main` and are squash-merged with that title, and release-please builds each component's version and changelog from it. `feat` raises the minor version, `fix` the patch version, `!` after the type marks a breaking change.
-4. `Closes #<issue>` in the description.
+4. Fill in every section of the pull request template, with `Closes #<issue>`.
+5. Commits are signed (SSH or GPG key).
+
+A contribution is licensed under the repository's license ([MIT](LICENSE)). There is no contributor license agreement (CLA).
 
 ## Branches
 
