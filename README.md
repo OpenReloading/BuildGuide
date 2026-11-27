@@ -3,6 +3,10 @@
 # BuildGuide
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-eikelandin-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/eikelandin)
+[![CI](https://github.com/OpenReloading/BuildGuide/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OpenReloading/BuildGuide/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/OpenReloading/BuildGuide/badge)](https://scorecard.dev/viewer/?uri=github.com/OpenReloading/BuildGuide)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Release: core](https://img.shields.io/github/v/release/OpenReloading/BuildGuide?filter=core-v*)](https://github.com/OpenReloading/BuildGuide/releases)
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white)](https://discord.gg/hUCSjDYNaa)
 
 A parts checklist plus wiring and tubing diagrams for your build documentation, from one data file. Readers tick off each part and connection as they build, and the ticks stay in their browser.
