@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.0](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.6...mkdocs-v0.2.0) (2026-11-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* license under MIT ([#229](https://github.com/OpenReloading/BuildGuide/issues/229))
+
+### Chores
+
+* license under MIT ([#229](https://github.com/OpenReloading/BuildGuide/issues/229)) ([ebee1ed](https://github.com/OpenReloading/BuildGuide/commit/ebee1eda5265c03bbe3d72584ce67a07be5c7dc0))
+
 ## [0.1.6](https://github.com/OpenReloading/BuildGuide/compare/mkdocs-v0.1.5...mkdocs-v0.1.6) (2026-11-05)
 
 

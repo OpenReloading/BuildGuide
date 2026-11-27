@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.0](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.7...core-v0.3.0) (2026-11-27)
+
+
+### ⚠ BREAKING CHANGES
+
+* license under MIT ([#229](https://github.com/OpenReloading/BuildGuide/issues/229))
+
+### Features
+
+* **core:** ship German texts, picked by the nearest lang attribute or the lang mount option ([#224](https://github.com/OpenReloading/BuildGuide/issues/224)) ([b9cf9db](https://github.com/OpenReloading/BuildGuide/commit/b9cf9db4c777948c60d1f8122aecea0d5c9dc28f))
+
+
+### Bug fixes
+
+* **core:** draw wires up to inset terminals and keep gland openings full width ([#231](https://github.com/OpenReloading/BuildGuide/issues/231)) ([a4308a6](https://github.com/OpenReloading/BuildGuide/commit/a4308a6a95f8415686ed393ee16bb6c226b1cda1))
+
+
+### Documentation
+
+* neutral wording without decision history ([#216](https://github.com/OpenReloading/BuildGuide/issues/216)) ([c046a3d](https://github.com/OpenReloading/BuildGuide/commit/c046a3dbcdfd3ffe2b8f67e838171614c404adc6))
+
+
+### Chores
+
+* license under MIT ([#229](https://github.com/OpenReloading/BuildGuide/issues/229)) ([ebee1ed](https://github.com/OpenReloading/BuildGuide/commit/ebee1eda5265c03bbe3d72584ce67a07be5c7dc0))
+
 ## [0.2.7](https://github.com/OpenReloading/BuildGuide/compare/core-v0.2.6...core-v0.2.7) (2026-11-05)
 
 
